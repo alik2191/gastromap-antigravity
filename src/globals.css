@@ -1,0 +1,215 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  
+  @keyframes bounce-slow {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-bounce-slow {
+    animation: bounce-slow 2s ease-in-out infinite;
+  }
+}
+
+/* Typography System with Theme Support */
+@layer base {
+  :root {
+    /* Light theme colors */
+    --color-text-primary: #171717; /* neutral-900 - заголовки, основной текст */
+    --color-text-secondary: #525252; /* neutral-600 - описания, лейблы */
+    --color-text-tertiary: #737373; /* neutral-500 - мелкий текст, подписи */
+    --color-text-muted: #a3a3a3; /* neutral-400 - очень мелкий/disabled текст */
+    
+    /* Background colors */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f5f5f5;
+  }
+
+  .dark {
+    /* Dark theme colors */
+    --color-text-primary: #f5f5f5; /* neutral-100 - заголовки, основной текст */
+    --color-text-secondary: #d4d4d4; /* neutral-300 - описания, лейблы */
+    --color-text-tertiary: #b3b3b3; /* neutral-400 улучшено - мелкий текст, подписи */
+    --color-text-muted: #8a8a8a; /* neutral-500 улучшено - очень мелкий/disabled текст */
+
+    /* Background colors */
+    --color-bg-primary: #262626;
+    --color-bg-secondary: #171717;
+  }
+  
+  /* Global text color rules for all elements */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text-primary);
+  }
+  
+  p, span, div, a, li {
+    color: inherit; /* Inherit from parent by default */
+  }
+  
+  /* Input elements should have primary text color */
+  input, textarea, select {
+    color: var(--color-text-primary) !important;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--color-text-muted) !important;
+    opacity: 0.7;
+  }
+
+  .dark input::placeholder, .dark textarea::placeholder {
+    opacity: 0.85;
+  }
+
+  /* Link hover and focus states for accessibility */
+  a:not(.no-underline-hover) {
+    transition: all 0.2s ease;
+  }
+
+  a:not(.no-underline-hover):hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  a:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Button focus states for better accessibility */
+  button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Semantic text color classes */
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+  
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+  
+  .text-tertiary {
+    color: var(--color-text-tertiary);
+  }
+  
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  /* Heading styles with consistent typography */
+  .heading-1 {
+    font-size: 1.875rem; /* 30px */
+    line-height: 2.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .heading-2 {
+    font-size: 1.5rem; /* 24px */
+    line-height: 2rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .heading-3 {
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .heading-4 {
+    font-size: 1.125rem; /* 18px */
+    line-height: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Body text styles */
+  .body-large {
+    font-size: 1rem; /* 16px */
+    line-height: 1.5rem;
+    color: var(--color-text-primary);
+  }
+
+  .body-normal {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.25rem;
+    color: var(--color-text-secondary);
+  }
+
+  .body-small {
+    font-size: 0.75rem; /* 12px */
+    line-height: 1rem;
+    color: var(--color-text-tertiary);
+  }
+
+  /* Label styles */
+  .label-large {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .label-normal {
+    font-size: 0.75rem; /* 12px */
+    line-height: 1rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .label-small {
+    font-size: 0.625rem; /* 10px */
+    line-height: 1rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+  }
+
+  /* Input placeholder styles */
+  .input-field {
+    color: var(--color-text-primary);
+  }
+
+  .input-field::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .heading-1 {
+    font-size: 1.5rem; /* 24px на мобильных */
+    line-height: 2rem;
+  }
+
+  .heading-2 {
+    font-size: 1.25rem; /* 20px на мобильных */
+    line-height: 1.75rem;
+  }
+}
