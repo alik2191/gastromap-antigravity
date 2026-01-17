@@ -783,10 +783,8 @@ export default function CreatorTools() {
                     onOpenChange={setShowLocationForm}
                     user={user}
                     onSuccess={() => {
-                        onSuccess = {() => {
-                queryClient.invalidateQueries({ queryKey: ['creatorLocations'] });
-            setShowLocationForm(false);
-                    }}
+                        queryClient.invalidateQueries({ queryKey: ['creatorLocations'] });
+                        setShowLocationForm(false);
                     }}
                 />
             )}
