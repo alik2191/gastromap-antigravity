@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { mockBase44 as base44 } from '@/api/mockBase44Client';
+import { base44 } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

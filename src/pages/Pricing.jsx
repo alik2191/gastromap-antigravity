@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight, Star, Shield, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";

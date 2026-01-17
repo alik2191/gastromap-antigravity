@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Star, Heart, Check, AlertCircle, Instagram, Facebook, Youtube, Linkedin, Twitter, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import { useLanguage } from '../LanguageContext';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";

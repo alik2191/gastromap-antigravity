@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Bot, Sparkles, MessageSquare, Play, Clock, CheckCircle, AlertCircle, Loader2, Filter, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { toast } from "sonner";
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function AIManagementTab() {

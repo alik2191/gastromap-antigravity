@@ -19,7 +19,7 @@ import { createPageUrl } from "@/utils";
 import ReviewSection from './ReviewSection';
 import AdminNotesList from './AdminNotesList';
 import { useLanguage } from '../LanguageContext';
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import { typeLabels, typeColors } from '../constants';
 
 const LocationCard = memo(function LocationCard({ 

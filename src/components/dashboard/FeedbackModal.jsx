@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import { Loader2, MessageSquarePlus } from "lucide-react";
 import { useLanguage } from '../LanguageContext';
 

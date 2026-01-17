@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-// import { base44 } from '@/api/base44Client'; // DISABLED: Using mock client
-import { mockBase44 as base44 } from '@/api/mockBase44Client'; // MOCK DATA
+// import { base44 } from '@/api/client'; // DISABLED: Using mock client
+import { base44 } from '@/api/client'; // MOCK DATA
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

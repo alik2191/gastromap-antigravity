@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import { Loader2, Trash2, Send, Save, CheckSquare, Square, X, SlidersHorizontal, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 

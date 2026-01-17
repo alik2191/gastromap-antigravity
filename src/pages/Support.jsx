@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { base44 } from '@/api/base44Client';
+import { base44 } from '@/api/client';
 import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
 
