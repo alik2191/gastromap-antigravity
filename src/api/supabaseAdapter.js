@@ -97,7 +97,23 @@ export const base44 = {
         CreatorAnswer: new SupabaseEntity('creator_answers'),
         User: new SupabaseEntity('profiles'), // 'users' is reserved in Supabase auth, usually 'profiles' table is used
         Review: new SupabaseEntity('reviews'),
-        LocationBranch: new SupabaseEntity('location_branches')
+        LocationBranch: new SupabaseEntity('location_branches'),
+        // Add Query proxy for compatibility with old sdk usage
+        Query: {
+            // This is a minimal mock for the Query object if used directly
+            filter: async () => [],
+            list: async () => []
+        }
+    },
+    appLogs: {
+        logUserInApp: async (pageName) => {
+            console.log(`[Supabase] Navigation log: ${pageName}`);
+            return { success: true };
+        },
+        logEvent: async (name, data) => {
+            console.log(`[Supabase] Event log: ${name}`, data);
+            return { success: true };
+        }
     },
     functions: {
         invoke: async (functionName, params) => {
@@ -140,7 +156,11 @@ export const base44 = {
                 });
                 if (error) throw error;
                 return data; // invoke-llm function should return the result directly or in { results }
-            }
+            },
+            SendEmail: async () => ({ success: true }),
+            SendSMS: async () => ({ success: true }),
+            GenerateImage: async () => ({ success: true }),
+            ExtractDataFromUploadedFile: async () => ({ success: true })
         }
     }
 };

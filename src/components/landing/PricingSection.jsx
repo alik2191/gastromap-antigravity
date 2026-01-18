@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { base44 } from '@/api/client';
 import { toast } from "sonner";
 import { motion } from 'framer-motion';
 
@@ -78,16 +78,15 @@ function PricingCard({ plan, index, onPurchase, loading }) {
                 </div>
             </div>
 
-            <Button 
+            <Button
                 onClick={() => onPurchase(plan)}
                 disabled={loading}
-                className={`w-full h-14 rounded-2xl text-base font-semibold transition-transform active:scale-95 ${
-                    plan.name === 'Yearly' 
-                        ? 'bg-white text-black hover:bg-neutral-200' 
+                className={`w-full h-14 rounded-2xl text-base font-semibold transition-transform active:scale-95 ${plan.name === 'Yearly'
+                        ? 'bg-white text-black hover:bg-neutral-200'
                         : plan.name === 'Lifetime'
                             ? 'bg-white text-blue-600 hover:bg-blue-50'
                             : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                }`}
+                    }`}
             >
                 {loading ? 'Processing...' : 'Choose Plan'}
             </Button>
@@ -100,7 +99,7 @@ export default function PricingSection() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        base44.auth.me().then(setUser).catch(() => {});
+        base44.auth.me().then(setUser).catch(() => { });
     }, []);
 
     const handlePurchase = async (plan) => {
@@ -114,7 +113,7 @@ export default function PricingSection() {
         try {
             const startDate = new Date();
             let endDate = new Date();
-            
+
             if (plan.id === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
             else if (plan.id === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
             else endDate.setFullYear(endDate.getFullYear() + 100);
@@ -132,7 +131,7 @@ export default function PricingSection() {
             setTimeout(() => {
                 window.location.href = createPageUrl('Dashboard');
             }, 1000);
-            
+
         } catch (e) {
             toast.error('Purchase error');
         } finally {
@@ -144,7 +143,7 @@ export default function PricingSection() {
         <section id="pricing" className="py-32 px-6 relative overflow-hidden font-sans">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12 md:mb-20 px-2">
-                    <motion.h2 
+                    <motion.h2
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -167,10 +166,10 @@ export default function PricingSection() {
 
                 <div className="grid md:grid-cols-3 gap-6">
                     {plans.map((plan, index) => (
-                        <PricingCard 
-                            key={index} 
-                            plan={plan} 
-                            index={index} 
+                        <PricingCard
+                            key={index}
+                            plan={plan}
+                            index={index}
                             onPurchase={handlePurchase}
                             loading={loading}
                         />

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44 } from '@/api/client';
 
 export default function Header() {
     const [user, setUser] = useState(null);
@@ -12,7 +12,7 @@ export default function Header() {
     useEffect(() => {
         base44.auth.me()
             .then(setUser)
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoading(false));
     }, []);
 
@@ -21,7 +21,7 @@ export default function Header() {
     };
 
     return (
-        <motion.nav 
+        <motion.nav
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3 }}
@@ -34,21 +34,21 @@ export default function Header() {
                     </div>
                     <span className="font-semibold text-lg tracking-tight text-neutral-900">GastroMap</span>
                 </Link>
-                
+
                 <div className="flex items-center gap-4">
                     {!loading && (
                         <>
                             {user ? (
-                                 <Link to={createPageUrl("Dashboard")}>
+                                <Link to={createPageUrl("Dashboard")}>
                                     <Button className="rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-6">
                                         Dashboard
                                     </Button>
-                                 </Link>
+                                </Link>
                             ) : (
                                 <>
-                                    <Button 
+                                    <Button
                                         onClick={handleLogin}
-                                        variant="ghost" 
+                                        variant="ghost"
                                         className="rounded-full font-medium text-neutral-900 hover:bg-neutral-100"
                                     >
                                         Sign In

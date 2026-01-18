@@ -1,4 +1,4 @@
-import { base44 } from './base44Client';
+import { base44 } from './client';
 
 
 export const Query = base44.entities.Query;
