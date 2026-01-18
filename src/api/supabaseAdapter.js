@@ -12,13 +12,34 @@ class SupabaseEntity {
         this.tableName = tableName;
     }
 
-    async list(sortField) {
-        let query = supabase.from(this.tableName).select('*');
+    async list(optionsOrSort) {
+        let query = supabase.from(this.tableName);
+
+        // Handle options
+        let sortField = null;
+        let select = '*';
+        let range = null;
+
+        if (typeof optionsOrSort === 'string') {
+            sortField = optionsOrSort; // Backward compatibility
+        } else if (typeof optionsOrSort === 'object' && optionsOrSort !== null) {
+            sortField = optionsOrSort.sort;
+            select = optionsOrSort.select || '*';
+            range = optionsOrSort.range; // [from, to]
+        }
+
+        query = query.select(select);
+
         if (sortField) {
             const ascending = !sortField.startsWith('-');
             const column = ascending ? sortField : sortField.substring(1);
             query = query.order(column, { ascending });
         }
+
+        if (range && Array.isArray(range) && range.length === 2) {
+            query = query.range(range[0], range[1]);
+        }
+
         const data = await handleResponse(query);
         // Map role to custom_role for UI compatibility if this is the profiles/users table
         if (this.tableName === 'profiles') {
@@ -27,13 +48,18 @@ class SupabaseEntity {
         return data;
     }
 
-    async filter(criteria) {
+    async filter(criteria, options = {}) {
         let actualCriteria = { ...criteria };
         if (this.tableName === 'profiles' && actualCriteria.custom_role) {
             actualCriteria.role = actualCriteria.custom_role;
             delete actualCriteria.custom_role;
         }
-        const data = await handleResponse(supabase.from(this.tableName).select('*').match(actualCriteria));
+
+        // Support select option
+        const select = options.select || '*';
+        let query = supabase.from(this.tableName).select(select).match(actualCriteria);
+
+        const data = await handleResponse(query);
         if (this.tableName === 'profiles') {
             return data.map(u => ({ ...u, custom_role: u.role }));
         }
@@ -128,6 +154,9 @@ export const adapter = {
                 role: finalRole,
                 custom_role: finalRole
             };
+        },
+        getLoginUrl: (redirectUrl) => {
+            return `/Login?redirect=${encodeURIComponent(redirectUrl)}`;
         },
         redirectToLogin: (redirectUrl) => {
             // Use Supabase Auth UI or redirect to login page

@@ -106,7 +106,7 @@ export default function PricingSection() {
     const handlePurchase = async (plan) => {
         if (!user) {
             toast.info("Please sign in first");
-            api.auth.redirectToLogin(window.location.href);
+            navigate(api.auth.getLoginUrl(window.location.pathname));
             return;
         }
 

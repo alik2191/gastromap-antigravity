@@ -443,7 +443,7 @@ export default function Admin() {
             setUser(userData);
         } catch (e) {
             console.error('Admin check failed:', e);
-            api.auth.redirectToLogin(window.location.href);
+            navigate(api.auth.getLoginUrl(window.location.pathname));
             return;
         }
         setLoading(false);
