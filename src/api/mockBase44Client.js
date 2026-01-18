@@ -284,5 +284,24 @@ export const mockBase44 = {
 
             return { data: {} };
         }
+    },
+    appLogs: {
+        logUserInApp: async (pageName) => {
+            console.log(`Mock: logUserInApp - ${pageName}`);
+            return { success: true };
+        },
+        logEvent: async (name, data) => {
+            console.log(`Mock: logEvent - ${name}`, data);
+            return { success: true };
+        }
+    },
+    storage: {
+        upload: async (path, file) => {
+            console.log(`Mock: storage upload to ${path}`);
+            return { path };
+        },
+        getPublicUrl: (path) => {
+            return `https://mock-storage.example.com/${path}`;
+        }
     }
 };
