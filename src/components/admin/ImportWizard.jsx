@@ -36,7 +36,7 @@ const EXPECTED_FIELDS = [
   { key: 'must_try', label: 'must_try' },
 ];
 
-const TYPE_ENUM = ['cafe','bar','restaurant','market','shop','bakery','winery'];
+const TYPE_ENUM = ['cafe', 'bar', 'restaurant', 'market', 'shop', 'bakery', 'winery'];
 const PRICE_ENUM = ['$', '$$', '$$$', '$$$$'];
 
 export default function ImportWizard({ isOpen, onClose, file, type, onImported }) {
@@ -175,8 +175,8 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
     const out = { ...mapped };
     if (out.latitude === '' || out.latitude === undefined) out.latitude = null; else out.latitude = parseFloat(out.latitude);
     if (out.longitude === '' || out.longitude === undefined) out.longitude = null; else out.longitude = parseFloat(out.longitude);
-    if (typeof out.is_hidden_gem === 'string') out.is_hidden_gem = ['true','1','yes','y','да'].includes(out.is_hidden_gem.toLowerCase());
-    if (typeof out.is_featured === 'string') out.is_featured = ['true','1','yes','y','да'].includes(out.is_featured.toLowerCase());
+    if (typeof out.is_hidden_gem === 'string') out.is_hidden_gem = ['true', '1', 'yes', 'y', 'да'].includes(out.is_hidden_gem.toLowerCase());
+    if (typeof out.is_featured === 'string') out.is_featured = ['true', '1', 'yes', 'y', 'да'].includes(out.is_featured.toLowerCase());
     if (out.id !== undefined && out.id !== null) {
       const s = String(out.id).trim();
       if (s.length === 0) delete out.id; else out.id = s;
@@ -192,7 +192,7 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
       fieldErrors[field].push(msg);
       errors.push(msg);
     };
-    const req = ['name','type','country','city'];
+    const req = ['name', 'type', 'country', 'city'];
     req.forEach(f => { if (!mapped[f] || String(mapped[f]).trim().length === 0) addFieldErr(f, `Отсутствует обязательное поле: ${f}`); });
     if (mapped.type && !TYPE_ENUM.includes(String(mapped.type))) addFieldErr('type', `Недопустимый type: ${mapped.type}`);
     if (mapped.price_range && !PRICE_ENUM.includes(String(mapped.price_range))) addFieldErr('price_range', `Недопустимый price_range: ${mapped.price_range}`);
@@ -231,24 +231,52 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
       setSummary({ created: 0, updated: 0, errors: 0 });
 
       let created = 0, updated = 0, errors = 0;
+      const allCreatedIds = [];
+      const allUpdatedChanges = [];
+
       for (let i = 0; i < payload.length; i += batchSize) {
         const batch = payload.slice(i, i + batchSize);
-        const res = await base44.functions.invoke('importLocations', { locations: batch });
-        const s = res.data || {};
-        created += s.created || 0;
-        updated += s.updated || 0;
-        errors += s.errors || 0;
+
+        let batchCreated = 0;
+        let batchUpdated = 0;
+        let batchErrors = 0;
+
+        // Process batch client-side since 'importLocations' function might not exist
+        await Promise.all(batch.map(async (loc) => {
+          try {
+            // Remove sourceRow before sending to DB
+            // eslint-disable-next-line no-unused-vars
+            const { sourceRow, ...dbData } = loc;
+
+            if (dbData.id) {
+              const res = await base44.entities.Location.update(dbData.id, dbData);
+              batchUpdated++;
+              if (res && res.id) allUpdatedChanges.push(res);
+            } else {
+              const res = await base44.entities.Location.create(dbData);
+              batchCreated++;
+              if (res && res.id) allCreatedIds.push(res.id);
+            }
+          } catch (err) {
+            console.error("Import row failed", err);
+            batchErrors++;
+          }
+        }));
+
+        created += batchCreated;
+        updated += batchUpdated;
+        errors += batchErrors;
 
         const processed = Math.min(i + batch.length, payload.length);
         setProcessedCount(processed);
         setUploadProgress(Math.round((processed / payload.length) * 100));
         setSummary({ created, updated, errors });
 
-        // небольшая пауза, чтобы не упереться в лимиты внешних сервисов
-        await new Promise((r) => setTimeout(r, 400));
+        // wait a bit to avoid rate limits
+        await new Promise((r) => setTimeout(r, 200));
       }
 
-      onImported?.({ created, updated, errors });
+      onImported?.({ created, updated, errors, createdIds: allCreatedIds, updatedChanges: allUpdatedChanges });
       onClose?.();
     } catch (e) {
       console.error('Import failed', e);
@@ -289,18 +317,18 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
               <input type="checkbox" checked={showOnlyErrors} onChange={(e) => setShowOnlyErrors(e.target.checked)} />
               Показывать только строки с ошибками
             </label>
-            </div>
+          </div>
 
-            {showOnlyErrors && (
+          {showOnlyErrors && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border-0 shadow-sm dark:border dark:border-amber-900 text-neutral-900 dark:text-amber-200 text-sm rounded-xl p-3 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 mt-0.5" />
-            <div>
-              Показаны только строки с ошибками. В каждой проблемной ячейке отмечена иконка — наведите для подсказки; также детали видны в колонке «Ошибки».
+              <AlertCircle className="w-4 h-4 mt-0.5" />
+              <div>
+                Показаны только строки с ошибками. В каждой проблемной ячейке отмечена иконка — наведите для подсказки; также детали видны в колонке «Ошибки».
+              </div>
             </div>
-            </div>
-            )}
+          )}
 
-            {/* Mapping */}
+          {/* Mapping */}
           <div className="border-0 shadow-sm dark:border dark:border-neutral-700 rounded-xl p-4 bg-white dark:bg-neutral-900">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {EXPECTED_FIELDS.map(({ key, label }) => (
@@ -325,7 +353,7 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
           {/* Preview & validation */}
           <div className="border-0 shadow-sm dark:border dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900">
             <div className="overflow-auto max-h-[70vh]">
-                <Table className="min-w-[1100px]">
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[44px] text-neutral-900 dark:text-neutral-300">
@@ -375,68 +403,68 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
                         {EXPECTED_FIELDS.map(f => {
                           const isLongField = ['description', 'insider_tip', 'must_try'].includes(f.key);
                           return (
-                          <TableCell
-                            key={f.key}
-                            className={`${isLongField ? 'max-w-[220px]' : 'min-w-[120px]'} ${validations[i]?.fieldErrors?.[f.key]?.length ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300' : 'text-neutral-900 dark:text-neutral-100'}`}
-                            title={validations[i]?.fieldErrors?.[f.key]?.join('; ') || String(m[f.key] ?? '')}
-                          >
-                            <div className="relative">
-                              {f.key === 'type' ? (
-                                <Select 
-                                  value={m[f.key] ?? ''} 
-                                  onValueChange={(v) => {
-                                    setEditedData(prev => ({
-                                      ...prev,
-                                      [i]: { ...(prev[i] || {}), [f.key]: v }
-                                    }));
-                                  }}
-                                >
-                                  <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {TYPE_ENUM.map(t => (
-                                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : f.key === 'price_range' ? (
-                                <Select 
-                                  value={m[f.key] ?? ''} 
-                                  onValueChange={(v) => {
-                                    setEditedData(prev => ({
-                                      ...prev,
-                                      [i]: { ...(prev[i] || {}), [f.key]: v }
-                                    }));
-                                  }}
-                                >
-                                  <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {PRICE_ENUM.map(p => (
-                                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <Input
-                                  value={m[f.key] ?? ''}
-                                  onChange={(e) => {
-                                    setEditedData(prev => ({
-                                      ...prev,
-                                      [i]: { ...(prev[i] || {}), [f.key]: e.target.value }
-                                    }));
-                                  }}
-                                  className={`h-7 text-xs px-2 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300 dark:border-red-700 pr-6' : ''}`}
-                                />
-                              )}
-                              {validations[i]?.fieldErrors?.[f.key]?.length > 0 && (
-                                <AlertCircle className="w-3.5 h-3.5 text-red-600 absolute right-2 top-1.5 pointer-events-none" />
-                              )}
-                            </div>
-                          </TableCell>
-                        );
+                            <TableCell
+                              key={f.key}
+                              className={`${isLongField ? 'max-w-[220px]' : 'min-w-[120px]'} ${validations[i]?.fieldErrors?.[f.key]?.length ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300' : 'text-neutral-900 dark:text-neutral-100'}`}
+                              title={validations[i]?.fieldErrors?.[f.key]?.join('; ') || String(m[f.key] ?? '')}
+                            >
+                              <div className="relative">
+                                {f.key === 'type' ? (
+                                  <Select
+                                    value={m[f.key] ?? ''}
+                                    onValueChange={(v) => {
+                                      setEditedData(prev => ({
+                                        ...prev,
+                                        [i]: { ...(prev[i] || {}), [f.key]: v }
+                                      }));
+                                    }}
+                                  >
+                                    <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {TYPE_ENUM.map(t => (
+                                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : f.key === 'price_range' ? (
+                                  <Select
+                                    value={m[f.key] ?? ''}
+                                    onValueChange={(v) => {
+                                      setEditedData(prev => ({
+                                        ...prev,
+                                        [i]: { ...(prev[i] || {}), [f.key]: v }
+                                      }));
+                                    }}
+                                  >
+                                    <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {PRICE_ENUM.map(p => (
+                                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Input
+                                    value={m[f.key] ?? ''}
+                                    onChange={(e) => {
+                                      setEditedData(prev => ({
+                                        ...prev,
+                                        [i]: { ...(prev[i] || {}), [f.key]: e.target.value }
+                                      }));
+                                    }}
+                                    className={`h-7 text-xs px-2 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300 dark:border-red-700 pr-6' : ''}`}
+                                  />
+                                )}
+                                {validations[i]?.fieldErrors?.[f.key]?.length > 0 && (
+                                  <AlertCircle className="w-3.5 h-3.5 text-red-600 absolute right-2 top-1.5 pointer-events-none" />
+                                )}
+                              </div>
+                            </TableCell>
+                          );
                         })}
                         <TableCell className="text-xs text-red-600 dark:text-red-400">
                           {validations[i]?.errors?.join('; ')}
@@ -446,8 +474,8 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
                   )}
                 </TableBody>
               </Table>
-              </div>
-              </div>
+            </div>
+          </div>
 
           <div className="flex items-center justify-between">
             <div className="text-xs text-neutral-700 dark:text-neutral-400">
