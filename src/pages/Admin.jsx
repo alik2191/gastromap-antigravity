@@ -2877,118 +2877,101 @@ function LocationForm({ location, onSubmit, isLoading }) {
         if (!smartSearchQuery.trim()) return;
         setIsSearching(true);
         try {
-            const prompt = `You are a location data extraction assistant. Your task is to comprehensively search the internet and find REAL, VERIFIED information about: "${smartSearchQuery}"
+            toast.info('Searching Google Places...');
 
-COMPREHENSIVE SEARCH STRATEGY:
-1. FIRST: Search on Google Maps for exact location, coordinates, and basic info
-2. THEN: Find the venue's official website (if available from the link or search)
-3. NEXT: Search for the venue's social media pages (Instagram, Facebook, TikTok, etc.) for additional info, photos, and popular items
-4. ALSO: Check review platforms (TripAdvisor, Yelp, Google Reviews) for "must-try" items and detailed descriptions
-5. FINALLY: Look for blog posts, articles, or guides mentioning this venue
+            // Step 1: Fetch Hard Data from Google Places (via standard edge function)
+            const googleResponse = await api.functions.invoke('search-google-places-detailed', {
+                query: smartSearchQuery,
+                language: 'en' // Force English as requested
+            });
 
-WHAT TO EXTRACT:
-- Name, address, coordinates from Google Maps (PRIORITY)
-- Official website URL if exists
-- Social media pages (Instagram, Facebook, etc.) - these often have the best photos and info
-- Description from multiple sources (website, social media, reviews)
-- Popular dishes/items mentioned in reviews or social media posts
-- Price range based on menu/reviews
-- Photos from official sources or social media
-- Opening hours from Google Places (in text format like "Mon-Fri: 9:00-22:00")
-- Best time to visit based on type and available menus (утро/день/вечер/поздняя ночь)
-- Check if they have breakfast menu, lunch menu, or serve late dinner
+            if (!googleResponse.data || !googleResponse.data.found) {
+                toast.error('Place not found on Google Maps');
+                setIsSearching(false);
+                return;
+            }
 
-IMPORTANT RULES:
-1. Extract information from MULTIPLE sources, not just one link
-2. Social media pages (especially Instagram) often have the most current info and photos
-3. If the provided link has limited info, actively search for additional sources
-4. For coordinates: use exact GPS from Google Maps
-5. For description: combine info from website, social media, and reviews to create comprehensive 2-3 sentence description
-6. For must_try: check reviews and social media comments for popular recommendations
-7. Use empty string "" for any field where NO information is found after searching multiple sources
+            const p = googleResponse.data.place;
+            toast.success('Found place! Fetching details...');
 
-Return a JSON object with these fields:
-- name: exact name of the place
-- type: one of [cafe, bar, restaurant, market, shop, bakery, winery]
-- country: country name
-- city: city name
-- address: full street address with city
-- description: comprehensive description (2-3 sentences) based on multiple sources
-- price_range: one of [$, $$, $$$, $$$$] based on available info
-- website: official website URL (empty if not found)
-- latitude: exact GPS latitude from Google Maps (0 if not found)
-- longitude: exact GPS longitude from Google Maps (0 if not found)
-- image_url: URL to quality photo from official sources or social media (empty if not found)
-- must_try: popular dish/item from reviews/social media (empty if not found)
-- social_links: array of social media URLs found (Instagram, Facebook, etc.)
-- opening_hours: opening hours in text format from Google Places (empty if not found)
-- best_time_to_visit: array of strings ["утро", "день", "вечер", "поздняя ночь"] based on type and menus
-- special_labels: array including "breakfastMenu", "lunchMenu", "lateDinner" if applicable
+            // Prepare "Hard" Data
+            const hardData = {
+                name: p.name,
+                address: p.address,
+                phone: p.phone,
+                website: p.website,
+                rating: p.rating,
+                opening_hours: p.opening_hours, // Text format
+                price_level: p.price_level,
+                latitude: p.latitude || 0,
+                longitude: p.longitude || 0,
+                google_maps_url: p.google_maps_url,
+                // Map photos if needed
+            };
 
-CRITICAL: Search MULTIPLE sources. Don't rely on just one link. Social media pages often have the best current information.`;
+            // Step 2: Ask Gemini to generate "Soft" Data based on Reviews
+            toast.info('Analyzing reviews with AI...');
 
-            const result = await api.integrations.Core.InvokeLLM({
+            const reviewsText = (p.reviews && p.reviews.length > 0)
+                ? p.reviews.map(r => `"${r.text}" (Rating: ${r.rating})`).join('\n\n')
+                : "No reviews available.";
+
+            const prompt = `You are a gastronomic expert. Analyze the following Google Reviews for the venue "${p.name}" (${p.address}).
+            
+Reviews:
+${reviewsText}
+
+Based ONLY on these reviews and the venue details, generate:
+1. "description": A lively, casual description (2-3 sentences).
+2. "insider_tip": A specific practical tip mentioned in reviews (e.g. "Come early," "Try the patio").
+3. "must_try": The specific dish/drink mentioned most positively.
+4. "best_time_to_visit": Best time (Morning, Afternoon, Evening, Late Night) inferred from context/hours.
+5. "type": The most likely category from [cafe, bar, restaurant, market, shop, bakery, winery].
+
+Return JSON only.`;
+
+            const aiResponse = await api.integrations.Core.InvokeLLM({
                 prompt,
-                add_context_from_internet: true,
                 response_json_schema: {
                     type: "object",
                     properties: {
-                        name: { type: "string" },
-                        type: { type: "string" },
-                        country: { type: "string" },
-                        city: { type: "string" },
-                        address: { type: "string" },
                         description: { type: "string" },
-                        price_range: { type: "string" },
-                        website: { type: "string" },
-                        latitude: { type: "number" },
-                        longitude: { type: "number" },
-                        image_url: { type: "string" },
+                        insider_tip: { type: "string" },
                         must_try: { type: "string" },
-                        social_links: {
-                            type: "array",
-                            items: { type: "string" }
-                        },
-                        opening_hours: { type: "string" },
-                        best_time_to_visit: {
-                            type: "array",
-                            items: { type: "string" }
-                        },
-                        special_labels: {
-                            type: "array",
-                            items: { type: "string" }
-                        }
+                        type: { type: "string" },
+                        best_time_to_visit: { type: "array", items: { type: "string" } }
                     }
                 }
             });
 
-            if (result) {
-                // Filter out empty/zero values before setting
-                const filteredResult = Object.entries(result).reduce((acc, [key, value]) => {
-                    if (key === 'social_links') {
-                        acc[key] = Array.isArray(value) ? value.filter(link => link && link !== "") : [];
-                    } else if (value && value !== "" && value !== 0) {
-                        acc[key] = value;
-                    }
-                    return acc;
-                }, {});
+            // Merge Data
+            const finalData = {
+                ...hardData,
+                description: aiResponse.description || p.name,
+                insider_tip: aiResponse.insider_tip || "",
+                must_try: aiResponse.must_try || "",
+                type: aiResponse.type || "restaurant",
+                best_time_to_visit: aiResponse.best_time_to_visit || [],
 
-                setFormData(prev => ({
-                    ...prev,
-                    ...filteredResult,
-                    is_hidden_gem: prev.is_hidden_gem,
-                    is_featured: prev.is_featured,
-                    special_labels: [...(prev.special_labels || []), ...(filteredResult.special_labels || [])]
-                        .filter((label, index, self) => self.indexOf(label) === index),
-                    social_links: [...(prev.social_links || []), ...(filteredResult.social_links || [])]
-                        .filter((link, index, self) => self.indexOf(link) === index),
-                    best_time_to_visit: filteredResult.best_time_to_visit || prev.best_time_to_visit || []
-                }));
-                toast.success('Данные успешно заполнены из множества источников!');
-            }
+                // Track AI updates
+                last_ai_update: new Date().toISOString(),
+                ai_update_log: {
+                    source: "Smart Fill",
+                    reviews_analyzed: p.reviews ? p.reviews.length : 0,
+                    timestamp: new Date().toISOString()
+                }
+            };
+
+            setFormData(prev => ({
+                ...prev,
+                ...finalData
+            }));
+
+            toast.success('Location data filled intelligently!');
+
         } catch (error) {
-            console.error(error);
-            toast.error('Не удалось найти информацию');
+            console.error('Smart Fill Error:', error);
+            toast.error('Failed to Smart Fill location');
         } finally {
             setIsSearching(false);
         }

@@ -12,7 +12,7 @@ serve(async (req) => {
     }
 
     try {
-        const { query, latitude, longitude } = await req.json();
+        const { query, latitude, longitude, language = 'en' } = await req.json();
         const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
         if (!apiKey) {
@@ -20,7 +20,7 @@ serve(async (req) => {
         }
 
         // Step 1: Find the Place ID
-        let searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
+        let searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}&language=${language}`;
         if (latitude && longitude) {
             searchUrl += `&location=${latitude},${longitude}&radius=5000`;
         }
@@ -41,9 +41,9 @@ serve(async (req) => {
         }
 
         // Step 2: Get Place Details
-        // Fields: name,rating,formatted_phone_number,international_phone_number,opening_hours,website,price_level,reviews,user_ratings_total,formatted_address,url
-        const fields = 'name,rating,formatted_phone_number,opening_hours,website,price_level,reviews,user_ratings_total,formatted_address,url';
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${candidate.place_id}&fields=${fields}&key=${apiKey}`;
+        // Fields: name,rating,formatted_phone_number,international_phone_number,opening_hours,website,price_level,reviews,user_ratings_total,formatted_address,url,photos
+        const fields = 'name,rating,formatted_phone_number,opening_hours,website,price_level,reviews,user_ratings_total,formatted_address,url,photos';
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${candidate.place_id}&fields=${fields}&key=${apiKey}&language=${language}`;
 
         const detailsRes = await fetch(detailsUrl);
         const detailsData = await detailsRes.json();

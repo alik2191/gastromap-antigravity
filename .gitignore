@@ -40,3 +40,6 @@ mcp-config.json
 .worktrees/
 .security-key
 logs/security/
+
+# Supabase temp
+supabase/.temp/
