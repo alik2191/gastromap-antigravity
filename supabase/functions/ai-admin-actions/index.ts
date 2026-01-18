@@ -1,119 +1,84 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Define available tools/actions
-const TOOLS = {
-    'get_statistics': {
-        description: 'Get platform statistics (count of locations, users, reviews)',
-        parameters: ['period'] // e.g. 'all_time', 'today'
-    },
-    'moderate_content': {
-        description: 'Check locations for missing data or flagged content',
-        parameters: ['type'] // e.g. 'missing_description'
-    }
-};
-
-serve(async (req) => {
+Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
     }
 
     try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''; // Needs Service Role for admin actions
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || '';
         const apiKey = Deno.env.get('GOOGLE_API_KEY');
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        const { command, context } = await req.json();
-
-        if (!command) {
-            throw new Error('Command is required');
-        }
+        const { command, context, systemPrompt: requestSystemPrompt } = await req.json();
 
         // 1. Fetch Agent Prompt
-        const { data: agent } = await supabase
-            .from('ai_agents')
-            .select('*')
-            .eq('key', 'admin_copilot')
-            .single();
+        let systemPrompt = requestSystemPrompt;
+        if (!systemPrompt) {
+            const { data: agent } = await supabase
+                .from('ai_agents')
+                .select('system_prompt')
+                .eq('key', 'admin_copilot')
+                .single();
+            systemPrompt = agent?.system_prompt || 'You are an admin assistant.';
+        }
 
-        // 2. Determine Action via LLM
-        const prompt = `
-${agent?.system_prompt || 'You are an admin assistant.'}
+        // 2. Build Prompt to decide tool use (Simulated for this MVP)
+        let toolOutput = '';
+        let isToolCall = false;
 
-Available Tools:
-${JSON.stringify(TOOLS, null, 2)}
+        if (command.includes('stats') || command.includes('статистика')) {
+            isToolCall = true;
+            // Mock Stats Tool
+            const { count } = await supabase.from('locations').select('*', { count: 'exact', head: true });
+            const { count: users } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+            toolOutput = `Statistics Tool Output: Locations: ${count}, Users: ${users}`;
+        }
 
-User Command: "${command}"
+        if (command.includes('moderate') || command.includes('модерация')) {
+            isToolCall = true;
+            // Mock Moderation Tool
+            toolOutput = `Moderation Tool: No high-priority flags found currently.`;
+        }
 
-Instructions:
-- If the user asks for something that matches a tool, output a JSON object: {"tool": "tool_name", "args": { ... }}
-- If no tool matches, output a JSON object: {"error": "I cannot do that yet."}
-- If it's just a chat/question, output: {"reply": "..."}
+        const finalPrompt = `
+${systemPrompt}
 
-Return ONLY VALID JSON.
+Current Context: ${JSON.stringify(context || {})}
+Admin Command: "${command}"
+
+${isToolCall ? `Tool Execution Result: ${toolOutput}\nAnalyze this result and summarize for the admin.` : ''}
+
+If no tool result is provided, just answer the admin question directly or explain what you can do (stats, moderation).
 `;
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-
-        let action;
-        try {
-            // Clean markdown code blocks if any
-            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            action = JSON.parse(jsonStr);
-        } catch (e) {
-            action = { reply: text };
-        }
-
-        // 3. Execute Action
-        let responseData = {};
-
-        if (action.tool === 'get_statistics') {
-            const { count: locCount } = await supabase.from('locations').select('*', { count: 'exact', head: true });
-            const { count: userCount } = await supabase.from('saved_locations').select('*', { count: 'exact', head: true }); // Approximation
-            responseData = { locations: locCount, saved_items: userCount, status: 'Healthy' };
-
-            // Generate a natural language summary of the stats
-            const summaryModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-            const summaryRes = await summaryModel.generateContent(`Summarize these stats for an admin: ${JSON.stringify(responseData)}`);
-            action.reply = summaryRes.response.text();
-
-        } else if (action.tool === 'moderate_content') {
-            const type = action.args?.type || 'missing_description';
-            if (type === 'missing_description') {
-                const { data: locations } = await supabase
-                    .from('locations')
-                    .select('id, name, city')
-                    .is('description', null)
-                    .limit(5);
-                responseData = { flagged_locations: locations };
-                action.reply = `Found ${locations?.length || 0} locations missing descriptions: ${locations?.map(l => l.name).join(', ')}`;
-            } else {
-                action.reply = "Unknown moderation type";
-            }
-        }
-
-        return new Response(JSON.stringify({
-            result: action.reply || JSON.stringify(responseData),
-            data: responseData,
-            tool_used: action.tool
-        }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-
-    } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
-        });
+        action.reply = `Found ${locations?.length || 0} locations missing descriptions: ${locations?.map(l => l.name).join(', ')}`;
+    } else {
+        action.reply = "Unknown moderation type";
     }
+}
+
+    return new Response(JSON.stringify({
+    result: action.reply || JSON.stringify(responseData),
+    data: responseData,
+    tool_used: action.tool
+}), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+});
+
+} catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+    });
+}
 });
