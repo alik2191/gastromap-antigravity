@@ -44,7 +44,7 @@ export function ThemeProvider({ children }) {
             root.classList.add('dark');
             root.style.colorScheme = 'dark';
             // Use pure black or matching background
-            metaThemeColor.setAttribute('content', '#000000');
+            metaThemeColor.setAttribute('content', '#0a0a0a');
         } else {
             root.classList.remove('dark');
             root.style.colorScheme = 'light';
