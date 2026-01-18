@@ -21,7 +21,7 @@ export default function Login() {
 
     useEffect(() => {
         if (isConfirmed) {
-            toast.success('Электронная почта успешно подтверждена! Теперь вы можете войти.');
+            toast.success('Email successfully confirmed! You can now sign in.');
             // Remove the param from URL without reloading
             const newUrl = window.location.pathname;
             window.history.replaceState({}, '', newUrl);
@@ -45,14 +45,14 @@ export default function Login() {
                     }
                 });
                 if (error) throw error;
-                toast.success('Проверьте свою почту для подтверждения регистрации!');
+                toast.success('Registration successful! Please check your email to confirm your account.');
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
                 if (error) throw error;
-                toast.success('Вход выполнен успешно!');
+                toast.success('Logged in successfully!');
                 navigate(redirectUrl);
             }
         } catch (error) {
