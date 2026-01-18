@@ -296,19 +296,26 @@ export const adapter = {
                 };
             },
             InvokeLLM: async ({ prompt, response_json_schema }) => {
-                // Mock AI response to prevent crash since Edge Function is missing
-                console.warn('AI Edge Function missing. Returning mock response.');
-
-                // Return a valid JSON structure if schema is provided, otherwise text
-                if (response_json_schema) {
-                    return {
-                        description: "AI generation is currently unavailable. Please write the description manually.",
-                        tags: ["manual", "pending"],
-                        category: "cafe"
-                    };
+                // Call Supabase Edge Function 'invoke-llm'
+                try {
+                    const result = await adapter.functions.invoke('invoke-llm', {
+                        prompt,
+                        response_json_schema
+                    });
+                    return result.data;
+                } catch (error) {
+                    console.error('InvokeLLM Error:', error);
+                    // Fallback to mock if function fails (e.g. not deployed yet)
+                    if (response_json_schema) {
+                        return {
+                            message: "⚠️ AI service is currently unavailable (Edge Function failed). Please check configuration.",
+                            description: "AI service unavailable.",
+                            tags: ["error"],
+                            category: "other"
+                        };
+                    }
+                    return "AI service is currently unavailable.";
                 }
-
-                return "AI generation is currently unavailable. Please write the description manually.";
             },
             SendEmail: async () => ({ success: true }),
             SendSMS: async () => ({ success: true }),
