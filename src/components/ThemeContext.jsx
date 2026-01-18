@@ -31,13 +31,24 @@ export function ThemeProvider({ children }) {
     // Apply theme to DOM and Meta tags
     const applyTheme = (newTheme) => {
         const root = document.documentElement;
+        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+
+        // Create if missing (failsafe)
+        if (!metaThemeColor) {
+            metaThemeColor = document.createElement('meta');
+            metaThemeColor.name = 'theme-color';
+            document.head.appendChild(metaThemeColor);
+        }
+
         if (newTheme === 'dark') {
             root.classList.add('dark');
-            // Update meta theme-color for mobile browsers
-            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0a0a0a'); // neutral-950
+            root.style.colorScheme = 'dark';
+            // Use pure black or matching background
+            metaThemeColor.setAttribute('content', '#000000');
         } else {
             root.classList.remove('dark');
-            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff');
+            root.style.colorScheme = 'light';
+            metaThemeColor.setAttribute('content', '#ffffff');
         }
     };
 
