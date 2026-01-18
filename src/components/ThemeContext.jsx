@@ -17,22 +17,29 @@ export function ThemeProvider({ children }) {
 
         // Resolve the actual theme to apply
         let actualTheme = theme;
-        
+
         if (theme === 'system') {
-            // Check system preference
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             actualTheme = prefersDark ? 'dark' : 'light';
         }
 
         setResolvedTheme(actualTheme);
+        applyTheme(actualTheme);
 
-        // Apply to document
-        if (actualTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
     }, [theme]);
+
+    // Apply theme to DOM and Meta tags
+    const applyTheme = (newTheme) => {
+        const root = document.documentElement;
+        if (newTheme === 'dark') {
+            root.classList.add('dark');
+            // Update meta theme-color for mobile browsers
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0a0a0a'); // neutral-950
+        } else {
+            root.classList.remove('dark');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff');
+        }
+    };
 
     // Listen for system theme changes
     useEffect(() => {
@@ -42,11 +49,7 @@ export function ThemeProvider({ children }) {
         const handler = (e) => {
             const newTheme = e.matches ? 'dark' : 'light';
             setResolvedTheme(newTheme);
-            if (newTheme === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            applyTheme(newTheme);
         };
 
         mediaQuery.addEventListener('change', handler);
