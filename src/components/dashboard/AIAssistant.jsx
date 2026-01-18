@@ -551,7 +551,7 @@ Response format:
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}
                         onClick={() => setIsOpen(true)}
-                        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50"
+                        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-[9999]"
                     >
                         <Sparkles className="w-7 h-7 text-white" />
                     </motion.button>
@@ -565,7 +565,7 @@ Response format:
                         initial={{ opacity: 0, y: 100, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 100, scale: 0.9 }}
-                        className="fixed top-[68px] left-0 right-0 bottom-16 md:bottom-8 md:right-8 md:top-auto md:left-auto md:w-[450px] md:h-[600px] bg-white dark:bg-neutral-800 md:rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden border-0 md:border md:border-purple-100 dark:md:border-neutral-700"
+                        className="fixed top-[68px] left-0 right-0 bottom-16 md:bottom-8 md:right-8 md:top-auto md:left-auto md:w-[450px] md:h-[600px] bg-white dark:bg-neutral-800 md:rounded-3xl shadow-2xl flex flex-col z-[9999] overflow-hidden border-0 md:border md:border-purple-100 dark:md:border-neutral-700"
                     >
                         {/* Header */}
                         <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 md:p-5 flex items-center justify-between">
@@ -594,8 +594,8 @@ Response format:
                                 <div key={index}>
                                     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                                ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white'
-                                                : 'bg-white dark:bg-neutral-700 border border-purple-100 dark:border-neutral-600 text-neutral-800 dark:text-neutral-100'
+                                            ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white'
+                                            : 'bg-white dark:bg-neutral-700 border border-purple-100 dark:border-neutral-600 text-neutral-800 dark:text-neutral-100'
                                             }`}>
                                             <p className="text-sm whitespace-pre-wrap leading-relaxed">
                                                 {message.content}
@@ -641,7 +641,8 @@ Response format:
                                                         dragging={true}
                                                     >
                                                         <TileLayer
-                                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                                                         />
                                                         <MarkerClusterGroup
                                                             chunkedLoading

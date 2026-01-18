@@ -90,7 +90,7 @@ function MapControls() {
             (error) => {
                 console.error('Error getting location:', error);
                 setLocating(false);
-                
+
                 if (error.code === 1) {
                     toast.error('Доступ к геолокации запрещён. Разрешите доступ в настройках браузера и перезагрузите страницу.', {
                         duration: 5000
@@ -176,7 +176,7 @@ export default function WorldMap({ locations, savedLocations, onLocationClick })
     const validLocations = locations.filter(loc => loc.latitude && loc.longitude);
 
     // Calculate center based on locations
-    const center = validLocations.length > 0 
+    const center = validLocations.length > 0
         ? [
             validLocations.reduce((sum, loc) => sum + loc.latitude, 0) / validLocations.length,
             validLocations.reduce((sum, loc) => sum + loc.longitude, 0) / validLocations.length
@@ -193,9 +193,9 @@ export default function WorldMap({ locations, savedLocations, onLocationClick })
 
     return (
         <div className="w-full h-full relative touch-none">
-            <MapContainer 
-                center={center} 
-                zoom={validLocations.length > 0 ? 6 : 3} 
+            <MapContainer
+                center={center}
+                zoom={validLocations.length > 0 ? 6 : 3}
                 className="w-full h-full"
                 style={{ background: '#f5f5f4' }}
                 zoomControl={false}
@@ -205,10 +205,10 @@ export default function WorldMap({ locations, savedLocations, onLocationClick })
                 doubleClickZoom={true}
             >
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 />
-                
+
                 <MapControls />
 
                 <MarkerClusterGroup
@@ -240,13 +240,13 @@ export default function WorldMap({ locations, savedLocations, onLocationClick })
                         const savedStatus = getSavedStatus(location.id);
 
                         return (
-                            <Marker 
+                            <Marker
                                 key={location.id}
                                 position={[location.latitude, location.longitude]}
                                 icon={createCustomIcon(savedStatus)}
                             >
                                 <Popup maxWidth={280} closeButton={false}>
-                                    <div 
+                                    <div
                                         className="p-3 cursor-pointer hover:bg-neutral-50 transition-colors rounded-lg"
                                         onClick={() => {
                                             setSelectedLocation(location);

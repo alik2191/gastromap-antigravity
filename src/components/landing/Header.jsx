@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { api } from '@/api/client';
@@ -16,8 +16,9 @@ export default function Header() {
             .finally(() => setLoading(false));
     }, []);
 
+    const navigate = useNavigate();
     const handleLogin = () => {
-        api.auth.redirectToLogin(createPageUrl("AuthCallback"));
+        navigate(api.auth.getLoginUrl(createPageUrl("AuthCallback")));
     };
 
     return (
