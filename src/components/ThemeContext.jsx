@@ -44,7 +44,7 @@ export function ThemeProvider({ children }) {
         if (newTheme === 'dark') {
             root.classList.add('dark');
             root.style.colorScheme = 'dark';
-            metaThemeColor.setAttribute('content', '#0a0a0a');
+            metaThemeColor.setAttribute('content', '#000000');
         } else {
             root.classList.remove('dark');
             root.style.colorScheme = 'light';
