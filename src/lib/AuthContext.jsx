@@ -22,9 +22,9 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
 
-      // ===== DEMO MODE: Skip Base44 and use mock user =====
-      // For testing without Base44 backend
-      const DEMO_MODE = true; // Set to false to use real Base44 auth
+      // ===== PRODUCTION-READY AUTH STATUS =====
+      const DEMO_MODE = false; // Using real Supabase Auth
+      // ========================================
 
       if (DEMO_MODE) {
         console.log('🎭 DEMO MODE: Using mock authentication');
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
           id: 'demo-user-123',
           email: 'demo@gastromap.app',
           name: 'Demo User',
-          role: 'admin', // Change to 'admin', 'creator', or 'user' to test different roles
+          role: 'admin',
           custom_role: 'admin',
           created_at: new Date().toISOString()
         };
@@ -45,6 +45,14 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       // ===== END DEMO MODE =====
+
+      // Initialize public settings
+      setAppPublicSettings({ id: 'gastromap', public_settings: {} });
+
+      // Always check user auth with Supabase
+      await checkUserAuth();
+      setIsLoadingPublicSettings(false);
+      return;
 
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.

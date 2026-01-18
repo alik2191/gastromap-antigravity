@@ -51,21 +51,27 @@ export const base44 = {
         me: async () => {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) return null;
-            // Map Supabase user to App user format if needed, or just return user
-            // The app expects { id, email, name, role... }
-            // Supabase user has { id, email, user_metadata: { name, ... } }
+
+            // Fetch profile for role and other details
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
             return {
                 id: user.id,
                 email: user.email,
-                name: user.user_metadata?.full_name || user.email,
-                role: user.user_metadata?.role || 'user',
-                ...user.user_metadata
+                name: profile?.full_name || user.user_metadata?.full_name || user.email,
+                role: profile?.role || 'user',
+                ...user.user_metadata,
+                ...profile
             };
         },
         redirectToLogin: (redirectUrl) => {
             // Use Supabase Auth UI or redirect to login page
-            // For now, redirect to /login
-            window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`;
+            // For now, redirect to /Login (matches PAGES key)
+            window.location.href = `/Login?redirect=${encodeURIComponent(redirectUrl)}`;
         },
         logout: async (redirectUrl) => {
             await supabase.auth.signOut();

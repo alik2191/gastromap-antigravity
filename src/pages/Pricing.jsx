@@ -58,17 +58,17 @@ export default function Pricing() {
             try {
                 const userData = await base44.auth.me();
                 setUser(userData);
-                
+
                 // Check for active subscription
-                const subs = await base44.entities.Subscription.filter({ 
+                const subs = await base44.entities.Subscription.filter({
                     user_email: userData.email,
                     status: 'active'
                 });
-                
+
                 // Validate if subscription is not expired
                 const now = new Date();
                 const validSub = subs.find(sub => new Date(sub.end_date) >= now);
-                
+
                 if (validSub) {
                     setHasActiveSub(true);
                 }
@@ -78,7 +78,7 @@ export default function Pricing() {
                 setCheckingSubscription(false);
             }
         };
-        
+
         checkUserAndSubscription();
     }, []);
 
@@ -149,110 +149,109 @@ export default function Pricing() {
                     }
                 `
             }} />
-            
+
             <div className="fixed inset-0 bg-[#F2F2F7]" style={{ zIndex: -1 }} />
-            
+
             <div className="min-h-[100dvh] relative isolate py-20 px-6 font-sans">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col md:flex-row items-center justify-between mb-16 gap-8">
-                    <div>
-                        <Link to={user ? createPageUrl("Dashboard") : createPageUrl("Home")} className="text-sm font-medium text-neutral-500 hover:text-neutral-900 mb-4 inline-block">
-                            ← {user ? 'Dashboard' : 'Home'}
-                        </Link>
-                        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-neutral-900 mb-4">
-                            Invest in your <br />
-                            <span className="text-blue-600">experiences</span>
-                        </h1>
-                        <p className="text-lg text-neutral-500 max-w-md">
-                            {hasActiveSub ? 'You already have an active subscription!' : 'Simple pricing. No hidden fees. Cancel anytime.'}
-                        </p>
-                    </div>
-                    
-                    <div className="bg-white p-6 rounded-3xl shadow-sm max-w-xs hidden md:block">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                <Shield className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm">Money-back guarantee</p>
-                                <p className="text-xs text-neutral-500">14 days to decide</p>
-                            </div>
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row items-center justify-between mb-16 gap-8">
+                        <div>
+                            <Link to={user ? createPageUrl("Dashboard") : createPageUrl("Home")} className="text-sm font-medium text-neutral-500 hover:text-neutral-900 mb-4 inline-block">
+                                ← {user ? 'Dashboard' : 'Home'}
+                            </Link>
+                            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-neutral-900 mb-4">
+                                Invest in your <br />
+                                <span className="text-blue-600">experiences</span>
+                            </h1>
+                            <p className="text-lg text-neutral-500 max-w-md">
+                                We are in <strong>Free Beta</strong>. Enjoy all features for free while we grow!
+                            </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <Zap className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm">Instant Access</p>
-                                <p className="text-xs text-neutral-500">Right after payment</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div className="grid md:grid-cols-3 gap-6">
-                    {plans.map((plan, idx) => (
-                        <motion.div
-                            key={plan.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1 }}
-                            className={`relative rounded-[2.5rem] p-8 flex flex-col justify-between h-full ${plan.color} ${plan.textColor} shadow-xl shadow-neutral-200/50 border border-neutral-100 ${hasActiveSub ? 'opacity-60' : ''}`}
-                        >
-                            {plan.popular && (
-                                <div className="absolute -top-4 left-8 bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg shadow-blue-500/30">
-                                    {t('mostPopular')}
+                        <div className="bg-white p-6 rounded-3xl shadow-sm max-w-xs hidden md:block">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <Shield className="w-5 h-5 text-green-600" />
                                 </div>
-                            )}
+                                <div>
+                                    <p className="font-semibold text-sm">Money-back guarantee</p>
+                                    <p className="text-xs text-neutral-500">14 days to decide</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <Zap className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-sm">Instant Access</p>
+                                    <p className="text-xs text-neutral-500">Right after payment</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div>
-                                <div className="mb-8">
-                                    <h3 className="font-medium text-lg opacity-80 mb-1">{plan.name}</h3>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-4xl font-bold">${plan.price}</span>
-                                        <span className="opacity-60 text-sm">{plan.period}</span>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {plans.map((plan, idx) => (
+                            <motion.div
+                                key={plan.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className={`relative rounded-[2.5rem] p-8 flex flex-col justify-between h-full ${plan.color} ${plan.textColor} shadow-xl shadow-neutral-200/50 border border-neutral-100 ${hasActiveSub ? 'opacity-60' : ''}`}
+                            >
+                                {plan.popular && (
+                                    <div className="absolute -top-4 left-8 bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg shadow-blue-500/30">
+                                        {t('mostPopular')}
                                     </div>
-                                    <p className="mt-4 text-sm opacity-70 leading-relaxed">
-                                        {plan.description}
-                                    </p>
-                                </div>
+                                )}
 
-                                <div className="space-y-4 mb-8">
-                                    {plan.features.map((feature, i) => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${plan.id === 'yearly' ? 'bg-white/20' : plan.id === 'lifetime' ? 'bg-white/20' : 'bg-neutral-100'}`}>
-                                                <Check className="w-3 h-3" />
-                                            </div>
-                                            <span className="text-sm font-medium opacity-90">{feature}</span>
+                                <div>
+                                    <div className="mb-8">
+                                        <h3 className="font-medium text-lg opacity-80 mb-1">{plan.name}</h3>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-4xl font-bold">${plan.price}</span>
+                                            <span className="opacity-60 text-sm">{plan.period}</span>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                        <p className="mt-4 text-sm opacity-70 leading-relaxed">
+                                            {plan.description}
+                                        </p>
+                                    </div>
 
-                            {hasActiveSub ? (
-                                <div className="w-full h-14 rounded-2xl text-base font-semibold flex items-center justify-center bg-green-500 text-white">
-                                    <Check className="w-5 h-5 mr-2" />
-                                    Active Subscription
+                                    <div className="space-y-4 mb-8">
+                                        {plan.features.map((feature, i) => (
+                                            <div key={i} className="flex items-center gap-3">
+                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center ${plan.id === 'yearly' ? 'bg-white/20' : plan.id === 'lifetime' ? 'bg-white/20' : 'bg-neutral-100'}`}>
+                                                    <Check className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium opacity-90">{feature}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ) : (
-                                <Button 
-                                    onClick={() => handlePurchase(plan)}
-                                    disabled={loading || checkingSubscription}
-                                    className={`w-full h-14 rounded-2xl text-base font-semibold transition-transform active:scale-95 ${
-                                        plan.id === 'yearly' 
-                                            ? 'bg-white text-black hover:bg-neutral-200' 
-                                            : plan.id === 'lifetime'
-                                                ? 'bg-white text-blue-600 hover:bg-blue-50'
-                                                : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                                    }`}
-                                >
-                                    {loading ? 'Processing...' : checkingSubscription ? 'Checking...' : 'Choose Plan'}
-                                </Button>
-                            )}
-                        </motion.div>
-                    ))}
+
+                                {hasActiveSub ? (
+                                    <div className="w-full h-14 rounded-2xl text-base font-semibold flex items-center justify-center bg-green-500 text-white">
+                                        <Check className="w-5 h-5 mr-2" />
+                                        Active Subscription
+                                    </div>
+                                ) : (
+                                    <Button
+                                        onClick={() => handlePurchase(plan)}
+                                        disabled={loading || checkingSubscription}
+                                        className={`w-full h-14 rounded-2xl text-base font-semibold transition-transform active:scale-95 ${plan.id === 'yearly'
+                                                ? 'bg-white text-black hover:bg-neutral-200'
+                                                : plan.id === 'lifetime'
+                                                    ? 'bg-white text-blue-600 hover:bg-blue-50'
+                                                    : 'bg-neutral-900 text-white hover:bg-neutral-800'
+                                            }`}
+                                    >
+                                        {loading ? 'Processing...' : checkingSubscription ? 'Checking...' : 'Choose Plan'}
+                                    </Button>
+                                )}
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
-            </div>
             </div>
         </>
     );

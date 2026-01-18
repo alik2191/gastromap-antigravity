@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from '@/api/client';
 import { toast } from "sonner";
@@ -82,19 +82,20 @@ function PricingCard({ plan, index, onPurchase, loading }) {
                 onClick={() => onPurchase(plan)}
                 disabled={loading}
                 className={`w-full h-14 rounded-2xl text-base font-semibold transition-transform active:scale-95 ${plan.name === 'Yearly'
-                        ? 'bg-white text-black hover:bg-neutral-200'
-                        : plan.name === 'Lifetime'
-                            ? 'bg-white text-blue-600 hover:bg-blue-50'
-                            : 'bg-neutral-900 text-white hover:bg-neutral-800'
+                    ? 'bg-white text-black hover:bg-neutral-200'
+                    : plan.name === 'Lifetime'
+                        ? 'bg-white text-blue-600 hover:bg-blue-50'
+                        : 'bg-neutral-900 text-white hover:bg-neutral-800'
                     }`}
             >
-                {loading ? 'Processing...' : 'Choose Plan'}
+                {loading ? 'Processing...' : 'Get Free Access'}
             </Button>
         </div>
     );
 }
 
 export default function PricingSection() {
+    const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -129,7 +130,7 @@ export default function PricingSection() {
 
             toast.success('Subscription active! Redirecting...');
             setTimeout(() => {
-                window.location.href = createPageUrl('Dashboard');
+                navigate(createPageUrl('Dashboard'));
             }, 1000);
 
         } catch (e) {
@@ -160,7 +161,7 @@ export default function PricingSection() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-neutral-900 max-w-2xl mx-auto text-base md:text-xl font-medium leading-relaxed"
                     >
-                        Simple pricing. No hidden fees. Cancel anytime.
+                        We are currently in <strong>Free Beta</strong>. Get full access for free while we grow.
                     </motion.p>
                 </div>
 

@@ -4,6 +4,7 @@ import CreatorDashboard from './pages/CreatorDashboard';
 import CreatorTools from './pages/CreatorTools';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
+import Login from './pages/Login';
 import Home2 from './pages/Home2';
 import LocationDetail from './pages/LocationDetail';
 import LocationPublic from './pages/LocationPublic';
@@ -22,6 +23,7 @@ export const PAGES = {
     "CreatorTools": CreatorTools,
     "Dashboard": Dashboard,
     "Home": Home,
+    "Login": Login,
     "Home2": Home2,
     "LocationDetail": LocationDetail,
     "LocationPublic": LocationPublic,

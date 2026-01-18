@@ -420,29 +420,20 @@ export default function Admin() {
     };
 
     const checkAdmin = async () => {
-        // DEMO MODE: Skip auth check and use mock admin user
-        setUser({
-            id: 'demo-user-123',
-            email: 'demo@gastromap.app',
-            name: 'Demo User',
-            role: 'admin'
-        });
-        setLoading(false);
-
-        /* Original auth code:
         try {
             const userData = await base44.auth.me();
-            if (userData.role !== 'admin') {
+            if (!userData || (userData.role !== 'admin' && userData.custom_role !== 'admin')) {
+                toast.error('Доступ запрещен: требуется роль администратора');
                 navigate(createPageUrl('Dashboard'));
                 return;
             }
             setUser(userData);
         } catch (e) {
+            console.error('Admin check failed:', e);
             base44.auth.redirectToLogin(window.location.href);
             return;
         }
         setLoading(false);
-        */
     };
 
     useEffect(() => {

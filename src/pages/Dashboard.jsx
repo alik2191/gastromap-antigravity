@@ -110,43 +110,29 @@ export default function Dashboard() {
         }
     }, []);
 
-    // AUTH & SUBSCRIPTION LOGIC - DISABLED FOR DEMO
+    // AUTH & SUBSCRIPTION LOGIC
     useEffect(() => {
-        // DEMO MODE: Use mock user from AuthContext
-        if (authUser) {
-            setUser(authUser);
-            setLoading(false);
-        } else {
-            // Fallback mock user
-            setUser({
-                id: 'demo-user-123',
-                email: 'demo@gastromap.app',
-                name: 'Demo User',
-                role: 'admin',
-                custom_role: 'admin'
-            });
-            setLoading(false);
-        }
-
-        // Original auth code commented out:
-        /*
         const checkAuth = async () => {
-            try {
-                // 1. Check if logged in
-                const userData = await base44.auth.me();
-                setUser(userData);
-                
-                // Check for URL params to restore navigation state
+            if (!isAuthenticated && !authUser) {
+                // Not logged in -> Redirect to Login
+                // Skip redirect in local dev if needed, but for production it's better to keep it
+                // base44.auth.redirectToLogin(window.location.href);
+                return;
+            }
+
+            if (authUser) {
+                setUser(authUser);
+
+                // Restore navigation state from URL
                 const params = new URLSearchParams(window.location.search);
-                const tabParam = params.get('tab');
                 const countryParam = params.get('country');
                 const cityParam = params.get('city');
-                
+                const tabParam = params.get('tab');
+
                 if (tabParam === 'saved' || tabParam === 'done') {
                     setMobileTab(tabParam);
                 }
-                
-                // Restore navigation state from URL
+
                 if (countryParam && cityParam) {
                     setSelectedCountry(countryParam);
                     setSelectedCity(cityParam);
@@ -155,47 +141,15 @@ export default function Dashboard() {
                     setSelectedCountry(countryParam);
                     setBrowsingLevel('cities');
                 }
-                
-                // 2. Check for active subscription and validate expiration
-                const subs = await base44.entities.Subscription.filter({ 
-                    user_email: userData.email,
-                    status: 'active'
-                });
 
-                // Check if subscription is actually expired
-                const now = new Date();
-                let hasValidSub = false;
-
-                for (const sub of subs) {
-                    const endDate = new Date(sub.end_date);
-                    if (endDate < now) {
-                        // Subscription expired, update status
-                        await base44.entities.Subscription.update(sub.id, { status: 'expired' });
-                    } else {
-                        hasValidSub = true;
-                    }
-                }
-
-                // 3. Logic: User exists but no valid subscription -> Redirect to Pricing
-                // Exception: admins and creators don't need subscriptions
-                if (!hasValidSub && userData.role !== 'admin' && userData.role !== 'creator' && userData.custom_role !== 'creator') {
-                    navigate(createPageUrl('Pricing'));
-                    return;
-                }
-                
+                // SUBSCRIPTION BYPASS: All users have access for now
+                // Original logic: if (!hasValidSub && userData.role !== 'admin'...) navigate('Pricing');
                 setLoading(false);
-            } catch (e) {
-                // 4. Not logged in -> Redirect to Login
-                // If they are on dashboard, they must be logged in. 
-                // Using current URL as nextUrl ensures they come back here, 
-                // which then triggers the subscription check above.
-                base44.auth.redirectToLogin(window.location.href);
             }
         };
-        
+
         checkAuth();
-        */
-    }, [authUser, navigate]);
+    }, [authUser, isAuthenticated, navigate]);
 
     const { data: locations = [], isLoading: loadingLocations } = useQuery({
         queryKey: ['locations'],
@@ -1387,8 +1341,8 @@ export default function Dashboard() {
                                                                 key={country.name}
                                                                 onClick={() => country.isActive && !country.isComingSoon && selectCountry(country.name)}
                                                                 className={`group relative h-40 rounded-2xl overflow-hidden shadow-sm transition-all ${country.isActive && !country.isComingSoon
-                                                                        ? 'cursor-pointer active:scale-[0.98]'
-                                                                        : 'cursor-not-allowed opacity-60'
+                                                                    ? 'cursor-pointer active:scale-[0.98]'
+                                                                    : 'cursor-not-allowed opacity-60'
                                                                     }`}
                                                             >
                                                                 <img src={country.image} alt={country.name} loading="lazy" className="w-full h-full object-cover" />
@@ -1482,8 +1436,8 @@ export default function Dashboard() {
                                                         key={country.name}
                                                         onClick={() => country.isActive && !country.isComingSoon && selectCountry(country.name)}
                                                         className={`group relative h-40 rounded-2xl overflow-hidden shadow-sm transition-all ${country.isActive && !country.isComingSoon
-                                                                ? 'cursor-pointer active:scale-[0.98]'
-                                                                : 'cursor-not-allowed opacity-60'
+                                                            ? 'cursor-pointer active:scale-[0.98]'
+                                                            : 'cursor-not-allowed opacity-60'
                                                             }`}
                                                     >
                                                         <img src={country.image} alt={country.name} loading="lazy" className="w-full h-full object-cover" />
@@ -1533,8 +1487,8 @@ export default function Dashboard() {
                                                         key={city.name}
                                                         onClick={() => city.isActive && !city.isComingSoon && selectCity(city.name)}
                                                         className={`group relative h-40 rounded-2xl overflow-hidden shadow-sm transition-all ${city.isActive && !city.isComingSoon
-                                                                ? 'cursor-pointer active:scale-[0.98]'
-                                                                : 'cursor-not-allowed opacity-60'
+                                                            ? 'cursor-pointer active:scale-[0.98]'
+                                                            : 'cursor-not-allowed opacity-60'
                                                             }`}
                                                     >
                                                         <img
@@ -1689,8 +1643,8 @@ export default function Dashboard() {
                                                                 key={country.name}
                                                                 onClick={() => country.isActive && !country.isComingSoon && selectCountry(country.name)}
                                                                 className={`group relative h-64 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 ${country.isActive && !country.isComingSoon
-                                                                        ? 'cursor-pointer hover:shadow-xl'
-                                                                        : 'cursor-not-allowed opacity-60'
+                                                                    ? 'cursor-pointer hover:shadow-xl'
+                                                                    : 'cursor-not-allowed opacity-60'
                                                                     }`}
                                                             >
                                                                 <img src={country.image} alt={country.name} loading="lazy" className={`w-full h-full object-cover transition-transform duration-700 ${country.isActive && !country.isComingSoon && 'group-hover:scale-105'}`} />
@@ -1799,8 +1753,8 @@ export default function Dashboard() {
                                                         key={country.name}
                                                         onClick={() => country.isActive && !country.isComingSoon && selectCountry(country.name)}
                                                         className={`group relative h-64 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 ${country.isActive && !country.isComingSoon
-                                                                ? 'cursor-pointer hover:shadow-xl'
-                                                                : 'cursor-not-allowed opacity-60'
+                                                            ? 'cursor-pointer hover:shadow-xl'
+                                                            : 'cursor-not-allowed opacity-60'
                                                             }`}
                                                     >
                                                         <img src={country.image} alt={country.name} loading="lazy" className={`w-full h-full object-cover transition-transform duration-700 ${country.isActive && !country.isComingSoon && 'group-hover:scale-105'}`} />
@@ -1849,8 +1803,8 @@ export default function Dashboard() {
                                                         key={city.name}
                                                         onClick={() => city.isActive && !city.isComingSoon && selectCity(city.name)}
                                                         className={`group relative h-64 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 ${city.isActive && !city.isComingSoon
-                                                                ? 'cursor-pointer hover:shadow-xl'
-                                                                : 'cursor-not-allowed opacity-60'
+                                                            ? 'cursor-pointer hover:shadow-xl'
+                                                            : 'cursor-not-allowed opacity-60'
                                                             }`}
                                                     >
                                                         <img
@@ -2101,8 +2055,8 @@ export default function Dashboard() {
                                             key={option.value}
                                             onClick={() => setFilterRating(option.value)}
                                             className={`h-12 rounded-xl font-semibold transition-all ${filterRating === option.value
-                                                    ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                                                ? 'bg-blue-600 text-white shadow-lg'
+                                                : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                                                 }`}
                                         >
                                             {option.label}
@@ -2126,8 +2080,8 @@ export default function Dashboard() {
                                                 }
                                             }}
                                             className={`h-12 rounded-xl font-semibold transition-all text-sm ${filterLabels.includes(label.id)
-                                                    ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                                                ? 'bg-blue-600 text-white shadow-lg'
+                                                : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                                                 }`}
                                         >
                                             {label.label}
