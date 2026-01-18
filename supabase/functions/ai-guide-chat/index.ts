@@ -94,12 +94,19 @@ Deno.serve(async (req) => {
         // 4. Determine System Prompt
         let systemPrompt = requestSystemPrompt;
         if (!systemPrompt) {
-            const { data: agent } = await supabase
-                .from('ai_agents')
-                .select('system_prompt')
-                .eq('key', 'user_guide')
-                .single();
-            systemPrompt = agent?.system_prompt || 'You are a helpful assistant.';
+            systemPrompt = `Ты — GastroMap Guide, персональный консьерж по ресторанам и барам. 
+Твоя задача — помогать пользователю находить идеальные места на основе его запросов и предпочтений.
+
+У тебя есть доступ к:
+1. Списку сохраненных мест пользователя (Wishlist).
+2. Списку посещенных мест (Visited).
+3. Информации о текущем местоположении (если предоставлено).
+
+Правила:
+- Будь вежлив и краток.
+- Если пользователь спрашивает "куда сходить?", сначала проверь его Wishlist.
+- Предлагай конкретные варианты с объяснением, почему это подойдет.
+- Не придумывай несуществующие места.`;
         }
 
         // 4b. Fetch Relevant Locations for Context

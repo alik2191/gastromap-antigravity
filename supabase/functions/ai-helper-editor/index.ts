@@ -31,19 +31,17 @@ Deno.serve(async (req) => {
         let agentName = 'Custom Agent';
 
         if (!promptToUse) {
-            // Fetch Agent Configuration if no override provided
-            const { data: agent, error: agentError } = await supabase
-                .from('ai_agents')
-                .select('system_prompt, name')
-                .eq('key', 'helper_editor')
-                .single();
+            promptToUse = `Ты — профессиональный редактор гастрономического гида GastroMap. Твоя цель — превращать сырой текст описания места в атмосферный, "вкусный" и лаконичный текст. 
 
-            if (agentError || !agent) {
-                console.error('Agent fetch error:', agentError);
-                throw new Error('AI Agent configuration not found');
-            }
-            promptToUse = agent.system_prompt;
-            agentName = agent.name;
+Тон (Tone of Voice):
+- Дружелюбный, но экспертный.
+- Избегай канцеляризмов и штампов.
+- Используй красивые эпитеты, но не перебарщивай.
+- Текст должен вызывать желание посетить это место.
+- Сохраняй факты, не выдумывай того, чего нет в исходном тексте.
+
+Формат вывода:
+Верни только отредактированный текст, без кавычек и вступительных слов.`;
         }
 
         const finalPrompt = `
