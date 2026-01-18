@@ -19,20 +19,57 @@ class SupabaseEntity {
             const column = ascending ? sortField : sortField.substring(1);
             query = query.order(column, { ascending });
         }
-        return handleResponse(query);
+        const data = await handleResponse(query);
+        // Map role to custom_role for UI compatibility if this is the profiles/users table
+        if (this.tableName === 'profiles') {
+            return data.map(u => ({ ...u, custom_role: u.role }));
+        }
+        return data;
     }
 
     async filter(criteria) {
-        // match() accepts an object of { column: value } which matches criteria perfectly
-        return handleResponse(supabase.from(this.tableName).select('*').match(criteria));
+        let actualCriteria = { ...criteria };
+        if (this.tableName === 'profiles' && actualCriteria.custom_role) {
+            actualCriteria.role = actualCriteria.custom_role;
+            delete actualCriteria.custom_role;
+        }
+        const data = await handleResponse(supabase.from(this.tableName).select('*').match(actualCriteria));
+        if (this.tableName === 'profiles') {
+            return data.map(u => ({ ...u, custom_role: u.role }));
+        }
+        return data;
     }
 
     async create(data) {
-        return handleResponse(supabase.from(this.tableName).insert(data).select().single());
+        let actualData = { ...data };
+        if (this.tableName === 'profiles' && actualData.custom_role) {
+            actualData.role = actualData.custom_role;
+            delete actualData.custom_role;
+        }
+        const result = await handleResponse(supabase.from(this.tableName).insert(actualData).select().single());
+        if (this.tableName === 'profiles') {
+            return { ...result, custom_role: result.role };
+        }
+        return result;
     }
 
     async update(id, data) {
-        return handleResponse(supabase.from(this.tableName).update(data).eq('id', id).select().single());
+        let actualData = { ...data };
+        if (this.tableName === 'profiles' && actualData.custom_role) {
+            actualData.role = actualData.custom_role;
+            // Don't delete it yet, we might need it for state, but SQL only wants role
+        }
+        const dbData = { ...actualData };
+        if (this.tableName === 'profiles' && dbData.custom_role) {
+            dbData.role = dbData.custom_role;
+            delete dbData.custom_role;
+        }
+
+        const result = await handleResponse(supabase.from(this.tableName).update(dbData).eq('id', id).select().single());
+        if (this.tableName === 'profiles') {
+            return { ...result, custom_role: result.role };
+        }
+        return result;
     }
 
     async delete(id) {
@@ -42,7 +79,11 @@ class SupabaseEntity {
     }
 
     async get(id) {
-        return handleResponse(supabase.from(this.tableName).select('*').eq('id', id).single());
+        const data = await handleResponse(supabase.from(this.tableName).select('*').eq('id', id).single());
+        if (this.tableName === 'profiles' && data) {
+            return { ...data, custom_role: data.role };
+        }
+        return data;
     }
 }
 
@@ -58,13 +99,15 @@ export const base44 = {
                 .eq('id', user.id)
                 .single();
 
+            const finalRole = profile?.role || user.user_metadata?.role || 'user';
             return {
                 ...user.user_metadata,
                 ...profile,
                 id: user.id,
                 email: user.email,
                 name: profile?.full_name || user.user_metadata?.full_name || user.email,
-                role: profile?.role || user.user_metadata?.role || 'user'
+                role: finalRole,
+                custom_role: finalRole
             };
         },
         redirectToLogin: (redirectUrl) => {
@@ -79,6 +122,12 @@ export const base44 = {
             }
         },
         updateMe: async (data) => {
+            let dbData = { ...data };
+            if (dbData.custom_role) {
+                dbData.role = dbData.custom_role;
+                delete dbData.custom_role;
+            }
+
             const { data: { user }, error } = await supabase.auth.updateUser({
                 data: data
             });
@@ -87,18 +136,20 @@ export const base44 = {
             // Also update profiles table if needed
             const { data: profile } = await supabase
                 .from('profiles')
-                .update(data)
+                .update(dbData)
                 .eq('id', user.id)
                 .select()
                 .single();
 
+            const finalRole = profile?.role || user.user_metadata?.role || 'user';
             return {
                 ...user.user_metadata,
                 ...profile,
                 id: user.id,
                 email: user.email,
                 name: profile?.full_name || user.user_metadata?.full_name || user.email,
-                role: profile?.role || user.user_metadata?.role || 'user'
+                role: finalRole,
+                custom_role: finalRole
             };
         }
     },
