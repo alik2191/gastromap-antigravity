@@ -14,34 +14,39 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
+const PUBLIC_PAGES = ['Home', 'Login', 'AuthCallback', 'Terms', 'Privacy', 'LocationPublic', 'Support', 'Pricing', 'Home2'];
+
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin, user } = useAuth();
+  const location = window.location.pathname.substring(1) || mainPageKey;
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-neutral-900">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
+  const isPublicPage = PUBLIC_PAGES.includes(location) || location === '';
+
+  // Handle authentication errors only for private pages
+  if (authError && !isPublicPage && !isAuthenticated) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
+      // Redirect to login automatically for private pages
       navigateToLogin();
       return null;
     }
   }
 
-  // Render the main app
+  // Render the app routes
   return (
     <Routes>
       <Route path="/" element={
