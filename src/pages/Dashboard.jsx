@@ -2127,7 +2127,7 @@ export default function Dashboard() {
                             )}
                             <Button
                                 onClick={() => setShowFilters(false)}
-                                className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700"
+                                className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
                             >
                                 Show Results
                             </Button>

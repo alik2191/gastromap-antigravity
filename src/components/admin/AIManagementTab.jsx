@@ -363,7 +363,7 @@ export default function AIManagementTab() {
                                     onClick={() => handleSavePrompt('location_moderation', 'Промпт для автоматической проверки и модерации локаций')}
                                     disabled={savingPrompt === 'location_moderation'}
                                     size="sm"
-                                    className="bg-blue-600 hover:bg-blue-700"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                     {savingPrompt === 'location_moderation' ? (
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -791,7 +791,7 @@ export default function AIManagementTab() {
                                 <Button
                                     onClick={() => handleSavePrompt('ai_guide', 'Промпт для AI Guide - помощника пользователей в поиске локаций')}
                                     disabled={savingPrompt === 'ai_guide'}
-                                    className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+                                    className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                     {savingPrompt === 'ai_guide' ? (
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -839,7 +839,7 @@ export default function AIManagementTab() {
                                         <Button
                                             onClick={() => handleSavePrompt('ai_assistant', 'Промпт для AI-ассистента при создании локаций')}
                                             disabled={savingPrompt === 'ai_assistant'}
-                                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+                                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                                         >
                                             {savingPrompt === 'ai_assistant' ? (
                                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -875,7 +875,7 @@ export default function AIManagementTab() {
                                         <Button
                                             onClick={() => handleSavePrompt('ai_location_fields', 'Промпт для автозаполнения полей локации (описание, инсайдерские советы, must-try)')}
                                             disabled={savingPrompt === 'ai_location_fields'}
-                                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+                                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                                         >
                                             {savingPrompt === 'ai_location_fields' ? (
                                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
