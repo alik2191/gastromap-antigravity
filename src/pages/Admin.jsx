@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-// import { base44 } from '@/api/client'; // DISABLED: Using mock client
-import { base44 } from '@/api/client'; // MOCK DATA
+
+import { api } from '@/api/client'; // MOCK DATA
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -281,7 +281,7 @@ export default function Admin() {
                 }
 
                 // Send to backend
-                const response = await base44.functions.invoke('importLocations', { locations: data });
+                const response = await api.functions.invoke('importLocations', { locations: data });
 
                 if (response.data.error) {
                     throw new Error(response.data.error);
@@ -339,7 +339,7 @@ export default function Admin() {
                 return;
             }
 
-            const response = await base44.functions.invoke('importLocations', { locations: data });
+            const response = await api.functions.invoke('importLocations', { locations: data });
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
@@ -372,39 +372,52 @@ export default function Admin() {
         }
 
         setIsBulkImporting(true);
+        let successCount = 0;
+        let failedCount = 0;
+
         try {
-            const locations = bulkImportText
+            const lines = bulkImportText
                 .split('\n')
                 .map(line => line.trim())
                 .filter(line => line.length > 0);
 
-            if (locations.length === 0) {
+            if (lines.length === 0) {
                 toast.error('Список пуст');
                 setIsBulkImporting(false);
                 return;
             }
 
-            toast.info(`Обрабатываю ${locations.length} локаций... Это может занять несколько минут.`);
+            toast.info(`Обрабатываю ${lines.length} локаций... Пожалуйста, подождите.`);
 
-            const response = await base44.functions.invoke('bulkImportLocations', {
-                locations,
-                country: bulkImportCountry,
-                city: bulkImportCity
-            });
+            // Process sequentially to avoid overwhelming the client/network
+            for (const line of lines) {
+                try {
+                    // Simple parsing: Assumes the line IS the name. 
+                    // Can be improved later if format is "Name | Address" etc.
+                    const locationData = {
+                        name: line,
+                        country: bulkImportCountry,
+                        city: bulkImportCity,
+                        status: 'pending', // Send to moderation
+                        type: 'cafe', // Default type
+                        generated_description: 'Imported via Bulk Tool'
+                    };
 
-            if (response.data.error) {
-                throw new Error(response.data.error);
+                    await api.entities.Location.create(locationData);
+                    successCount++;
+                } catch (err) {
+                    console.error('Failed to import line:', line, err);
+                    failedCount++;
+                }
             }
 
-            const { success, failed } = response.data;
-
-            if (success > 0) {
-                toast.success(`Успешно добавлено ${success} локаций на модерацию!`);
+            if (successCount > 0) {
+                toast.success(`Успешно добавлено ${successCount} локаций на модерацию!`);
                 queryClient.invalidateQueries(['admin-pending-locations']);
             }
 
-            if (failed > 0) {
-                toast.warning(`Не удалось обработать ${failed} локаций`);
+            if (failedCount > 0) {
+                toast.warning(`Не удалось обработать ${failedCount} локаций`);
             }
 
             setShowBulkImport(false);
@@ -413,7 +426,7 @@ export default function Admin() {
             setBulkImportCity('');
         } catch (error) {
             console.error(error);
-            toast.error('Ошибка импорта: ' + error.message);
+            toast.error('Ошибка массового импорта: ' + error.message);
         } finally {
             setIsBulkImporting(false);
         }
@@ -421,7 +434,7 @@ export default function Admin() {
 
     const checkAdmin = async () => {
         try {
-            const userData = await base44.auth.me();
+            const userData = await api.auth.me();
             if (!userData || (userData.role !== 'admin' && userData.custom_role !== 'admin')) {
                 toast.error('Доступ запрещен: требуется роль администратора');
                 navigate(createPageUrl('Dashboard'));
@@ -430,7 +443,7 @@ export default function Admin() {
             setUser(userData);
         } catch (e) {
             console.error('Admin check failed:', e);
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
         setLoading(false);
@@ -443,7 +456,7 @@ export default function Admin() {
     const { data: locations = [] } = useQuery({
         queryKey: ['admin-locations'],
         queryFn: async () => {
-            const allLocations = await base44.entities.Location.list();
+            const allLocations = await api.entities.Location.list();
             return allLocations.filter(l => l.status === 'published' || !l.status);
         },
         enabled: !loading
@@ -452,7 +465,7 @@ export default function Admin() {
     const { data: pendingLocations = [] } = useQuery({
         queryKey: ['admin-pending-locations'],
         queryFn: async () => {
-            const allLocations = await base44.entities.Location.list('-created_date');
+            const allLocations = await api.entities.Location.list('-created_date');
             return allLocations.filter(l => l.status === 'pending');
         },
         enabled: !loading
@@ -460,47 +473,47 @@ export default function Admin() {
 
     const { data: subscriptions = [] } = useQuery({
         queryKey: ['admin-subscriptions'],
-        queryFn: () => base44.entities.Subscription.list('-created_date'),
+        queryFn: () => api.entities.Subscription.list('-created_date'),
         enabled: !loading,
         refetchInterval: 60000 // Poll every minute
     });
 
     const { data: users = [] } = useQuery({
         queryKey: ['admin-users'],
-        queryFn: () => base44.entities.User.list(),
+        queryFn: () => api.entities.User.list(),
         enabled: !loading
     });
 
     const { data: feedback = [] } = useQuery({
         queryKey: ['admin-feedback'],
-        queryFn: () => base44.entities.Feedback.list('-created_date'),
+        queryFn: () => api.entities.Feedback.list('-created_date'),
         enabled: !loading,
         refetchInterval: 30000 // Poll every 30 seconds
     });
 
     const { data: regionStatuses = [] } = useQuery({
         queryKey: ['admin-region-statuses'],
-        queryFn: () => base44.entities.RegionStatus.list(),
+        queryFn: () => api.entities.RegionStatus.list(),
         enabled: !loading
     });
 
     const { data: reviews = [] } = useQuery({
         queryKey: ['admin-reviews'],
-        queryFn: () => base44.entities.Review.list('-created_date'),
+        queryFn: () => api.entities.Review.list('-created_date'),
         enabled: !loading,
         refetchInterval: 30000
     });
 
     const { data: agentConversations = [] } = useQuery({
         queryKey: ['agent-conversations'],
-        queryFn: () => base44.agents.listConversations({ agent_name: 'location_manager' }),
+        queryFn: () => api.agents.listConversations({ agent_name: 'location_manager' }),
         enabled: !loading
     });
 
     const { data: moderationRounds = [] } = useQuery({
         queryKey: ['admin-moderation-rounds'],
         queryFn: async () => {
-            const allRounds = await base44.entities.ModerationRound.filter({ status: 'pending_admin_review' });
+            const allRounds = await api.entities.ModerationRound.filter({ status: 'pending_admin_review' });
             // Only AI-generated rounds (not creator voting rounds)
             return allRounds.filter(round =>
                 (round.yes_count === 0 || !round.yes_count) &&
@@ -582,7 +595,7 @@ export default function Admin() {
                 hasNewExpired = true;
                 notifiedExpiredIds.current.add(sub.id);
                 // Auto-update status
-                base44.entities.Subscription.update(sub.id, { status: 'expired' }).catch(console.error);
+                api.entities.Subscription.update(sub.id, { status: 'expired' }).catch(console.error);
             }
         });
 
@@ -604,9 +617,9 @@ export default function Admin() {
     const locationMutation = useMutation({
         mutationFn: async (data) => {
             if (data.id) {
-                return base44.entities.Location.update(data.id, data);
+                return api.entities.Location.update(data.id, data);
             }
-            return base44.entities.Location.create(data);
+            return api.entities.Location.create(data);
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-locations']);
@@ -619,7 +632,7 @@ export default function Admin() {
 
     const publishLocationMutation = useMutation({
         mutationFn: async (id) => {
-            return base44.entities.Location.update(id, { status: 'published' });
+            return api.entities.Location.update(id, { status: 'published' });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-locations']);
@@ -632,7 +645,7 @@ export default function Admin() {
 
     const rejectLocationMutation = useMutation({
         mutationFn: async (id) => {
-            return base44.entities.Location.update(id, { status: 'rejected' });
+            return api.entities.Location.update(id, { status: 'rejected' });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-locations']);
@@ -642,7 +655,7 @@ export default function Admin() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.Location.delete(id),
+        mutationFn: (id) => api.entities.Location.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-locations']);
             toast.success('Локация удалена');
@@ -650,7 +663,7 @@ export default function Admin() {
     });
 
     const subscriptionMutation = useMutation({
-        mutationFn: ({ id, status }) => base44.entities.Subscription.update(id, { status }),
+        mutationFn: ({ id, status }) => api.entities.Subscription.update(id, { status }),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-subscriptions']);
             toast.success('Статус обновлён');
@@ -658,7 +671,7 @@ export default function Admin() {
     });
 
     const feedbackMutation = useMutation({
-        mutationFn: ({ id, status }) => base44.entities.Feedback.update(id, { status }),
+        mutationFn: ({ id, status }) => api.entities.Feedback.update(id, { status }),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-feedback']);
             toast.success('Статус обновлён');
@@ -666,7 +679,7 @@ export default function Admin() {
     });
 
     const reviewMutation = useMutation({
-        mutationFn: ({ id, status, is_hidden }) => base44.entities.Review.update(id, { status, is_hidden }),
+        mutationFn: ({ id, status, is_hidden }) => api.entities.Review.update(id, { status, is_hidden }),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-reviews']);
             queryClient.invalidateQueries(['analytics-reviews']);
@@ -675,7 +688,7 @@ export default function Admin() {
     });
 
     const updateUserRoleMutation = useMutation({
-        mutationFn: ({ id, custom_role }) => base44.entities.User.update(id, { custom_role }),
+        mutationFn: ({ id, custom_role }) => api.entities.User.update(id, { custom_role }),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-users']);
             toast.success('Роль обновлена');
@@ -696,9 +709,9 @@ export default function Admin() {
             if (image_url_night !== undefined) updateData.image_url_night = image_url_night;
 
             if (existing) {
-                return base44.entities.RegionStatus.update(existing.id, updateData);
+                return api.entities.RegionStatus.update(existing.id, updateData);
             }
-            return base44.entities.RegionStatus.create({
+            return api.entities.RegionStatus.create({
                 region_name,
                 region_type,
                 parent_region,
@@ -712,7 +725,7 @@ export default function Admin() {
     });
 
     const createSubscriptionMutation = useMutation({
-        mutationFn: (data) => base44.entities.Subscription.create(data),
+        mutationFn: (data) => api.entities.Subscription.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-subscriptions']);
             setShowSubscriptionForm(false);
@@ -941,7 +954,7 @@ export default function Admin() {
                                     </p>
                                 </div>
                                 <a
-                                    href={base44.agents.getWhatsAppConnectURL('location_manager')}
+                                    href={api.agents.getWhatsAppConnectURL('location_manager')}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="shrink-0 w-full md:w-auto"
@@ -1240,7 +1253,7 @@ export default function Admin() {
                                                     createdIds: lastImportChanges.createdIds || [],
                                                     updatedChanges: lastImportChanges.updatedChanges || []
                                                 };
-                                                const res = await base44.functions.invoke('rollbackImport', payload);
+                                                const res = await api.functions.invoke('rollbackImport', payload);
                                                 if (res.data?.error) throw new Error(res.data.error);
                                                 toast.success(`Откат выполнен: удалено ${res.data.deleted}, восстановлено ${res.data.restored}`);
                                                 setLastImportChanges(null);
@@ -1451,7 +1464,7 @@ export default function Admin() {
                                                                         if (!file) return;
                                                                         try {
                                                                             toast.info('Загрузка изображения дня...');
-                                                                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                                            const { file_url } = await api.integrations.Core.UploadFile({ file });
                                                                             await updateRegionStatusMutation.mutateAsync({
                                                                                 region_name: country.name,
                                                                                 region_type: 'country',
@@ -1487,7 +1500,7 @@ export default function Admin() {
                                                                         if (!file) return;
                                                                         try {
                                                                             toast.info('Загрузка изображения вечера...');
-                                                                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                                            const { file_url } = await api.integrations.Core.UploadFile({ file });
                                                                             await updateRegionStatusMutation.mutateAsync({
                                                                                 region_name: country.name,
                                                                                 region_type: 'country',
@@ -1523,7 +1536,7 @@ export default function Admin() {
                                                                         if (!file) return;
                                                                         try {
                                                                             toast.info('Загрузка изображения ночи...');
-                                                                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                                            const { file_url } = await api.integrations.Core.UploadFile({ file });
                                                                             await updateRegionStatusMutation.mutateAsync({
                                                                                 region_name: country.name,
                                                                                 region_type: 'country',
@@ -1657,7 +1670,7 @@ export default function Admin() {
                                                                         try {
                                                                             toast.info('Загрузка изображения...');
 
-                                                                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                                            const { file_url } = await api.integrations.Core.UploadFile({ file });
 
                                                                             updateRegionStatusMutation.mutate({
                                                                                 region_name: city.name,
@@ -2839,7 +2852,7 @@ function LocationForm({ location, onSubmit, isLoading }) {
         const loadBranches = async () => {
             if (location?.id) {
                 try {
-                    const existingBranches = await base44.entities.LocationBranch.filter({ location_id: location.id });
+                    const existingBranches = await api.entities.LocationBranch.filter({ location_id: location.id });
                     if (existingBranches.length > 0) {
                         setBranches(existingBranches.map(b => ({
                             id: b.id,
@@ -2914,7 +2927,7 @@ Return a JSON object with these fields:
 
 CRITICAL: Search MULTIPLE sources. Don't rely on just one link. Social media pages often have the best current information.`;
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 add_context_from_internet: true,
                 response_json_schema: {
@@ -3061,7 +3074,7 @@ CRITICAL: Search MULTIPLE sources. Don't rely on just one link. Social media pag
                 };
             }
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 add_context_from_internet: !existingText || !existingText.trim(),
                 response_json_schema: jsonSchema
@@ -3089,7 +3102,7 @@ CRITICAL: Search MULTIPLE sources. Don't rely on just one link. Social media pag
         if (rawTags.length > 0) {
             try {
                 toast.info('Проверка и оптимизация тегов...');
-                const tagsResponse = await base44.functions.invoke('normalizeTags', {
+                const tagsResponse = await api.functions.invoke('normalizeTags', {
                     tags: rawTags
                 });
                 if (tagsResponse.data?.normalizedTags) {
@@ -3145,7 +3158,7 @@ Return format (keep the style fun and lively):
   "opening_hours": "translated opening hours (if provided)"
 }`;
 
-                const translation = await base44.integrations.Core.InvokeLLM({
+                const translation = await api.integrations.Core.InvokeLLM({
                     prompt: translationPrompt,
                     response_json_schema: {
                         type: "object",
@@ -3188,15 +3201,15 @@ Return format (keep the style fun and lively):
         if (location?.id && branches.length > 0) {
             try {
                 // Delete existing branches and create new ones
-                const existingBranches = await base44.entities.LocationBranch.filter({ location_id: location.id });
+                const existingBranches = await api.entities.LocationBranch.filter({ location_id: location.id });
                 for (const eb of existingBranches) {
-                    await base44.entities.LocationBranch.delete(eb.id);
+                    await api.entities.LocationBranch.delete(eb.id);
                 }
 
                 // Create new branches
                 for (const branch of branches) {
                     if (branch.latitude && branch.longitude) {
-                        await base44.entities.LocationBranch.create({
+                        await api.entities.LocationBranch.create({
                             location_id: location.id,
                             branch_name: branch.branch_name || (branch.is_main ? 'Главный филиал' : ''),
                             address: branch.address,
@@ -3445,7 +3458,7 @@ Return format (keep the style fun and lively):
                                 try {
                                     toast.info('Загрузка изображения...');
 
-                                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                    const { file_url } = await api.integrations.Core.UploadFile({ file });
 
                                     setFormData(prev => ({ ...prev, image_url: file_url }));
                                     toast.success('Фото загружено!');

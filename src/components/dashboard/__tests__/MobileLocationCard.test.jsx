@@ -6,9 +6,10 @@ import MobileLocationCard from '../MobileLocationCard';
 import { LanguageProvider } from '../../LanguageContext';
 import '@testing-library/jest-dom';
 
-// Mock base44 client
-jest.mock('@/api/base44Client', () => ({
-    base44: {
+
+// Mock api client
+jest.mock('@/api/client', () => ({
+    api: {
         entities: {
             Review: {
                 filter: jest.fn(() => Promise.resolve([]))
@@ -244,7 +245,7 @@ describe('MobileLocationCard', () => {
 
     test('prevents event propagation when clicking Save button', async () => {
         const mockNavigate = jest.fn();
-        
+
         render(
             <MobileLocationCard
                 location={mockLocation}
@@ -256,7 +257,7 @@ describe('MobileLocationCard', () => {
         );
 
         const saveButton = screen.getByRole('button', { name: /add to wishlist/i });
-        
+
         // Create a mock click event
         const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
         const stopPropagationSpy = jest.spyOn(clickEvent, 'stopPropagation');
@@ -301,9 +302,9 @@ describe('MobileLocationCard', () => {
         );
 
         const saveButton = screen.getByRole('button', { name: /add to wishlist/i });
-        
+
         fireEvent.click(saveButton);
-        
+
         // Button should be disabled during save
         expect(saveButton).toBeDisabled();
     });

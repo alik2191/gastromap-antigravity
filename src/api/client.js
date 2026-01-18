@@ -1,9 +1,8 @@
-import { mockBase44 } from './mockBase44Client';
-import { base44 as supabaseBase44 } from './supabaseAdapter';
+// Direct Supabase Adapter export
+import { adapter } from './supabaseAdapter';
 
-// Default to true if not specified, for safety
-// But in production this should be set to 'false'
-const isDemo = import.meta.env.VITE_DEMO_MODE !== 'false';
+// Export as 'api' to be generic
+export const api = adapter;
 
-// Export the selected client
-export const base44 = isDemo ? mockBase44 : supabaseBase44;
+// Deprecated alias for backward compatibility during refactor (will be removed)
+export const base44 = adapter;

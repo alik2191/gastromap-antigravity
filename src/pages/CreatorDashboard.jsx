@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-    Plus, MapPin, Clock, CheckCircle, XCircle, Eye, Heart, 
+import {
+    Plus, MapPin, Clock, CheckCircle, XCircle, Eye, Heart,
     Star, TrendingUp, BarChart3, Loader2, ArrowLeft
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -26,21 +26,21 @@ export default function CreatorDashboard() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const userData = await base44.auth.me();
+                const userData = await api.auth.me();
                 setUser(userData);
-                
+
                 // Check if user is creator
                 if (userData.role !== 'creator' && userData.custom_role !== 'creator') {
                     navigate(createPageUrl('Dashboard'));
                     return;
                 }
-                
+
                 setLoading(false);
             } catch (e) {
-                base44.auth.redirectToLogin(window.location.href);
+                api.auth.redirectToLogin(window.location.href);
             }
         };
-        
+
         checkAuth();
     }, [navigate]);
 
@@ -48,7 +48,7 @@ export default function CreatorDashboard() {
     const { data: myLocations = [], isLoading: loadingLocations } = useQuery({
         queryKey: ['creatorLocations', user?.email],
         queryFn: async () => {
-            const locs = await base44.entities.Location.filter({ created_by: user.email });
+            const locs = await api.entities.Location.filter({ created_by: user.email });
             return locs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
         },
         enabled: !!user
@@ -57,14 +57,14 @@ export default function CreatorDashboard() {
     // Fetch saved locations for analytics
     const { data: savedLocations = [] } = useQuery({
         queryKey: ['allSavedLocations'],
-        queryFn: () => base44.entities.SavedLocation.list(),
+        queryFn: () => api.entities.SavedLocation.list(),
         enabled: !!user
     });
 
     // Fetch reviews for analytics
     const { data: allReviews = [] } = useQuery({
         queryKey: ['allReviews'],
-        queryFn: () => base44.entities.Review.list(),
+        queryFn: () => api.entities.Review.list(),
         enabled: !!user
     });
 
@@ -73,7 +73,7 @@ export default function CreatorDashboard() {
         const saves = savedLocations.filter(s => s.location_id === location.id).length;
         const reviews = allReviews.filter(r => r.location_id === location.id);
         const reviewsCount = reviews.length;
-        const avgRating = reviewsCount > 0 
+        const avgRating = reviewsCount > 0
             ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviewsCount).toFixed(1)
             : 0;
 
@@ -131,7 +131,7 @@ export default function CreatorDashboard() {
                             <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 hidden sm:block">{t('manageSubmissions')}</p>
                         </div>
                     </div>
-                    <Button 
+                    <Button
                         onClick={() => setShowLocationForm(true)}
                         className="rounded-full h-9 md:h-10 px-3 md:px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shrink-0"
                     >
@@ -197,7 +197,7 @@ export default function CreatorDashboard() {
                                 <p className="text-[10px] md:text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                                     {t('userReviewsReceived')}
                                 </p>
-            </CardContent>
+                            </CardContent>
                         </Card>
                     </motion.div>
 
@@ -213,7 +213,7 @@ export default function CreatorDashboard() {
                             </CardHeader>
                             <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                                 <div className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-                                    {stats.published > 0 
+                                    {stats.published > 0
                                         ? ((stats.totalSaves + stats.totalReviews) / stats.published).toFixed(1)
                                         : '0.0'
                                     }
@@ -237,25 +237,25 @@ export default function CreatorDashboard() {
                     <CardContent className="p-4 md:p-6 pt-0">
                         <Tabs defaultValue="all" className="w-full">
                             <TabsList className="grid w-full grid-cols-4 mb-4 md:mb-6 bg-neutral-50 dark:bg-neutral-900 p-1 md:p-1 rounded-xl md:rounded-2xl h-10 md:h-12">
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="all"
                                     className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:text-neutral-300 rounded-lg md:rounded-xl text-xs md:text-sm h-full"
                                 >
                                     <span className="hidden sm:inline">{t('allTab')} </span>({stats.total})
                                 </TabsTrigger>
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="published"
                                     className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:text-neutral-300 rounded-lg md:rounded-xl text-xs md:text-sm h-full"
                                 >
                                     <span className="hidden sm:inline">{t('publishedTab')} </span>({stats.published})
                                 </TabsTrigger>
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="pending"
                                     className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:text-neutral-300 rounded-lg md:rounded-xl text-xs md:text-sm h-full"
                                 >
                                     <span className="hidden sm:inline">{t('pendingTab')} </span>({stats.pending})
                                 </TabsTrigger>
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="draft"
                                     className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:text-neutral-300 rounded-lg md:rounded-xl text-xs md:text-sm h-full"
                                 >
@@ -276,9 +276,9 @@ export default function CreatorDashboard() {
                                                 .map(location => {
                                                     const StatusIcon = statusIcons[location.status];
                                                     return (
-                                                        <div 
-                                                           key={location.id}
-                                                           className="shadow-sm border-0 dark:border dark:border-neutral-700 rounded-2xl p-4 md:p-6 hover:shadow-md transition-all bg-white dark:bg-neutral-800"
+                                                        <div
+                                                            key={location.id}
+                                                            className="shadow-sm border-0 dark:border dark:border-neutral-700 rounded-2xl p-4 md:p-6 hover:shadow-md transition-all bg-white dark:bg-neutral-800"
                                                         >
                                                             <div className="flex items-start justify-between gap-3 md:gap-4">
                                                                 <div className="flex-1 min-w-0">
@@ -289,7 +289,7 @@ export default function CreatorDashboard() {
                                                                             <span className="hidden sm:inline">{location.status}</span>
                                                                         </Badge>
                                                                     </div>
-                                                                    
+
                                                                     <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-neutral-500 dark:text-neutral-400 mb-3 md:mb-4">
                                                                         <span className="flex items-center gap-1">
                                                                             <MapPin className="w-3 h-3 md:w-4 md:h-4" />
@@ -338,8 +338,8 @@ export default function CreatorDashboard() {
                                                                 </div>
 
                                                                 {location.image_url && (
-                                                                    <img 
-                                                                        src={location.image_url} 
+                                                                    <img
+                                                                        src={location.image_url}
                                                                         alt={location.name}
                                                                         className="w-20 h-20 md:w-32 md:h-32 object-cover rounded-xl shrink-0"
                                                                     />
@@ -353,7 +353,7 @@ export default function CreatorDashboard() {
                                                 <div className="text-center py-12">
                                                     <MapPin className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
                                                     <p className="text-neutral-500 dark:text-neutral-400">{t('noLocationsInCategory')}</p>
-                                                    <Button 
+                                                    <Button
                                                         onClick={() => setShowLocationForm(true)}
                                                         className="mt-4"
                                                         variant="outline"
@@ -373,7 +373,7 @@ export default function CreatorDashboard() {
 
             {/* Location Form Modal */}
             {showLocationForm && (
-                <CreatorLocationForm 
+                <CreatorLocationForm
                     isOpen={showLocationForm}
                     onOpenChange={setShowLocationForm}
                     user={user}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,13 +14,13 @@ export default function ReviewSection({ locationId, user }) {
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
     const [showForm, setShowForm] = useState(false);
-    
+
     const queryClient = useQueryClient();
 
     const { data: reviews = [], isLoading } = useQuery({
         queryKey: ['reviews', locationId],
         queryFn: async () => {
-            const allReviews = await base44.entities.Review.filter({ location_id: locationId }, '-created_date');
+            const allReviews = await api.entities.Review.filter({ location_id: locationId }, '-created_date');
             // Filter out hidden reviews for regular users
             return allReviews.filter(r => !r.is_hidden);
         }
@@ -34,9 +34,9 @@ export default function ReviewSection({ locationId, user }) {
             // Check if user already reviewed
             const existing = reviews.find(r => r.user_email === user.email);
             if (existing) {
-                return base44.entities.Review.update(existing.id, finalData);
+                return api.entities.Review.update(existing.id, finalData);
             }
-            return base44.entities.Review.create(finalData);
+            return api.entities.Review.create(finalData);
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['reviews', locationId]);
@@ -52,7 +52,7 @@ export default function ReviewSection({ locationId, user }) {
             toast.error('Please select a rating');
             return;
         }
-        
+
         submitReviewMutation.mutate({
             user_email: user.email,
             user_name: user.full_name,
@@ -62,7 +62,7 @@ export default function ReviewSection({ locationId, user }) {
         });
     };
 
-    const averageRating = reviews.length > 0 
+    const averageRating = reviews.length > 0
         ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
         : 0;
 
@@ -84,15 +84,15 @@ export default function ReviewSection({ locationId, user }) {
                     <div className="text-4xl font-bold text-neutral-900 dark:text-neutral-100">{averageRating}</div>
                     <div className="flex gap-1 mt-1">
                         {[...Array(5)].map((_, i) => (
-                            <Star 
-                                key={i} 
+                            <Star
+                                key={i}
                                 className={`w-4 h-4 ${i < Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`}
                             />
                         ))}
                     </div>
                     <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{reviews.length} reviews</div>
                 </div>
-                
+
                 <div className="flex-1">
                     {[5, 4, 3, 2, 1].map(stars => {
                         const count = reviews.filter(r => r.rating === stars).length;
@@ -101,7 +101,7 @@ export default function ReviewSection({ locationId, user }) {
                             <div key={stars} className="flex items-center gap-2 mb-1">
                                 <span className="text-xs text-neutral-700 dark:text-neutral-400 w-8">{stars}★</span>
                                 <div className="flex-1 h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
-                                    <div 
+                                    <div
                                         className="h-full bg-amber-400 transition-all duration-300"
                                         style={{ width: `${percentage}%` }}
                                     />
@@ -115,7 +115,7 @@ export default function ReviewSection({ locationId, user }) {
 
             {/* Write Review Button */}
             {!showForm && !userReview && (
-                <Button 
+                <Button
                     onClick={() => setShowForm(true)}
                     className="w-full rounded-full h-11 bg-neutral-900 hover:bg-neutral-800"
                 >
@@ -145,12 +145,11 @@ export default function ReviewSection({ locationId, user }) {
                                         onClick={() => setRating(star)}
                                         className="transition-transform hover:scale-110"
                                     >
-                                        <Star 
-                                            className={`w-8 h-8 ${
-                                                star <= (hoverRating || rating) 
-                                                    ? 'fill-amber-400 text-amber-400' 
+                                        <Star
+                                            className={`w-8 h-8 ${star <= (hoverRating || rating)
+                                                    ? 'fill-amber-400 text-amber-400'
                                                     : 'text-neutral-300'
-                                            }`}
+                                                }`}
                                         />
                                     </button>
                                 ))}
@@ -161,7 +160,7 @@ export default function ReviewSection({ locationId, user }) {
                             <label className="text-sm font-medium text-neutral-900 dark:text-neutral-300 mb-2 block">
                                 Your Review (Optional)
                             </label>
-                            <Textarea 
+                            <Textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
                                 placeholder="Share your experience..."
@@ -170,7 +169,7 @@ export default function ReviewSection({ locationId, user }) {
                         </div>
 
                         <div className="flex gap-2">
-                            <Button 
+                            <Button
                                 onClick={handleSubmit}
                                 disabled={submitReviewMutation.isPending || rating === 0}
                                 className="flex-1 rounded-full h-11 bg-neutral-900 hover:bg-neutral-800"
@@ -184,7 +183,7 @@ export default function ReviewSection({ locationId, user }) {
                                     </>
                                 )}
                             </Button>
-                            <Button 
+                            <Button
                                 onClick={() => {
                                     setShowForm(false);
                                     setRating(0);
@@ -205,7 +204,7 @@ export default function ReviewSection({ locationId, user }) {
                 <div className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl p-5 border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Your Review</span>
-                        <Button 
+                        <Button
                             onClick={() => {
                                 setRating(userReview.rating);
                                 setComment(userReview.comment || '');
@@ -220,8 +219,8 @@ export default function ReviewSection({ locationId, user }) {
                     </div>
                     <div className="flex gap-1 mb-2">
                         {[...Array(5)].map((_, i) => (
-                            <Star 
-                                key={i} 
+                            <Star
+                                key={i}
                                 className={`w-4 h-4 ${i < userReview.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`}
                             />
                         ))}
@@ -256,11 +255,11 @@ export default function ReviewSection({ locationId, user }) {
                                 <div className="flex items-start gap-4">
                                     {/* Avatar with Initials */}
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md">
-                                        {review.user_name 
+                                        {review.user_name
                                             ? review.user_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
                                             : 'A'}
                                     </div>
-                                    
+
                                     <div className="flex-1 min-w-0">
                                         {/* Header: Name, Date, Rating */}
                                         <div className="flex items-start justify-between mb-3">
@@ -271,8 +270,8 @@ export default function ReviewSection({ locationId, user }) {
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <div className="flex gap-0.5">
                                                         {[...Array(5)].map((_, i) => (
-                                                            <Star 
-                                                                key={i} 
+                                                            <Star
+                                                                key={i}
                                                                 className={`w-4 h-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`}
                                                             />
                                                         ))}
@@ -280,27 +279,27 @@ export default function ReviewSection({ locationId, user }) {
                                                     <span className="text-xs text-neutral-400 dark:text-neutral-600">•</span>
                                                     <div className="text-xs text-neutral-500 dark:text-neutral-400">
                                                         {new Date(review.created_date).toLocaleDateString(
-                                                            language === 'ru' ? 'ru-RU' : 
-                                                            language === 'uk' ? 'uk-UA' : 
-                                                            language === 'es' ? 'es-ES' : 'en-US', 
-                                                            { 
-                                                                year: 'numeric', 
-                                                                month: 'long', 
-                                                                day: 'numeric' 
+                                                            language === 'ru' ? 'ru-RU' :
+                                                                language === 'uk' ? 'uk-UA' :
+                                                                    language === 'es' ? 'es-ES' : 'en-US',
+                                                            {
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric'
                                                             }
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Review Comment */}
                                         {review.comment && (
                                             <p className="text-sm text-neutral-900 dark:text-neutral-200 leading-relaxed mb-4">
                                                 {getLocalizedComment(review)}
                                             </p>
                                         )}
-                                        
+
                                         {/* Helpful Button */}
                                         <button className="flex items-center gap-2 text-xs font-medium text-neutral-700 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                             <ThumbsUp className="w-3.5 h-3.5" />

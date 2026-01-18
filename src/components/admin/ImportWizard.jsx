@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import {
   Dialog,
   DialogContent,
@@ -249,11 +249,11 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
             const { sourceRow, ...dbData } = loc;
 
             if (dbData.id) {
-              const res = await base44.entities.Location.update(dbData.id, dbData);
+              const res = await api.entities.Location.update(dbData.id, dbData);
               batchUpdated++;
               if (res && res.id) allUpdatedChanges.push(res);
             } else {
-              const res = await base44.entities.Location.create(dbData);
+              const res = await api.entities.Location.create(dbData);
               batchCreated++;
               if (res && res.id) allCreatedIds.push(res.id);
             }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,7 +120,7 @@ export default function CreatorLocationForm({ isOpen, onOpenChange, user, onSucc
             
             Return a JSON array of results. If only one exact match found, return array with just that one result.`;
 
-            const searchResults = await base44.integrations.Core.InvokeLLM({
+            const searchResults = await api.integrations.Core.InvokeLLM({
                 prompt: searchPrompt,
                 add_context_from_internet: true,
                 response_json_schema: {
@@ -160,7 +160,7 @@ export default function CreatorLocationForm({ isOpen, onOpenChange, user, onSucc
     const handleOnboardingComplete = async () => {
         setShowOnboarding(false);
         try {
-            await base44.auth.updateMe({ has_seen_location_onboarding: true });
+            await api.auth.updateMe({ has_seen_location_onboarding: true });
         } catch (error) {
             console.error('Error updating onboarding status:', error);
         }
@@ -169,7 +169,7 @@ export default function CreatorLocationForm({ isOpen, onOpenChange, user, onSucc
     const handleOnboardingSkip = async () => {
         setShowOnboarding(false);
         try {
-            await base44.auth.updateMe({ has_seen_location_onboarding: true });
+            await api.auth.updateMe({ has_seen_location_onboarding: true });
         } catch (error) {
             console.error('Error updating onboarding status:', error);
         }
@@ -191,7 +191,7 @@ export default function CreatorLocationForm({ isOpen, onOpenChange, user, onSucc
         try {
             // Try Google Places API first
             toast.info('Searching location data...');
-            const googleResult = await base44.functions.invoke('searchGooglePlaces', {
+            const googleResult = await api.functions.invoke('searchGooglePlaces', {
                 query: `${selectedPlace.name} ${selectedPlace.address}`
             });
 
@@ -327,7 +327,7 @@ This ensures proper navigation in Google/Apple Maps while keeping UI in English.
 
 CRITICAL: Use the NAME and ADDRESS provided to find the EXACT location. Search multiple sources for complete information.`;
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 add_context_from_internet: true,
                 response_json_schema: {
@@ -472,7 +472,7 @@ Provide a short, specific recommendation (just the dish name and brief descripti
                 };
             }
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 add_context_from_internet: !existingText || !existingText.trim(),
                 response_json_schema: jsonSchema
@@ -624,7 +624,7 @@ Provide a short, specific recommendation (just the dish name and brief descripti
 
         if (!user) {
             toast.error('Please sign in to add a location');
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
 
@@ -642,7 +642,7 @@ Provide a short, specific recommendation (just the dish name and brief descripti
             if (rawTags.length > 0) {
                 try {
                     toast.info('Optimizing tags...');
-                    const tagsResponse = await base44.functions.invoke('normalizeTags', {
+                    const tagsResponse = await api.functions.invoke('normalizeTags', {
                         tags: rawTags
                     });
                     if (tagsResponse.data?.normalizedTags) {
@@ -714,7 +714,7 @@ Return format (keep the style fun and lively):
   "opening_hours": "translated opening hours (if provided)"
 }`;
 
-                const translation = await base44.integrations.Core.InvokeLLM({
+                const translation = await api.integrations.Core.InvokeLLM({
                     prompt: translationPrompt,
                     response_json_schema: {
                         type: "object",
@@ -736,7 +736,7 @@ Return format (keep the style fun and lively):
 
             // Create main location (use first branch coordinates for backward compatibility)
             const mainBranch = branches[0];
-            const createdLocation = await base44.entities.Location.create({
+            const createdLocation = await api.entities.Location.create({
                 ...translatedData,
                 latitude: mainBranch.latitude ? parseFloat(mainBranch.latitude) : null,
                 longitude: mainBranch.longitude ? parseFloat(mainBranch.longitude) : null,
@@ -755,7 +755,7 @@ Return format (keep the style fun and lively):
             if (branches.length > 0) {
                 for (const branch of branches) {
                     if (branch.latitude && branch.longitude) {
-                        await base44.entities.LocationBranch.create({
+                        await api.entities.LocationBranch.create({
                             location_id: createdLocation.id,
                             branch_name: branch.branch_name || (branch.is_main ? 'Главный филиал' : ''),
                             address: branch.address,
@@ -1381,7 +1381,7 @@ Return format (keep the style fun and lively):
                                             try {
                                                 toast.info('Uploading image...');
 
-                                                const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                const { file_url } = await api.integrations.Core.UploadFile({ file });
 
                                                 setFormData(prev => ({ ...prev, image_url: file_url }));
                                                 toast.success('Photo uploaded successfully!');
@@ -1529,8 +1529,8 @@ Return format (keep the style fun and lively):
                                             }
                                         }}
                                         className={`text-xs ${formData.special_labels?.includes(labelItem.id)
-                                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300'
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300'
                                             }`}
                                     >
                                         {labelItem.emoji} {labelItem.label}

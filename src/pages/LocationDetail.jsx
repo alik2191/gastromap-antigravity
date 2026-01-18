@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-    MapPin, Star, Heart, Check, ArrowLeft, Sparkles, AlertCircle, Share2, 
+import {
+    MapPin, Star, Heart, Check, ArrowLeft, Sparkles, AlertCircle, Share2,
     Clock, Phone, Calendar, Loader2, Instagram, Facebook, Youtube, Linkedin, Twitter, Globe
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -24,13 +24,13 @@ export default function LocationDetail() {
     const [note, setNote] = useState('');
     const [saving, setSaving] = useState(false);
     const [viewTracked, setViewTracked] = useState(false);
-    
+
     const queryClient = useQueryClient();
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const userData = await base44.auth.me();
+                const userData = await api.auth.me();
                 setUser(userData);
             } catch (e) {
                 // User not logged in
@@ -48,8 +48,8 @@ export default function LocationDetail() {
         const trackView = async () => {
             if (locationId && !viewTracked) {
                 try {
-                    const currentUser = await base44.auth.me().catch(() => null);
-                    await base44.entities.LocationView.create({
+                    const currentUser = await api.auth.me().catch(() => null);
+                    await api.entities.LocationView.create({
                         location_id: locationId,
                         user_email: currentUser?.email || 'anonymous',
                         viewed_at: new Date().toISOString()
@@ -66,15 +66,15 @@ export default function LocationDetail() {
     const { data: location, isLoading: loadingLocation } = useQuery({
         queryKey: ['location', locationId],
         queryFn: async () => {
-            const locs = await base44.entities.Location.filter({ id: locationId });
+            const locs = await api.entities.Location.filter({ id: locationId });
             const loc = locs[0];
             if (!loc) return null;
-            
+
             // Проверка доступа: published видны всем, остальные только админам и создателю
             if (loc.status === 'published') return loc;
             if (user?.role === 'admin' || user?.custom_role === 'admin') return loc;
             if (loc.created_by === user?.email) return loc;
-            
+
             // Если локация не published и пользователь не админ/создатель - не показываем
             return null;
         },
@@ -83,7 +83,7 @@ export default function LocationDetail() {
 
     const { data: savedLocations = [] } = useQuery({
         queryKey: ['savedLocations', user?.email],
-        queryFn: () => base44.entities.SavedLocation.filter({ user_email: user.email }),
+        queryFn: () => api.entities.SavedLocation.filter({ user_email: user.email }),
         enabled: !!user
     });
 
@@ -92,39 +92,39 @@ export default function LocationDetail() {
     const { data: reviews = [] } = useQuery({
         queryKey: ['reviews', locationId],
         queryFn: async () => {
-            const allReviews = await base44.entities.Review.filter({ location_id: locationId });
+            const allReviews = await api.entities.Review.filter({ location_id: locationId });
             // Filter out hidden reviews for regular users
             return allReviews.filter(r => !r.is_hidden);
         },
         enabled: !!locationId
     });
 
-    const averageRating = reviews.length > 0 
+    const averageRating = reviews.length > 0
         ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
         : 0;
 
     const saveMutation = useMutation({
-         mutationFn: async ({ listType, personalNote }) => {
-             const existing = savedLocations.find(s => s.location_id === locationId);
-             if (existing) {
-                 const updateData = { list_type: listType };
-                 if (typeof personalNote === 'string' && personalNote.trim() !== '') {
-                     updateData.personal_note = personalNote;
-                 }
-                 return base44.entities.SavedLocation.update(existing.id, updateData);
-             }
-             const createData = {
-                 user_email: user.email,
-                 location_id: locationId,
-                 list_type: listType,
-             };
-             if (typeof personalNote === 'string' && personalNote.trim() !== '') {
-                 createData.personal_note = personalNote;
-             }
-             return base44.entities.SavedLocation.create(createData);
-         },
-         onSuccess: () => queryClient.invalidateQueries(['savedLocations'])
-     });
+        mutationFn: async ({ listType, personalNote }) => {
+            const existing = savedLocations.find(s => s.location_id === locationId);
+            if (existing) {
+                const updateData = { list_type: listType };
+                if (typeof personalNote === 'string' && personalNote.trim() !== '') {
+                    updateData.personal_note = personalNote;
+                }
+                return api.entities.SavedLocation.update(existing.id, updateData);
+            }
+            const createData = {
+                user_email: user.email,
+                location_id: locationId,
+                list_type: listType,
+            };
+            if (typeof personalNote === 'string' && personalNote.trim() !== '') {
+                createData.personal_note = personalNote;
+            }
+            return api.entities.SavedLocation.create(createData);
+        },
+        onSuccess: () => queryClient.invalidateQueries(['savedLocations'])
+    });
 
     useEffect(() => {
         if (savedLocation) {
@@ -132,10 +132,10 @@ export default function LocationDetail() {
         }
     }, [savedLocation]);
 
-    const hasUpdates = savedLocation && location?.updated_date && 
+    const hasUpdates = savedLocation && location?.updated_date &&
         new Date(location.updated_date) > new Date(savedLocation.created_date);
-    
-    const wasRecentlyUpdated = location?.updated_date && 
+
+    const wasRecentlyUpdated = location?.updated_date &&
         (Date.now() - new Date(location.updated_date).getTime()) < 7 * 24 * 60 * 60 * 1000;
 
     const getLocalizedField = (field) => {
@@ -165,14 +165,14 @@ export default function LocationDetail() {
     const handleSave = async (listType) => {
         if (!user) {
             toast.error(t('loginToSave'));
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
         setSaving(true);
-        
+
         // If already saved with the same type, remove it (toggle off)
         if (savedLocation && savedLocation.list_type === listType) {
-            await base44.entities.SavedLocation.delete(savedLocation.id);
+            await api.entities.SavedLocation.delete(savedLocation.id);
             queryClient.invalidateQueries(['savedLocations']);
             toast.success(listType === 'visited' ? t('removedFromVisited') : t('removedFromWishlist'));
         } else {
@@ -180,24 +180,24 @@ export default function LocationDetail() {
             await saveMutation.mutateAsync({ listType, personalNote: note });
             toast.success(listType === 'visited' ? t('markedAsVisited') : t('addedToWishlist'));
         }
-        
+
         setSaving(false);
     };
 
     const handleUpdateNote = async () => {
         if (!user) {
             toast.error(t('loginToAddNote'));
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
         if (!note.trim()) {
             toast.error(t('noteCannotBeEmpty'));
             return;
         }
-        
+
         setSaving(true);
         if (savedLocation) {
-            await base44.entities.SavedLocation.update(savedLocation.id, { personal_note: note });
+            await api.entities.SavedLocation.update(savedLocation.id, { personal_note: note });
             queryClient.invalidateQueries(['savedLocations']);
             toast.success(t('noteSaved'));
         } else {
@@ -240,26 +240,26 @@ export default function LocationDetail() {
         <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900">
             {/* Hero Section */}
             <div className="relative h-[40vh] md:h-[50vh] w-full">
-                <img 
-                    src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80"} 
+                <img
+                    src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80"}
                     alt={location.name}
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                
+
                 {/* Back Button */}
-                <Link 
+                <Link
                     to={(() => {
                         const params = new URLSearchParams(window.location.search);
                         const country = params.get('country');
                         const city = params.get('city');
-                        
+
                         // Build back URL with navigation state
                         const backParams = new URLSearchParams();
                         if (country) backParams.set('country', country);
                         if (city) backParams.set('city', city);
-                        
-                        return backParams.toString() 
+
+                        return backParams.toString()
                             ? `${createPageUrl('Dashboard')}?${backParams.toString()}`
                             : createPageUrl('Dashboard');
                     })()}
@@ -295,26 +295,24 @@ export default function LocationDetail() {
             <div className="sticky top-0 z-40 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-sm">
                 <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 md:py-4">
                     <div className="flex gap-2 md:gap-3">
-                        <Button 
+                        <Button
                             onClick={() => handleSave('wishlist')}
                             disabled={saving}
-                            className={`flex-1 md:flex-none rounded-full h-12 font-medium px-4 md:px-6 ${
-                                savedLocation?.list_type === 'wishlist' 
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                            className={`flex-1 md:flex-none rounded-full h-12 font-medium px-4 md:px-6 ${savedLocation?.list_type === 'wishlist'
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                     : 'bg-blue-600 hover:bg-blue-700 text-white'
-                            }`}
+                                }`}
                             aria-label="Save to wishlist"
                         >
                             <Heart className={`w-4 h-4 mr-2 shrink-0 ${savedLocation?.list_type === 'wishlist' ? 'fill-current' : ''}`} />
                             <span className="truncate">{savedLocation?.list_type === 'wishlist' ? t('saved') : t('saveToWishlist')}</span>
                         </Button>
-                        <Button 
+                        <Button
                             onClick={() => handleSave('visited')}
                             disabled={saving}
                             variant="outline"
-                            className={`flex-1 md:flex-none rounded-full h-12 font-medium px-4 md:px-6 ${
-                                savedLocation?.list_type === 'visited' ? 'bg-green-50 text-green-700 border-green-200' : ''
-                            }`}
+                            className={`flex-1 md:flex-none rounded-full h-12 font-medium px-4 md:px-6 ${savedLocation?.list_type === 'visited' ? 'bg-green-50 text-green-700 border-green-200' : ''
+                                }`}
                             aria-label="Mark as visited"
                         >
                             <Check className="w-4 h-4 mr-2 shrink-0" />
@@ -328,20 +326,20 @@ export default function LocationDetail() {
             <div className="max-w-5xl mx-auto px-6 py-8">
                 <Tabs defaultValue="overview" className="w-full">
                     <TabsList className="w-full grid grid-cols-3 bg-neutral-100 dark:bg-neutral-800 rounded-2xl p-1 mb-6">
-                        <TabsTrigger 
-                            value="overview" 
+                        <TabsTrigger
+                            value="overview"
                             className="rounded-xl text-neutral-700 dark:text-neutral-300 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
                         >
                             {t('overview')}
                         </TabsTrigger>
-                        <TabsTrigger 
-                            value="reviews" 
+                        <TabsTrigger
+                            value="reviews"
                             className="rounded-xl text-neutral-700 dark:text-neutral-300 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
                         >
                             {t('reviews')} {reviews.length > 0 && `(${reviews.length})`}
                         </TabsTrigger>
-                        <TabsTrigger 
-                            value="notes" 
+                        <TabsTrigger
+                            value="notes"
                             className="rounded-xl text-neutral-700 dark:text-neutral-300 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
                         >
                             {t('myNotes')}
@@ -368,7 +366,7 @@ export default function LocationDetail() {
                                     </Badge>
                                 )}
                             </div>
-                            
+
                             {/* Special labels */}
                             {location.special_labels && location.special_labels.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -379,13 +377,13 @@ export default function LocationDetail() {
                                     ))}
                                 </div>
                             )}
-                            
+
                             {reviews.length > 0 && (
                                 <div className="flex items-center gap-2">
                                     <div className="flex gap-0.5">
                                         {[...Array(5)].map((_, i) => (
-                                            <Star 
-                                                key={i} 
+                                            <Star
+                                                key={i}
                                                 className={`w-5 h-5 ${i < Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'}`}
                                             />
                                         ))}
@@ -425,10 +423,10 @@ export default function LocationDetail() {
                                 </p>
                                 {location.updated_date && hasUpdates && (
                                     <p className="text-xs text-purple-600 mt-2">
-                                        {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', { 
-                                            day: 'numeric', 
-                                            month: 'long', 
-                                            year: 'numeric' 
+                                        {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric'
                                         })}
                                     </p>
                                 )}
@@ -449,10 +447,10 @@ export default function LocationDetail() {
                                 <p className="text-amber-900 dark:text-amber-200 leading-relaxed text-base">{localizedMustTry}</p>
                                 {location.updated_date && hasUpdates && (
                                     <p className="text-xs text-amber-700 mt-2">
-                                        {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', { 
-                                            day: 'numeric', 
-                                            month: 'long', 
-                                            year: 'numeric' 
+                                        {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric'
                                         })}
                                     </p>
                                 )}
@@ -469,7 +467,7 @@ export default function LocationDetail() {
                             </p>
                             {location.latitude && location.longitude && (
                                 <div className="flex flex-wrap gap-3">
-                                    <a 
+                                    <a
                                         href={`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -478,7 +476,7 @@ export default function LocationDetail() {
                                         <MapPin className="w-4 h-4" />
                                         {t('routeInGoogleMaps')}
                                     </a>
-                                    <a 
+                                    <a
                                         href={`http://maps.apple.com/?daddr=${location.latitude},${location.longitude}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -523,7 +521,7 @@ export default function LocationDetail() {
                                 <h4 className="text-neutral-500 dark:text-neutral-400 text-sm font-semibold uppercase tracking-wide">
                                     {t('additionalInfo')}
                                 </h4>
-                                
+
                                 {location.opening_hours && (
                                     <div className="flex items-start gap-3">
                                         <Clock className="w-5 h-5 text-neutral-500 mt-0.5 shrink-0" />
@@ -533,7 +531,7 @@ export default function LocationDetail() {
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {location.phone && (
                                     <div className="flex items-start gap-3">
                                         <Phone className="w-5 h-5 text-neutral-500 mt-0.5 shrink-0" />
@@ -549,9 +547,9 @@ export default function LocationDetail() {
                                         <Globe className="w-5 h-5 text-neutral-500 mt-0.5 shrink-0" />
                                         <div>
                                             <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">{t('website')}</p>
-                                            <a 
-                                                href={location.website} 
-                                                target="_blank" 
+                                            <a
+                                                href={location.website}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                                             >
@@ -560,15 +558,15 @@ export default function LocationDetail() {
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {location.booking_url && (
                                     <div className="flex items-start gap-3">
                                         <Calendar className="w-5 h-5 text-neutral-500 mt-0.5 shrink-0" />
                                         <div>
                                             <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">{t('booking')}</p>
-                                            <a 
-                                                href={location.booking_url} 
-                                                target="_blank" 
+                                            <a
+                                                href={location.booking_url}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                                             >
@@ -593,14 +591,14 @@ export default function LocationDetail() {
                                 <label className="text-sm font-medium text-neutral-900 dark:text-neutral-300 mb-2 block">
                                     {t('personalNotes')}
                                 </label>
-                                <Textarea 
+                                <Textarea
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
                                     placeholder={t('addPersonalNotes')}
                                     className="min-h-[200px] resize-none text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                 />
                             </div>
-                            <Button 
+                            <Button
                                 onClick={handleUpdateNote}
                                 disabled={saving || !note.trim()}
                                 className="w-full rounded-full h-12 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50"

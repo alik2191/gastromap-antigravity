@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-// import { base44 } from '@/api/client'; // DISABLED: Using mock client
-import { base44 } from '@/api/client'; // MOCK DATA
+
+import { api } from '@/api/client'; // MOCK DATA
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +116,7 @@ export default function Dashboard() {
             if (!isAuthenticated && !authUser) {
                 // Not logged in -> Redirect to Login
                 // Skip redirect in local dev if needed, but for production it's better to keep it
-                // base44.auth.redirectToLogin(window.location.href);
+                // api.auth.redirectToLogin(window.location.href);
                 return;
             }
 
@@ -154,7 +154,7 @@ export default function Dashboard() {
     const { data: locations = [], isLoading: loadingLocations } = useQuery({
         queryKey: ['locations'],
         queryFn: async () => {
-            const allLocations = await base44.entities.Location.list();
+            const allLocations = await api.entities.Location.list();
             // Admin sees all locations
             if (user?.role === 'admin' || user?.custom_role === 'admin') {
                 return allLocations;
@@ -174,20 +174,20 @@ export default function Dashboard() {
 
     const { data: savedLocations = [], isLoading: loadingSaved } = useQuery({
         queryKey: ['savedLocations', user?.email],
-        queryFn: () => base44.entities.SavedLocation.filter({ user_email: user.email }),
+        queryFn: () => api.entities.SavedLocation.filter({ user_email: user.email }),
         enabled: !loading && !!user
     });
 
     const { data: regionStatuses = [] } = useQuery({
         queryKey: ['regionStatuses'],
-        queryFn: () => base44.entities.RegionStatus.list(),
+        queryFn: () => api.entities.RegionStatus.list(),
         enabled: !loading && !!user
     });
 
     const { data: newFeedbackCount = 0 } = useQuery({
         queryKey: ['newFeedbackCount'],
         queryFn: async () => {
-            const items = await base44.entities.Feedback.filter({ status: 'new' });
+            const items = await api.entities.Feedback.filter({ status: 'new' });
             return items.length;
         },
         enabled: !!user && user.role === 'admin'
@@ -196,14 +196,14 @@ export default function Dashboard() {
     const { data: creatorTasksCount = 0 } = useQuery({
         queryKey: ['creatorTasksCount'],
         queryFn: async () => {
-            const allRounds = await base44.entities.ModerationRound.filter({ status: 'pending_creator_answers' });
-            const myAnswers = await base44.entities.CreatorAnswer.filter({ creator_email: user.email });
+            const allRounds = await api.entities.ModerationRound.filter({ status: 'pending_creator_answers' });
+            const myAnswers = await api.entities.CreatorAnswer.filter({ creator_email: user.email });
             const answeredIds = new Set(myAnswers.map(a => a.review_question_id));
             const unansweredRounds = allRounds.filter(round => !answeredIds.has(round.id));
 
             // Не показываем задачи для собственных локаций если есть другие
             const myEmail = user.email;
-            const myLocations = await base44.entities.Location.filter({ created_by: myEmail });
+            const myLocations = await api.entities.Location.filter({ created_by: myEmail });
             const myLocationIds = new Set(myLocations.map(l => l.id));
 
             const otherRounds = unansweredRounds.filter(r => !myLocationIds.has(r.location_id));
@@ -221,7 +221,7 @@ export default function Dashboard() {
                 if (typeof note === 'string' && note.trim() !== '') {
                     updateData.personal_note = note;
                 }
-                return base44.entities.SavedLocation.update(existing.id, updateData);
+                return api.entities.SavedLocation.update(existing.id, updateData);
             }
             const createData = {
                 user_email: user.email,
@@ -231,14 +231,14 @@ export default function Dashboard() {
             if (typeof note === 'string' && note.trim() !== '') {
                 createData.personal_note = note;
             }
-            return base44.entities.SavedLocation.create(createData);
+            return api.entities.SavedLocation.create(createData);
         },
         onSuccess: () => queryClient.invalidateQueries(['savedLocations'])
     });
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }) => {
-            return base44.entities.SavedLocation.update(id, data);
+            return api.entities.SavedLocation.update(id, data);
         },
         onSuccess: () => queryClient.invalidateQueries(['savedLocations'])
     });
@@ -249,7 +249,7 @@ export default function Dashboard() {
 
             // If already saved with the same type, remove it (toggle off)
             if (existing && existing.list_type === listType) {
-                await base44.entities.SavedLocation.delete(existing.id);
+                await api.entities.SavedLocation.delete(existing.id);
                 await queryClient.invalidateQueries(['savedLocations']);
                 await queryClient.refetchQueries(['savedLocations']);
                 toast.success(listType === 'visited' ? t('removedFromVisited') : t('removedFromWishlist'));
@@ -879,7 +879,7 @@ export default function Dashboard() {
                             variant="ghost"
                             size="icon"
                             onClick={async () => {
-                                await base44.auth.logout();
+                                await api.auth.logout();
                                 navigate('/');
                             }}
                             className="rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 h-9 w-9 lg:h-10 lg:w-10 transition-all hover:shadow-sm"
@@ -956,7 +956,7 @@ export default function Dashboard() {
                             variant="ghost"
                             size="icon"
                             onClick={async () => {
-                                await base44.auth.logout();
+                                await api.auth.logout();
                                 navigate('/');
                             }}
                             className="hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"

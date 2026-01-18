@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
@@ -9,7 +9,7 @@ export default function AdminNotesList({ locationId }) {
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['admin-location-notes', locationId],
     queryFn: async () => {
-      const items = await base44.entities.SavedLocation.filter({ location_id: locationId }, '-updated_date');
+      const items = await api.entities.SavedLocation.filter({ location_id: locationId }, '-updated_date');
       return items;
     },
     enabled: !!locationId,

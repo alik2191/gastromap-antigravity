@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { 
+import {
     MapPin, Search, CheckCircle2, Loader2, Filter
 } from "lucide-react";
 import { toast } from "sonner";
@@ -41,8 +41,8 @@ export default function ModerationLocationsTab({ locations }) {
     const sendToModerationMutation = useMutation({
         mutationFn: async ({ locationIds, fields }) => {
             // Проверяем существующие активные раунды модерации
-            const allRounds = await base44.entities.ModerationRound.list();
-            const existingRounds = allRounds.filter(r => 
+            const allRounds = await api.entities.ModerationRound.list();
+            const existingRounds = allRounds.filter(r =>
                 r.status === 'pending_creator_answers' || r.status === 'pending_admin_review'
             );
 
@@ -53,7 +53,7 @@ export default function ModerationLocationsTab({ locations }) {
 
             const rounds = [];
             let skippedCount = 0;
-            
+
             for (const locationId of locationIds) {
                 const location = locations.find(l => l.id === locationId);
                 if (!location) continue;
@@ -120,8 +120,8 @@ export default function ModerationLocationsTab({ locations }) {
             }
 
             // Создаём новые раунды модерации
-            const result = rounds.length > 0 ? await base44.entities.ModerationRound.bulkCreate(rounds) : [];
-            
+            const result = rounds.length > 0 ? await api.entities.ModerationRound.bulkCreate(rounds) : [];
+
             return { created: result, skipped: skippedCount };
         },
         onSuccess: (result, { locationIds }) => {
@@ -129,11 +129,11 @@ export default function ModerationLocationsTab({ locations }) {
             queryClient.invalidateQueries(['creatorTasksCount']);
             setSelectedLocations([]);
             setShowFieldsDialog(false);
-            
-            const message = result.skipped > 0 
+
+            const message = result.skipped > 0
                 ? `Создано ${result.created.length} раундов для ${locationIds.length} локаций (пропущено дубликатов: ${result.skipped})`
                 : `Создано ${result.created.length} раундов модерации для ${locationIds.length} локаций`;
-            
+
             toast.success(message);
         },
         onError: (error) => {
@@ -142,11 +142,11 @@ export default function ModerationLocationsTab({ locations }) {
     });
 
     const filteredLocations = locations.filter(loc => {
-        const matchesSearch = 
+        const matchesSearch =
             loc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             loc.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             loc.country?.toLowerCase().includes(searchQuery.toLowerCase());
-        
+
         const matchesCountry = filterCountry === 'all' || loc.country === filterCountry;
         const matchesCity = filterCity === 'all' || loc.city === filterCity;
 
@@ -154,8 +154,8 @@ export default function ModerationLocationsTab({ locations }) {
     });
 
     const toggleLocation = (locationId) => {
-        setSelectedLocations(prev => 
-            prev.includes(locationId) 
+        setSelectedLocations(prev =>
+            prev.includes(locationId)
                 ? prev.filter(id => id !== locationId)
                 : [...prev, locationId]
         );
@@ -183,7 +183,7 @@ export default function ModerationLocationsTab({ locations }) {
             <div className="flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-                    <Input 
+                    <Input
                         placeholder="Поиск локаций..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -256,7 +256,7 @@ export default function ModerationLocationsTab({ locations }) {
                             <div className="flex items-center gap-3 p-3 border-0 shadow-sm dark:border dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900">
                                 <Checkbox
                                     checked={selectedFields.insider_tip}
-                                    onCheckedChange={(checked) => 
+                                    onCheckedChange={(checked) =>
                                         setSelectedFields(prev => ({ ...prev, insider_tip: checked }))
                                     }
                                 />
@@ -268,7 +268,7 @@ export default function ModerationLocationsTab({ locations }) {
                             <div className="flex items-center gap-3 p-3 border-0 shadow-sm dark:border dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900">
                                 <Checkbox
                                     checked={selectedFields.must_try}
-                                    onCheckedChange={(checked) => 
+                                    onCheckedChange={(checked) =>
                                         setSelectedFields(prev => ({ ...prev, must_try: checked }))
                                     }
                                 />
@@ -280,7 +280,7 @@ export default function ModerationLocationsTab({ locations }) {
                             <div className="flex items-center gap-3 p-3 border-0 shadow-sm dark:border dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900">
                                 <Checkbox
                                     checked={selectedFields.special_labels}
-                                    onCheckedChange={(checked) => 
+                                    onCheckedChange={(checked) =>
                                         setSelectedFields(prev => ({ ...prev, special_labels: checked }))
                                     }
                                 />
@@ -300,9 +300,9 @@ export default function ModerationLocationsTab({ locations }) {
                         </Button>
                         <Button
                             className="bg-purple-600 hover:bg-purple-700"
-                            onClick={() => sendToModerationMutation.mutate({ 
-                                locationIds: selectedLocations, 
-                                fields: selectedFields 
+                            onClick={() => sendToModerationMutation.mutate({
+                                locationIds: selectedLocations,
+                                fields: selectedFields
                             })}
                             disabled={sendToModerationMutation.isPending || !Object.values(selectedFields).some(v => v)}
                         >
@@ -331,7 +331,7 @@ export default function ModerationLocationsTab({ locations }) {
                 <div className="divide-y divide-neutral-100 dark:divide-neutral-700 max-h-[600px] overflow-y-auto">
                     {filteredLocations.length > 0 ? (
                         filteredLocations.map(location => (
-                            <div 
+                            <div
                                 key={location.id}
                                 className="p-4 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
                                 onClick={() => toggleLocation(location.id)}
@@ -362,8 +362,8 @@ export default function ModerationLocationsTab({ locations }) {
                                         )}
                                     </div>
                                     {location.image_url && (
-                                        <img 
-                                            src={location.image_url} 
+                                        <img
+                                            src={location.image_url}
                                             alt={location.name}
                                             className="w-16 h-16 rounded-lg object-cover shrink-0"
                                         />

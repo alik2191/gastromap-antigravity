@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Sparkles, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { toast } from "sonner";
 import { motion } from 'framer-motion';
 
@@ -100,13 +100,13 @@ export default function PricingSection() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        base44.auth.me().then(setUser).catch(() => { });
+        api.auth.me().then(setUser).catch(() => { });
     }, []);
 
     const handlePurchase = async (plan) => {
         if (!user) {
             toast.info("Please sign in first");
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
 
@@ -119,7 +119,7 @@ export default function PricingSection() {
             else if (plan.id === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
             else endDate.setFullYear(endDate.getFullYear() + 100);
 
-            await base44.entities.Subscription.create({
+            await api.entities.Subscription.create({
                 user_email: user.email,
                 plan: plan.id,
                 status: 'active',

@@ -87,19 +87,38 @@ class SupabaseEntity {
     }
 }
 
-export const base44 = {
+// Export as generic adapter
+export const adapter = {
     auth: {
         me: async () => {
             const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) return null;
+            if (error || !user) {
+                console.log('[Auth] No user found via getUser:', error);
+                return null;
+            }
 
-            const { data: profile } = await supabase
+            console.log('[Auth] User found:', user.email, user.id);
+
+            const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
                 .single();
 
+            if (profileError) {
+                console.error('[Auth] Error fetching profile:', profileError);
+            } else {
+                console.log('[Auth] Profile fetched:', profile);
+            }
+
             const finalRole = profile?.role || user.user_metadata?.role || 'user';
+
+            console.log('[Auth] Final Role Determination:', {
+                profileRole: profile?.role,
+                metadataRole: user.user_metadata?.role,
+                calculated: finalRole
+            });
+
             return {
                 ...user.user_metadata,
                 ...profile,
@@ -134,12 +153,40 @@ export const base44 = {
             if (error) throw error;
 
             // Also update profiles table if needed
-            const { data: profile } = await supabase
+            // Filter out fields that might not be in the profiles table to prevent errors
+            // ideally we should fix the schema, but filtering is safer for now
+            const validColumns = ['full_name', 'avatar_url', 'role', 'points', 'bio', 'notification_settings'];
+            const profileData = {};
+            Object.keys(dbData).forEach(key => {
+                if (validColumns.includes(key)) {
+                    profileData[key] = dbData[key];
+                }
+            });
+
+            if (Object.keys(profileData).length > 0) {
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .update(profileData)
+                    .eq('id', user.id)
+                    .select()
+                    .single();
+
+                if (profileError) {
+                    console.error('[Auth] Error updating profile:', profileError);
+                }
+            } else {
+                console.warn('[Auth] No valid columns to update in profiles table', dbData);
+            }
+
+            // Re-fetch profile to get the absolute latest state
+            const { data: latestProfile } = await supabase
                 .from('profiles')
-                .update(dbData)
+                .select('*')
                 .eq('id', user.id)
-                .select()
                 .single();
+
+            const profile = latestProfile; // use latest matches
+
 
             const finalRole = profile?.role || user.user_metadata?.role || 'user';
             return {
@@ -164,6 +211,8 @@ export const base44 = {
         User: new SupabaseEntity('profiles'), // 'users' is reserved in Supabase auth, usually 'profiles' table is used
         Review: new SupabaseEntity('reviews'),
         LocationBranch: new SupabaseEntity('location_branches'),
+        LocationView: new SupabaseEntity('location_views'),
+        ChatMessage: new SupabaseEntity('chat_messages'),
         // Add Query proxy for compatibility with old sdk usage
         Query: {
             // This is a minimal mock for the Query object if used directly
@@ -194,6 +243,17 @@ export const base44 = {
     // but the mock has integrations.Core.UploadFile
     integrations: {
         Core: {
+            InvokeLLM: async (params) => {
+                // Bridge to Supabase Edge Function 'invoke-llm'
+                const { data, error } = await supabase.functions.invoke('invoke-llm', {
+                    body: params
+                });
+                if (error) {
+                    console.error('LLM invocation failed:', error);
+                    throw error;
+                }
+                return data;
+            },
             UploadFile: async ({ file }) => {
                 // Upload to Supabase Storage 'uploads' bucket
                 const fileName = `${Date.now()}-${file.name}`;
@@ -217,12 +277,19 @@ export const base44 = {
                 };
             },
             InvokeLLM: async ({ prompt, response_json_schema }) => {
-                // Call Supabase Edge Function 'invoke-llm'
-                const { data, error } = await supabase.functions.invoke('invoke-llm', {
-                    body: { prompt, response_json_schema }
-                });
-                if (error) throw error;
-                return data;
+                // Mock AI response to prevent crash since Edge Function is missing
+                console.warn('AI Edge Function missing. Returning mock response.');
+
+                // Return a valid JSON structure if schema is provided, otherwise text
+                if (response_json_schema) {
+                    return {
+                        description: "AI generation is currently unavailable. Please write the description manually.",
+                        tags: ["manual", "pending"],
+                        category: "cafe"
+                    };
+                }
+
+                return "AI generation is currently unavailable. Please write the description manually.";
             },
             SendEmail: async () => ({ success: true }),
             SendSMS: async () => ({ success: true }),

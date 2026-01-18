@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-    Eye, Heart, Star, MapPin, TrendingUp, Globe, 
+import {
+    Eye, Heart, Star, MapPin, TrendingUp, Globe,
     ArrowLeft, Loader2, Search, ChevronRight, MessageSquare,
     EyeOff
 } from "lucide-react";
@@ -31,22 +31,22 @@ export default function AnalyticsTab() {
     // Fetch all data
     const { data: locations = [], isLoading: loadingLocations } = useQuery({
         queryKey: ['analytics-locations'],
-        queryFn: () => base44.entities.Location.list()
+        queryFn: () => api.entities.Location.list()
     });
 
     const { data: views = [], isLoading: loadingViews } = useQuery({
         queryKey: ['analytics-views'],
-        queryFn: () => base44.entities.LocationView.list()
+        queryFn: () => api.entities.LocationView.list()
     });
 
     const { data: savedLocations = [], isLoading: loadingSaved } = useQuery({
         queryKey: ['analytics-saved'],
-        queryFn: () => base44.entities.SavedLocation.list()
+        queryFn: () => api.entities.SavedLocation.list()
     });
 
     const { data: reviews = [], isLoading: loadingReviews, refetch: refetchReviews } = useQuery({
         queryKey: ['analytics-reviews'],
-        queryFn: () => base44.entities.Review.list('-created_date')
+        queryFn: () => api.entities.Review.list('-created_date')
     });
 
     // Calculate analytics for locations
@@ -62,7 +62,7 @@ export default function AnalyticsTab() {
                 threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
                 return reviewDate > threeDaysAgo;
             });
-            const avgRating = visibleReviews.length > 0 
+            const avgRating = visibleReviews.length > 0
                 ? (visibleReviews.reduce((sum, r) => sum + r.rating, 0) / visibleReviews.length).toFixed(1)
                 : 0;
 
@@ -80,12 +80,12 @@ export default function AnalyticsTab() {
     }, [locations, views, savedLocations, reviews]);
 
     // Filter by search
-    const filteredBySearch = searchQuery 
-        ? locationsWithAnalytics.filter(l => 
+    const filteredBySearch = searchQuery
+        ? locationsWithAnalytics.filter(l =>
             l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             l.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             l.country?.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+        )
         : locationsWithAnalytics;
 
     // Country aggregation
@@ -132,7 +132,7 @@ export default function AnalyticsTab() {
 
     const handleToggleReviewVisibility = async (review) => {
         try {
-            await base44.entities.Review.update(review.id, { is_hidden: !review.is_hidden });
+            await api.entities.Review.update(review.id, { is_hidden: !review.is_hidden });
             toast.success(review.is_hidden ? 'Отзыв снова виден пользователям' : 'Отзыв скрыт от пользователей');
             refetchReviews();
         } catch (error) {
@@ -220,7 +220,7 @@ export default function AnalyticsTab() {
             {/* Search */}
             <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-                <Input 
+                <Input
                     placeholder="Поиск по названию, городу или стране..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -237,7 +237,7 @@ export default function AnalyticsTab() {
                     {selectedCountry && (
                         <>
                             <span>/</span>
-                            <button 
+                            <button
                                 onClick={() => {
                                     setBrowsingLevel('cities');
                                     setSelectedCity(null);
@@ -391,7 +391,7 @@ export default function AnalyticsTab() {
                     <CardContent>
                         <div className="space-y-3">
                             {locationsInCity.map(location => (
-                                <div 
+                                <div
                                     key={location.id}
                                     className="shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl p-3 hover:shadow-md transition-all bg-white dark:bg-neutral-900"
                                 >
@@ -401,8 +401,8 @@ export default function AnalyticsTab() {
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{location.address}</p>
                                         </div>
                                         {location.image_url && (
-                                            <img 
-                                                src={location.image_url} 
+                                            <img
+                                                src={location.image_url}
                                                 alt={location.name}
                                                 className="w-12 h-12 md:w-14 md:h-14 object-cover rounded-lg shrink-0"
                                             />
@@ -478,13 +478,12 @@ export default function AnalyticsTab() {
                         {reviews
                             .filter(r => r.location_id === selectedLocation?.id)
                             .map(review => (
-                                <div 
+                                <div
                                     key={review.id}
-                                    className={`rounded-xl p-4 transition-all ${
-                                        review.is_hidden 
-                                            ? 'border-0 dark:border dark:border-red-900 bg-red-50 dark:bg-red-950/30 shadow-sm' 
+                                    className={`rounded-xl p-4 transition-all ${review.is_hidden
+                                            ? 'border-0 dark:border dark:border-red-900 bg-red-50 dark:bg-red-950/30 shadow-sm'
                                             : 'shadow-sm border-0 dark:border dark:border-neutral-700 bg-white dark:bg-neutral-900'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-start justify-between gap-4 mb-3">
                                         <div className="flex-1">
@@ -492,8 +491,8 @@ export default function AnalyticsTab() {
                                                 <span className="font-semibold text-neutral-900 dark:text-neutral-100">{review.user_name}</span>
                                                 <div className="flex items-center gap-1">
                                                     {[...Array(5)].map((_, i) => (
-                                                        <Star 
-                                                            key={i} 
+                                                        <Star
+                                                            key={i}
                                                             className={`w-3 h-3 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`}
                                                         />
                                                     ))}
@@ -501,7 +500,7 @@ export default function AnalyticsTab() {
                                             </div>
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400">{review.user_email}</p>
                                         </div>
-                                        
+
                                         <div className="text-right">
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                                                 {format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}

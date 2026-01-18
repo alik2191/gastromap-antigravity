@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Loader2, MessageSquarePlus } from "lucide-react";
 import { useLanguage } from '../LanguageContext';
 
@@ -34,7 +34,7 @@ export default function FeedbackModal({ isOpen, onOpenChange, user }) {
 
         setLoading(true);
         try {
-            await base44.entities.Feedback.create({
+            await api.entities.Feedback.create({
                 user_email: user?.email || 'anonymous',
                 user_name: user?.full_name || 'Anonymous',
                 message: message.trim(),
@@ -82,7 +82,7 @@ export default function FeedbackModal({ isOpen, onOpenChange, user }) {
                     </div>
                     <div className="space-y-2">
                         <Label className="text-neutral-900 dark:text-neutral-300">{t('feedbackMessage') || 'Сообщение'}</Label>
-                        <Textarea 
+                        <Textarea
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             placeholder={t('feedbackPlaceholder') || 'Ваше сообщение...'}

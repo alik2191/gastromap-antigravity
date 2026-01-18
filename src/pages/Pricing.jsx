@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight, Star, Shield, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -56,11 +56,11 @@ export default function Pricing() {
     useEffect(() => {
         const checkUserAndSubscription = async () => {
             try {
-                const userData = await base44.auth.me();
+                const userData = await api.auth.me();
                 setUser(userData);
 
                 // Check for active subscription
-                const subs = await base44.entities.Subscription.filter({
+                const subs = await api.entities.Subscription.filter({
                     user_email: userData.email,
                     status: 'active'
                 });
@@ -86,7 +86,7 @@ export default function Pricing() {
         if (!user) {
             // Force login before purchase
             toast.info("Please sign in first");
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
 
@@ -99,7 +99,7 @@ export default function Pricing() {
             else if (plan.id === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
             else endDate.setFullYear(endDate.getFullYear() + 100);
 
-            await base44.entities.Subscription.create({
+            await api.entities.Subscription.create({
                 user_email: user.email,
                 plan: plan.id,
                 status: 'active',
@@ -239,10 +239,10 @@ export default function Pricing() {
                                         onClick={() => handlePurchase(plan)}
                                         disabled={loading || checkingSubscription}
                                         className={`w-full h-14 rounded-2xl text-base font-semibold transition-transform active:scale-95 ${plan.id === 'yearly'
-                                                ? 'bg-white text-black hover:bg-neutral-200'
-                                                : plan.id === 'lifetime'
-                                                    ? 'bg-white text-blue-600 hover:bg-blue-50'
-                                                    : 'bg-neutral-900 text-white hover:bg-neutral-800'
+                                            ? 'bg-white text-black hover:bg-neutral-200'
+                                            : plan.id === 'lifetime'
+                                                ? 'bg-white text-blue-600 hover:bg-blue-50'
+                                                : 'bg-neutral-900 text-white hover:bg-neutral-800'
                                             }`}
                                     >
                                         {loading ? 'Processing...' : checkingSubscription ? 'Checking...' : 'Choose Plan'}

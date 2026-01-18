@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { createPageUrl } from "@/utils";
 import { Loader2 } from "lucide-react";
 
@@ -7,7 +7,7 @@ export default function AuthCallback() {
     useEffect(() => {
         const checkRole = async () => {
             try {
-                const user = await base44.auth.me();
+                const user = await api.auth.me();
                 if (user.role === 'admin') {
                     window.location.href = createPageUrl('Admin');
                 } else {
@@ -18,7 +18,7 @@ export default function AuthCallback() {
                 window.location.href = createPageUrl('Home');
             }
         };
-        
+
         checkRole();
     }, []);
 

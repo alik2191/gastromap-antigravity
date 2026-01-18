@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
+import {
     MapPin, Star, Heart, Check, X, Sparkles, AlertCircle, Clock, Phone, Calendar,
     Instagram, Facebook, Youtube, Linkedin, Twitter, Globe
 } from "lucide-react";
@@ -19,10 +19,10 @@ import { createPageUrl } from "@/utils";
 import ReviewSection from './ReviewSection';
 import AdminNotesList from './AdminNotesList';
 import { useLanguage } from '../LanguageContext';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { typeLabels, typeColors } from '../constants';
 
-const LocationCard = memo(function LocationCard({ 
+const LocationCard = memo(function LocationCard({
     location, savedLocation, onSave, onUpdate, user,
     isOpen, onOpenChange
 }) {
@@ -30,7 +30,7 @@ const LocationCard = memo(function LocationCard({
     const [internalOpen, setInternalOpen] = useState(false);
     const isControlled = typeof isOpen !== 'undefined';
     const showDetail = isControlled ? isOpen : internalOpen;
-    
+
     const handleOpenChange = (open) => {
         if (isControlled) {
             onOpenChange?.(open);
@@ -53,8 +53,8 @@ const LocationCard = memo(function LocationCard({
         const trackView = async () => {
             if (showDetail && !viewTracked && location?.id) {
                 try {
-                    const currentUser = await base44.auth.me().catch(() => null);
-                    await base44.entities.LocationView.create({
+                    const currentUser = await api.auth.me().catch(() => null);
+                    await api.entities.LocationView.create({
                         location_id: location.id,
                         user_email: currentUser?.email || 'anonymous',
                         viewed_at: new Date().toISOString()
@@ -71,25 +71,25 @@ const LocationCard = memo(function LocationCard({
     const { data: reviews = [] } = useQuery({
         queryKey: ['reviews', location.id],
         queryFn: async () => {
-            const allReviews = await base44.entities.Review.filter({ location_id: location.id });
+            const allReviews = await api.entities.Review.filter({ location_id: location.id });
             return allReviews.filter(r => !r.is_hidden);
         },
         enabled: showDetail
     });
 
-    const averageRating = reviews.length > 0 
+    const averageRating = reviews.length > 0
         ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
         : 0;
 
     // Check if location was updated after user saved it
-    const hasUpdates = savedLocation && location.updated_date && 
+    const hasUpdates = savedLocation && location.updated_date &&
         new Date(location.updated_date) > new Date(savedLocation.created_date);
-    
-    const wasRecentlyUpdated = location.updated_date && 
+
+    const wasRecentlyUpdated = location.updated_date &&
         (Date.now() - new Date(location.updated_date).getTime()) < 7 * 24 * 60 * 60 * 1000; // 7 days
-    
+
     // Check if location is new (created within last 14 days)
-    const isNew = location.created_date && 
+    const isNew = location.created_date &&
         new Date(location.created_date) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
     // Get localized content (NOT name or address - those are unique/proper nouns)
@@ -132,7 +132,7 @@ const LocationCard = memo(function LocationCard({
             toast.error(t('noteCannotBeEmpty'));
             return;
         }
-        
+
         try {
             if (savedLocation) {
                 await onUpdate(savedLocation.id, { personal_note: note });
@@ -151,17 +151,16 @@ const LocationCard = memo(function LocationCard({
             <div
                 onClick={() => handleOpenChange(true)}
                 data-location-id={location.id}
-                className={`group bg-white dark:bg-neutral-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 dark:hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full flex flex-col relative ${
-                    isNew 
-                        ? 'border-2 border-blue-400 dark:border-blue-500 animate-pulse-slow ring-2 ring-blue-400/20' 
+                className={`group bg-white dark:bg-neutral-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 dark:hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full flex flex-col relative ${isNew
+                        ? 'border-2 border-blue-400 dark:border-blue-500 animate-pulse-slow ring-2 ring-blue-400/20'
                         : hasUpdates && wasRecentlyUpdated
-                            ? 'border-2 border-purple-400 dark:border-purple-500 ring-2 ring-purple-400/20' 
+                            ? 'border-2 border-purple-400 dark:border-purple-500 ring-2 ring-purple-400/20'
                             : 'border border-neutral-100 dark:border-neutral-700'
-                }`}
+                    }`}
             >
                 <div className="aspect-[16/10] overflow-hidden relative">
-                    <img 
-                        src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80"} 
+                    <img
+                        src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80"}
                         alt={`Photo of ${location.name} in ${localizedCity}`}
                         loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -238,8 +237,8 @@ const LocationCard = memo(function LocationCard({
                         <div className="flex items-center gap-2">
                             <div className="flex gap-0.5">
                                 {[...Array(5)].map((_, i) => (
-                                    <Star 
-                                        key={i} 
+                                    <Star
+                                        key={i}
                                         className={`w-3.5 h-3.5 ${i < Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-stone-300'}`}
                                     />
                                 ))}
@@ -255,16 +254,16 @@ const LocationCard = memo(function LocationCard({
                 <DialogContent className="p-0 max-w-2xl max-h-[95vh] overflow-hidden flex flex-col gap-0 sm:rounded-3xl [&>button]:hidden bg-white dark:bg-neutral-800 dark:border-neutral-700 z-[9999]">
                     {/* Hero Image Section */}
                     <div className="relative h-[200px] sm:h-[350px] shrink-0">
-                        <img 
-                            src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80"} 
+                        <img
+                            src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80"}
                             alt={location.name}
                             loading="lazy"
                             className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                        
+
                         {/* Close Button */}
-                        <button 
+                        <button
                             onClick={() => handleOpenChange(false)}
                             className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg z-50"
                             aria-label="Close location details"
@@ -287,17 +286,16 @@ const LocationCard = memo(function LocationCard({
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button 
+                                    <Button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleSave('wishlist');
                                         }}
                                         disabled={saving}
-                                        className={`flex-1 rounded-full h-12 font-medium ${
-                                            savedLocation?.list_type === 'wishlist' 
-                                                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                                        className={`flex-1 rounded-full h-12 font-medium ${savedLocation?.list_type === 'wishlist'
+                                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                                 : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                        }`}
+                                            }`}
                                         aria-label="Save to wishlist"
                                     >
                                         <Heart className={`w-4 h-4 mr-2 ${savedLocation?.list_type === 'wishlist' ? 'fill-current' : ''}`} />
@@ -312,16 +310,15 @@ const LocationCard = memo(function LocationCard({
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button 
+                                    <Button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleSave('visited');
                                         }}
                                         disabled={saving}
                                         variant="outline"
-                                        className={`flex-1 rounded-full h-12 font-medium ${
-                                            savedLocation?.list_type === 'visited' ? 'bg-green-50 text-green-700 border-green-200' : ''
-                                        }`}
+                                        className={`flex-1 rounded-full h-12 font-medium ${savedLocation?.list_type === 'visited' ? 'bg-green-50 text-green-700 border-green-200' : ''
+                                            }`}
                                         aria-label="Mark as visited"
                                     >
                                         <Check className="w-4 h-4 mr-2" />
@@ -332,26 +329,26 @@ const LocationCard = memo(function LocationCard({
                                     <p>{savedLocation?.list_type === 'visited' ? t('visited') : t('markAsVisited')}</p>
                                 </TooltipContent>
                             </Tooltip>
-                            </TooltipProvider>
-                            </div>
+                        </TooltipProvider>
+                    </div>
 
                     {/* Content Section - Scrollable */}
                     <div className="overflow-y-auto flex-1">
                         <Tabs defaultValue="overview" className="w-full">
                             <TabsList className="w-full justify-start rounded-none border-b dark:border-neutral-700 bg-transparent h-auto p-0">
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="overview"
                                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-neutral-100 data-[state=active]:bg-transparent px-6 py-3 text-neutral-700 dark:text-neutral-300 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100"
                                 >
                                     {t('overview')}
                                 </TabsTrigger>
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="reviews"
                                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-neutral-100 data-[state=active]:bg-transparent px-6 py-3 text-neutral-700 dark:text-neutral-300 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100"
                                 >
                                     {t('reviews')}
                                 </TabsTrigger>
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="notes"
                                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-neutral-100 data-[state=active]:bg-transparent px-6 py-3 text-neutral-700 dark:text-neutral-300 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100"
                                 >
@@ -381,8 +378,8 @@ const LocationCard = memo(function LocationCard({
                                         ))}
                                         <div className="flex gap-0.5 ml-auto">
                                             {[...Array(5)].map((_, i) => (
-                                                <Star 
-                                                    key={i} 
+                                                <Star
+                                                    key={i}
                                                     className={`w-4 h-4 ${i < 4 ? 'fill-amber-400 text-amber-400' : 'text-neutral-300 dark:text-neutral-600'}`}
                                                 />
                                             ))}
@@ -391,11 +388,11 @@ const LocationCard = memo(function LocationCard({
 
                                     {/* Description */}
                                     {localizedDescription && (
-                                    <div className="pb-4 border-b dark:border-neutral-700">
-                                        <p className="text-neutral-900 dark:text-neutral-300 leading-relaxed text-sm">
-                                            {localizedDescription}
-                                        </p>
-                                    </div>
+                                        <div className="pb-4 border-b dark:border-neutral-700">
+                                            <p className="text-neutral-900 dark:text-neutral-300 leading-relaxed text-sm">
+                                                {localizedDescription}
+                                            </p>
+                                        </div>
                                     )}
 
                                     {/* Curator's Tip */}
@@ -415,10 +412,10 @@ const LocationCard = memo(function LocationCard({
                                             </p>
                                             {location.updated_date && hasUpdates && (
                                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                                                    {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', { 
-                                                        day: 'numeric', 
-                                                        month: 'long', 
-                                                        year: 'numeric' 
+                                                    {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric'
                                                     })}
                                                 </p>
                                             )}
@@ -439,10 +436,10 @@ const LocationCard = memo(function LocationCard({
                                             <p className="text-neutral-900 dark:text-neutral-300 leading-relaxed text-sm">{localizedMustTry}</p>
                                             {location.updated_date && hasUpdates && (
                                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                                                    {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', { 
-                                                        day: 'numeric', 
-                                                        month: 'long', 
-                                                        year: 'numeric' 
+                                                    {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric'
                                                     })}
                                                 </p>
                                             )}
@@ -460,7 +457,7 @@ const LocationCard = memo(function LocationCard({
                                         </p>
                                         {location.latitude && location.longitude && (
                                             <div className="flex flex-wrap gap-2">
-                                                <a 
+                                                <a
                                                     href={`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
@@ -468,7 +465,7 @@ const LocationCard = memo(function LocationCard({
                                                 >
                                                     Google Maps →
                                                 </a>
-                                                <a 
+                                                <a
                                                     href={`http://maps.apple.com/?daddr=${location.latitude},${location.longitude}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
@@ -508,9 +505,9 @@ const LocationCard = memo(function LocationCard({
                                                     <Calendar className="w-4 h-4 text-neutral-500 dark:text-neutral-400 mt-0.5 shrink-0" />
                                                     <div className="flex-1">
                                                         <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('booking')}</p>
-                                                        <a 
-                                                            href={location.booking_url} 
-                                                            target="_blank" 
+                                                        <a
+                                                            href={location.booking_url}
+                                                            target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
                                                         >
@@ -557,14 +554,14 @@ const LocationCard = memo(function LocationCard({
                                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                             {t('personalNotes')}
                                         </label>
-                                        <Textarea 
+                                        <Textarea
                                             value={note}
                                             onChange={(e) => setNote(e.target.value)}
                                             placeholder={t('addPersonalNotes')}
                                             className="min-h-[200px] resize-none text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                         />
                                     </div>
-                                    <Button 
+                                    <Button
                                         onClick={handleUpdateNote}
                                         disabled={saving || !note.trim()}
                                         className="w-full rounded-full h-12 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 disabled:opacity-50"

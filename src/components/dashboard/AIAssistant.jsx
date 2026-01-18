@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-    Sparkles, Send, X, Loader2, MapPin, Star, DollarSign, 
+import {
+    Sparkles, Send, X, Loader2, MapPin, Star, DollarSign,
     MessageCircle, ChevronDown, Map as MapIcon, Calendar, Route, Download
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +27,7 @@ const typeLabels = {
     winery: "Винодельня"
 };
 
-export default function AIAssistant({ 
+export default function AIAssistant({
     allLocations, savedLocations, user, onSave, onUpdate,
     isOpen: externalIsOpen, onOpenChange: externalOnOpenChange, showFloatingButton = true,
     userLocation = null
@@ -65,22 +65,22 @@ export default function AIAssistant({
     useEffect(() => {
         const loadHistory = async () => {
             if (!user || historyLoaded) return;
-            
+
             try {
                 // Find or create conversation
-                const conversations = await base44.entities.ChatMessage.filter({ 
-                    user_email: user.email 
+                const conversations = await api.entities.ChatMessage.filter({
+                    user_email: user.email
                 });
-                
+
                 if (conversations.length > 0) {
                     // Load existing conversation
                     const convId = conversations[0].conversation_id;
                     setConversationId(convId);
-                    
-                    const history = await base44.entities.ChatMessage.filter({ 
-                        conversation_id: convId 
+
+                    const history = await api.entities.ChatMessage.filter({
+                        conversation_id: convId
                     });
-                    
+
                     if (history.length > 0) {
                         const loadedMessages = history
                             .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
@@ -98,14 +98,14 @@ export default function AIAssistant({
                     const newConvId = `conv_${user.email}_${Date.now()}`;
                     setConversationId(newConvId);
                 }
-                
+
                 setHistoryLoaded(true);
             } catch (error) {
                 console.error('Error loading chat history:', error);
                 setHistoryLoaded(true);
             }
         };
-        
+
         if (isOpen && user) {
             loadHistory();
         }
@@ -114,9 +114,9 @@ export default function AIAssistant({
     // Save message to DB
     const saveMessageToDB = async (message, recommendations = null) => {
         if (!user || !conversationId) return;
-        
+
         try {
-            await base44.entities.ChatMessage.create({
+            await api.entities.ChatMessage.create({
                 conversation_id: conversationId,
                 user_email: user.email,
                 role: message.role,
@@ -134,21 +134,21 @@ export default function AIAssistant({
         const mentionedTypes = [];
         const mentionedCities = [];
         const mentionedFeatures = [];
-        
+
         userMessages.forEach(msg => {
             const lower = msg.toLowerCase();
             // Extract types
             if (lower.includes('cafe') || lower.includes('кафе') || lower.includes('coffee')) mentionedTypes.push('cafe');
             if (lower.includes('bar') || lower.includes('бар')) mentionedTypes.push('bar');
             if (lower.includes('restaurant') || lower.includes('ресторан')) mentionedTypes.push('restaurant');
-            
+
             // Extract features
             if (lower.includes('cozy') || lower.includes('уютн')) mentionedFeatures.push('cozyRestaurant');
             if (lower.includes('romantic') || lower.includes('романтич')) mentionedFeatures.push('romanticSetting');
             if (lower.includes('wifi') || lower.includes('вай-фай')) mentionedFeatures.push('freeWifi');
             if (lower.includes('terrace') || lower.includes('outdoor') || lower.includes('терраса')) mentionedFeatures.push('outdoorSeating');
         });
-        
+
         return {
             types: [...new Set(mentionedTypes)],
             features: [...new Set(mentionedFeatures)]
@@ -161,11 +161,11 @@ export default function AIAssistant({
         startDate.setHours(12, 0, 0);
         const endDate = new Date(startDate);
         endDate.setHours(14, 0, 0);
-        
+
         const formatDate = (d) => {
             return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         };
-        
+
         const icsContent = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
@@ -181,7 +181,7 @@ export default function AIAssistant({
             'END:VEVENT',
             'END:VCALENDAR'
         ].join('\r\n');
-        
+
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -247,11 +247,11 @@ export default function AIAssistant({
                     const R = 6371;
                     const dLat = (l.latitude - userLocation.latitude) * Math.PI / 180;
                     const dLon = (l.longitude - userLocation.longitude) * Math.PI / 180;
-                    const a = 
-                        Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    const a =
+                        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                         Math.cos(userLocation.latitude * Math.PI / 180) * Math.cos(l.latitude * Math.PI / 180) *
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     baseData.distance_km = Math.round(R * c * 10) / 10;
                 }
 
@@ -263,7 +263,7 @@ export default function AIAssistant({
                 .filter(s => s.list_type === 'wishlist')
                 .map(s => allLocations.find(l => l.id === s.location_id))
                 .filter(Boolean);
-            
+
             const userVisited = savedLocations
                 .filter(s => s.list_type === 'visited')
                 .map(s => allLocations.find(l => l.id === s.location_id))
@@ -289,12 +289,12 @@ CONVERSATION MEMORY (preferences from chat history):
 
 TIME-BASED PERSONALIZATION:
 - Current time of day: ${(() => {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 11) return 'УТРО (утро) - prioritize breakfast spots';
-    if (hour >= 11 && hour < 18) return 'ДЕНЬ (день) - prioritize lunch/cafe spots';
-    if (hour >= 18 && hour < 21) return 'ВЕЧЕР (вечер) - prioritize dinner/bars';
-    return 'ПОЗДНЯЯ НОЧЬ (поздняя ночь) - prioritize late-night spots';
-})()}
+                    const hour = new Date().getHours();
+                    if (hour >= 6 && hour < 11) return 'УТРО (утро) - prioritize breakfast spots';
+                    if (hour >= 11 && hour < 18) return 'ДЕНЬ (день) - prioritize lunch/cafe spots';
+                    if (hour >= 18 && hour < 21) return 'ВЕЧЕР (вечер) - prioritize dinner/bars';
+                    return 'ПОЗДНЯЯ НОЧЬ (поздняя ночь) - prioritize late-night spots';
+                })()}
 - IMPORTANT: Prioritize locations with matching best_time_to_visit array values and relevant special_labels
 - For УТРО: prefer locations with special_labels containing "breakfastMenu" or "allDayBreakfast"
 - For ДЕНЬ: prefer locations with special_labels containing "lunchMenu" or "businessLunch"
@@ -380,7 +380,7 @@ Response format:
   ]
 }`;
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 response_json_schema: {
                     type: "object",
@@ -390,7 +390,7 @@ Response format:
                         is_route: { type: "boolean" },
                         route_description: { type: "string" },
                         need_online_check: { type: "boolean" },
-                        locations_to_check: { 
+                        locations_to_check: {
                             type: "array",
                             items: { type: "string" }
                         },
@@ -432,7 +432,7 @@ Response format:
                     if (location) {
                         try {
                             // Try Google Places API first
-                            const googlePlacesResult = await base44.functions.invoke('searchGooglePlacesDetailed', {
+                            const googlePlacesResult = await api.functions.invoke('searchGooglePlacesDetailed', {
                                 query: location.name,
                                 latitude: location.latitude,
                                 longitude: location.longitude
@@ -443,7 +443,7 @@ Response format:
                                 verifiedInfo[location.id] = {
                                     opening_hours: placeData.opening_hours,
                                     average_bill: placeData.price_level,
-                                    popular_dishes: placeData.reviews?.length > 0 
+                                    popular_dishes: placeData.reviews?.length > 0
                                         ? placeData.reviews.slice(0, 3).map(r => r.text.substring(0, 100)).join('; ')
                                         : 'Check reviews',
                                     website: placeData.website,
@@ -455,7 +455,7 @@ Response format:
                                 };
                             } else {
                                 // Fallback to LLM with web search
-                                const onlineCheck = await base44.integrations.Core.InvokeLLM({
+                                const onlineCheck = await api.integrations.Core.InvokeLLM({
                                     prompt: `Search for real-time information about: ${location.name} in ${location.city}, ${location.country}. Return structured data.`,
                                     add_context_from_internet: true,
                                     response_json_schema: {
@@ -475,14 +475,14 @@ Response format:
                             console.error('Online check failed:', e);
                         }
                     }
-                    }
+                }
             }
 
             // Create assistant response with recommendations
-            const filteredRecommendations = result.recommendations?.filter(r => 
+            const filteredRecommendations = result.recommendations?.filter(r =>
                 allLocations.find(l => l.id === r.location_id)
             );
-            
+
             const assistantMessage = {
                 role: 'assistant',
                 content: finalMessage,
@@ -521,11 +521,11 @@ Response format:
         const R = 6371; // Earth's radius in km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     };
 
@@ -593,11 +593,10 @@ Response format:
                             {messages.map((message, index) => (
                                 <div key={index}>
                                     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                                            message.role === 'user'
+                                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
                                                 ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white'
                                                 : 'bg-white dark:bg-neutral-700 border border-purple-100 dark:border-neutral-600 text-neutral-800 dark:text-neutral-100'
-                                        }`}>
+                                            }`}>
                                             <p className="text-sm whitespace-pre-wrap leading-relaxed">
                                                 {message.content}
                                             </p>
@@ -621,10 +620,10 @@ Response format:
 
                                     {/* Interactive Map */}
                                     {message.recommendations && message.recommendations.length > 0 && (
-                                       <div className="mt-3 ml-2 space-y-2">
-                                           <div className="bg-white dark:bg-neutral-700 rounded-xl border border-purple-200 dark:border-neutral-600 overflow-hidden">
+                                        <div className="mt-3 ml-2 space-y-2">
+                                            <div className="bg-white dark:bg-neutral-700 rounded-xl border border-purple-200 dark:border-neutral-600 overflow-hidden">
                                                 <div className="h-48 relative">
-                                                    <MapContainer 
+                                                    <MapContainer
                                                         center={(() => {
                                                             const locs = message.recommendations
                                                                 .map(r => allLocations.find(l => l.id === r.location_id))
@@ -661,7 +660,7 @@ Response format:
                                                             {message.recommendations.map((rec, idx) => {
                                                                 const location = allLocations.find(l => l.id === rec.location_id);
                                                                 if (!location || !location.latitude || !location.longitude) return null;
-                                                                
+
                                                                 return (
                                                                     <Marker
                                                                         key={idx}
@@ -680,7 +679,7 @@ Response format:
                                                                         }}
                                                                     >
                                                                         <Popup closeButton={false}>
-                                                                            <div 
+                                                                            <div
                                                                                 className="cursor-pointer p-2"
                                                                                 onClick={() => {
                                                                                     setSelectedLocation(location);
@@ -724,14 +723,14 @@ Response format:
                                                         className="bg-white dark:bg-neutral-700 rounded-xl border border-purple-200 dark:border-neutral-600 overflow-hidden hover:shadow-lg transition-all"
                                                     >
                                                         {/* Image Header */}
-                                                        <div 
+                                                        <div
                                                             className="relative h-32 cursor-pointer"
                                                             onClick={() => {
                                                                 setSelectedLocation(location);
                                                                 setIsLocationCardOpen(true);
                                                             }}
                                                         >
-                                                            <img 
+                                                            <img
                                                                 src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80"}
                                                                 alt={location.name}
                                                                 className="w-full h-full object-cover"
@@ -775,9 +774,9 @@ Response format:
                                                                     <div className="flex items-start gap-2">
                                                                         <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 w-20 flex-shrink-0">Популярное:</span>
                                                                         <span className="text-xs text-neutral-900 dark:text-neutral-100">{info.popular_dishes}</span>
-                                                                        </div>
-                                                                        {info.website && info.website !== "Информация не найдена" && info.website !== "Not found" && (
-                                                                        <a 
+                                                                    </div>
+                                                                    {info.website && info.website !== "Информация не найдена" && info.website !== "Not found" && (
+                                                                        <a
                                                                             href={info.website}
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
@@ -786,33 +785,33 @@ Response format:
                                                                         >
                                                                             🌐 Website →
                                                                         </a>
-                                                                        )}
+                                                                    )}
                                                                 </div>
                                                             )}
 
                                                             {/* Action Buttons */}
                                                             <div className="flex gap-2 mt-2">
                                                                 <Button
-                                                                   onClick={() => {
-                                                                       setSelectedLocation(location);
-                                                                       setIsLocationCardOpen(true);
-                                                                   }}
-                                                                   variant="outline"
-                                                                   className="flex-1 rounded-full h-9 text-xs"
+                                                                    onClick={() => {
+                                                                        setSelectedLocation(location);
+                                                                        setIsLocationCardOpen(true);
+                                                                    }}
+                                                                    variant="outline"
+                                                                    className="flex-1 rounded-full h-9 text-xs"
                                                                 >
-                                                                   Подробнее
+                                                                    Подробнее
                                                                 </Button>
                                                                 <Button
-                                                                   onClick={(e) => {
-                                                                       e.stopPropagation();
-                                                                       generateICS(location);
-                                                                   }}
-                                                                   variant="ghost"
-                                                                   size="icon"
-                                                                   className="rounded-full h-9 w-9 shrink-0"
-                                                                   title="Добавить в календарь"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        generateICS(location);
+                                                                    }}
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="rounded-full h-9 w-9 shrink-0"
+                                                                    title="Добавить в календарь"
                                                                 >
-                                                                   <Calendar className="w-4 h-4" />
+                                                                    <Calendar className="w-4 h-4" />
                                                                 </Button>
                                                             </div>
                                                         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// import { base44 } from '@/api/client';
-import { base44 } from '@/api/client';
+
+import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +45,7 @@ export default function CreatorTools() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const userData = await base44.auth.me();
+                const userData = await api.auth.me();
                 setUser(userData);
 
                 if (userData.role !== 'creator' && userData.custom_role !== 'creator' && userData.role !== 'admin') {
@@ -57,7 +57,7 @@ export default function CreatorTools() {
             } catch (e) {
                 console.error("Auth error:", e);
                 // In demo mode, don't redirect
-                // base44.auth.redirectToLogin(window.location.href);
+                // api.auth.redirectToLogin(window.location.href);
                 setLoading(false);
             }
         };
@@ -65,15 +65,25 @@ export default function CreatorTools() {
         checkAuth();
     }, [navigate]);
 
-    // Загружаем счетчик задач сразу при загрузке страницы
-    const { data: taskCount = 0 } = useQuery({
+    // Загружаем счетчик задач
+    const { data: taskCount = 0, refetch: refetchTaskCount } = useQuery({
         queryKey: ['creatorTasksCount', user?.email],
         queryFn: async () => {
-            const response = await base44.functions.invoke('getCreatorTasks', {});
-            if (response.data.success) {
-                return response.data.remainingCount || 0;
-            }
-            return 0;
+            // Client-side Logic: Count open moderation rounds that I haven't answered
+            // 1. Get all rounds
+            const allRounds = await api.entities.ModerationRound.list();
+
+            // 2. Get my answers
+            const myAnswers = await api.entities.CreatorAnswer.filter({ creator_email: user.email });
+            const answeredRoundIds = myAnswers.map(a => a.review_question_id);
+
+            // 3. Filter rounds
+            const openRounds = allRounds.filter(r =>
+                r.status === 'pending_creator_answers' &&
+                !answeredRoundIds.includes(r.id)
+            );
+
+            return openRounds.length;
         },
         enabled: !!user,
         refetchInterval: 30000
@@ -90,17 +100,50 @@ export default function CreatorTools() {
     }, [activeTab, user]);
 
     const loadNextQuestion = async () => {
+        setLoading(true);
         try {
-            const response = await base44.functions.invoke('getCreatorTasks', {});
-            if (response.data.success) {
-                setCurrentQuestion(response.data.question);
-                setCurrentLocation(response.data.location);
-                setRemainingCount(response.data.remainingCount || 0);
+            // Client-side Logic: Find the next task
+            // 1. Get all rounds again (or optimize later)
+            const allRounds = await api.entities.ModerationRound.list();
+
+            // 2. Get my answers
+            const myAnswers = await api.entities.CreatorAnswer.filter({ creator_email: user.email });
+            const answeredRoundIds = myAnswers.map(a => a.review_question_id);
+
+            // 3. Find first open round
+            const nextRound = allRounds.find(r =>
+                r.status === 'pending_creator_answers' &&
+                !answeredRoundIds.includes(r.id)
+            );
+
+            if (nextRound) {
+                // Fetch the location details
+                const location = await api.entities.Location.get(nextRound.location_id);
+
+                // Construct the "question" object expected by the UI
+                const question = {
+                    id: nextRound.id,
+                    location_id: nextRound.location_id,
+                    question_text: "Is this location suitable for our map?", // Simple default
+                    field_name: "general_suitability",
+                    suggested_answer_text: "Check verify status",
+                    proposed_tags: []
+                };
+
+                setCurrentQuestion(question);
+                setCurrentLocation(location);
+                setRemainingCount(prev => (prev > 0 ? prev : 1)); // Just to keep UI active
                 resetForm();
+            } else {
+                setCurrentQuestion(null);
+                setCurrentLocation(null);
+                setRemainingCount(0);
             }
         } catch (error) {
             console.error('Error loading next question:', error);
             toast.error('Failed to load next question');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -124,53 +167,63 @@ export default function CreatorTools() {
 
         setSubmitting(true);
         try {
-            const response = await base44.functions.invoke('submitCreatorAnswer', {
+            // Client-side Logic: Submit Answer
+            const points = 1;
+
+            // 1. Create Answer
+            await api.entities.CreatorAnswer.create({
                 review_question_id: currentQuestion.id,
+                creator_email: user.email,
                 answer_type: answerType,
                 custom_answer: customAnswer,
                 proposed_tags_add: selectedTagsAdd,
-                proposed_tags_remove: selectedTagsRemove
+                proposed_tags_remove: selectedTagsRemove,
+                points_awarded: points
             });
 
-            if (response.data.success) {
-                toast.success(`Answer submitted! +1 point (Total: ${response.data.total_points})`);
-                await loadNextQuestion();
-            } else {
-                // Если success = false в ответе
-                const errorMsg = response.data.error || 'Unknown error';
-                console.error('Submit failed:', response.data);
-                toast.error(`Failed: ${errorMsg}`);
+            // 2. Update Moderation Round (Optimistic Yes/No count)
+            const round = await api.entities.ModerationRound.get(currentQuestion.id);
+            const updates = {};
+            if (answerType === 'yes') updates.yes_count = (round.yes_count || 0) + 1;
+            if (answerType === 'no') updates.no_count = (round.no_count || 0) + 1;
+
+            // Check if we should close the round (simple logic: 3 votes = approved)
+            if ((round.yes_count || 0) + (answerType === 'yes' ? 1 : 0) >= 3) {
+                updates.status = 'approved';
+                // Also publish the location? Maybe later.
             }
+
+            if (Object.keys(updates).length > 0) {
+                await api.entities.ModerationRound.update(round.id, updates);
+            }
+
+            // 3. Award Points to User
+            const newPoints = (user.creator_points || 0) + points;
+            await api.auth.updateMe({
+                creator_points: newPoints
+            });
+
+            // Update local state
+            setUser(prev => ({ ...prev, creator_points: newPoints }));
+            toast.success(`Answer submitted! +${points} point (Total: ${newPoints})`);
+
+            refetchTaskCount(); // Refresh count
+            await loadNextQuestion();
+
         } catch (error) {
             console.error('Error submitting answer:', error);
-
-            // Извлекаем детальную информацию об ошибке
-            let errorMessage = 'Failed to submit answer';
-
-            if (error.response?.data?.error) {
-                errorMessage = error.response.data.error;
-            } else if (error.data?.error) {
-                errorMessage = error.data.error;
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-
-            console.error('Detailed error:', {
-                message: errorMessage,
-                fullError: error,
-                response: error.response,
-                data: error.data
-            });
-
-            toast.error(`Error: ${errorMessage}`, { duration: 5000 });
+            toast.error('Failed to submit answer');
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleSkip = () => {
+        // Just skip locally for now, maybe log it later
         setAnswerType('skip');
-        setTimeout(() => handleSubmit(), 100);
+        setTimeout(async () => {
+            await loadNextQuestion();
+        }, 100);
     };
 
     const toggleTagAdd = (tag) => {
@@ -193,7 +246,7 @@ export default function CreatorTools() {
     const { data: myLocations = [], isLoading: loadingLocations } = useQuery({
         queryKey: ['creatorLocations', user?.email],
         queryFn: async () => {
-            const locs = await base44.entities.Location.filter({ created_by: user.email });
+            const locs = await api.entities.Location.filter({ created_by: user.email });
 
             // Подсчитываем новые подтверждения (pending -> published за последние 7 дней)
             const sevenDaysAgo = new Date();
@@ -214,13 +267,13 @@ export default function CreatorTools() {
 
     const { data: savedLocations = [] } = useQuery({
         queryKey: ['allSavedLocations'],
-        queryFn: () => base44.entities.SavedLocation.list(),
+        queryFn: () => api.entities.SavedLocation.list(),
         enabled: !!user
     });
 
     const { data: allReviews = [] } = useQuery({
         queryKey: ['allReviews'],
-        queryFn: () => base44.entities.Review.list(),
+        queryFn: () => api.entities.Review.list(),
         enabled: !!user
     });
 

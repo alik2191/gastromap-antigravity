@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,17 +26,17 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
     });
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [deletionRequested, setDeletionRequested] = useState(false);
-    
+
     const queryClient = useQueryClient();
 
     const { data: subscriptions = [] } = useQuery({
         queryKey: ['userSubscriptions', user?.email],
-        queryFn: () => base44.entities.Subscription.filter({ user_email: user.email }),
+        queryFn: () => api.entities.Subscription.filter({ user_email: user.email }),
         enabled: !!user && isOpen
     });
 
     const updateProfileMutation = useMutation({
-        mutationFn: (data) => base44.auth.updateMe(data),
+        mutationFn: (data) => api.auth.updateMe(data),
         onSuccess: () => {
             toast.success('Профиль обновлен');
             queryClient.invalidateQueries(['user']);
@@ -49,7 +49,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
 
         setUploadingAvatar(true);
         try {
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            const { file_url } = await api.integrations.Core.UploadFile({ file });
             setFormData({ ...formData, avatar_url: file_url });
             await updateProfileMutation.mutateAsync({ avatar_url: file_url });
         } catch (error) {
@@ -91,7 +91,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
         }
 
         try {
-            await base44.entities.Feedback.create({
+            await api.entities.Feedback.create({
                 user_email: user.email,
                 user_name: user.full_name,
                 type: 'general',
@@ -139,7 +139,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                 <DialogHeader className="px-6 pt-6 pb-3 border-b border-neutral-100 sticky top-0 bg-white z-10">
                     <div className="flex items-center justify-between">
                         <DialogTitle className="text-2xl font-bold">Мой профиль</DialogTitle>
-                        <button 
+                        <button
                             onClick={() => onOpenChange(false)}
                             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 transition-colors"
                             aria-label="Закрыть"
@@ -151,28 +151,28 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
 
                 <Tabs defaultValue="profile" className="w-full overflow-x-hidden">
                     <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 gap-1.5 px-3 py-2 bg-transparent border-b border-neutral-100 rounded-none h-auto">
-                        <TabsTrigger 
+                        <TabsTrigger
                             value="profile"
                             className="flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1.5 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg py-2 transition-all"
                         >
                             <User className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="text-[10px] md:text-xs font-medium">Профиль</span>
                         </TabsTrigger>
-                        <TabsTrigger 
+                        <TabsTrigger
                             value="notifications"
                             className="flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1.5 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg py-2 transition-all"
                         >
                             <Bell className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="text-[10px] md:text-xs font-medium">Уведомления</span>
                         </TabsTrigger>
-                        <TabsTrigger 
+                        <TabsTrigger
                             value="subscriptions"
                             className="flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1.5 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg py-2 transition-all"
                         >
                             <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="text-[10px] md:text-xs font-medium">Подписки</span>
                         </TabsTrigger>
-                        <TabsTrigger 
+                        <TabsTrigger
                             value="privacy"
                             className="flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1.5 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg py-2 transition-all"
                         >
@@ -186,8 +186,8 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                         <div className="flex flex-col items-center gap-4 py-4">
                             <div className="relative">
                                 {formData.avatar_url ? (
-                                    <img 
-                                        src={formData.avatar_url} 
+                                    <img
+                                        src={formData.avatar_url}
                                         alt="Аватар пользователя"
                                         className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-lg ring-2 ring-blue-100"
                                     />
@@ -202,10 +202,10 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                     ) : (
                                         <Camera className="w-5 h-5 text-white" />
                                     )}
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        className="hidden" 
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
                                         onChange={handleAvatarUpload}
                                         disabled={uploadingAvatar}
                                     />
@@ -224,7 +224,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
 
                             <div>
                                 <Label className="mb-2">Имя</Label>
-                                <Input 
+                                <Input
                                     value={formData.full_name}
                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                                     placeholder="Ваше имя"
@@ -234,7 +234,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
 
                             <div>
                                 <Label className="mb-2">О себе</Label>
-                                <Textarea 
+                                <Textarea
                                     value={formData.bio}
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                     placeholder="Расскажите о себе..."
@@ -250,7 +250,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                 </p>
                             </div>
 
-                            <Button 
+                            <Button
                                 onClick={handleSaveProfile}
                                 disabled={updateProfileMutation.isPending}
                                 className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 font-medium text-sm px-3"
@@ -273,7 +273,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                     </div>
                                     <Switch
                                         checked={notificationSettings.email_notifications}
-                                        onCheckedChange={(checked) => 
+                                        onCheckedChange={(checked) =>
                                             setNotificationSettings({ ...notificationSettings, email_notifications: checked })
                                         }
                                     />
@@ -288,7 +288,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                     </div>
                                     <Switch
                                         checked={notificationSettings.new_locations}
-                                        onCheckedChange={(checked) => 
+                                        onCheckedChange={(checked) =>
                                             setNotificationSettings({ ...notificationSettings, new_locations: checked })
                                         }
                                     />
@@ -303,7 +303,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                     </div>
                                     <Switch
                                         checked={notificationSettings.location_updates}
-                                        onCheckedChange={(checked) => 
+                                        onCheckedChange={(checked) =>
                                             setNotificationSettings({ ...notificationSettings, location_updates: checked })
                                         }
                                     />
@@ -318,14 +318,14 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                     </div>
                                     <Switch
                                         checked={notificationSettings.marketing}
-                                        onCheckedChange={(checked) => 
+                                        onCheckedChange={(checked) =>
                                             setNotificationSettings({ ...notificationSettings, marketing: checked })
                                         }
                                     />
                                 </div>
                             </div>
 
-                            <Button 
+                            <Button
                                 onClick={handleSaveNotifications}
                                 disabled={updateProfileMutation.isPending}
                                 className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 font-medium text-sm mt-6 px-3"
@@ -378,7 +378,7 @@ export default function ProfileModal({ isOpen, onOpenChange, user }) {
                                 <div className="flex-1 min-w-0 overflow-hidden">
                                     <h3 className="font-bold text-amber-900 mb-2 break-words">Удаление данных (GDPR)</h3>
                                     <p className="text-sm text-amber-800 leading-relaxed mb-3 break-words">
-                                        В соответствии с GDPR, вы имеете право запросить удаление всех ваших персональных данных. 
+                                        В соответствии с GDPR, вы имеете право запросить удаление всех ваших персональных данных.
                                         После подтверждения запроса, мы удалим все ваши данные в течение 30 дней.
                                     </p>
                                     <p className="text-xs text-amber-700 mb-4 break-words">

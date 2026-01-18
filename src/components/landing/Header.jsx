@@ -3,21 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 
 export default function Header() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        base44.auth.me()
+        api.auth.me()
             .then(setUser)
             .catch(() => { })
             .finally(() => setLoading(false));
     }, []);
 
     const handleLogin = () => {
-        base44.auth.redirectToLogin(createPageUrl("AuthCallback"));
+        api.auth.redirectToLogin(createPageUrl("AuthCallback"));
     };
 
     return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export default function AIRecommendations({ user, savedLocations, allLocations }
                 })
                 .filter(Boolean);
 
-            const availableLocations = allLocations.slice(0, 50).map(l => 
+            const availableLocations = allLocations.slice(0, 50).map(l =>
                 `${l.name} (${l.type}, ${l.city}, ${l.country})`
             );
 
@@ -64,7 +64,7 @@ Format your response as a JSON array with this structure:
   }
 ]`;
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 response_json_schema: {
                     type: "object",
@@ -142,8 +142,8 @@ Format your response as a JSON array with this structure:
             <Card className="p-6 bg-red-50 border-red-200">
                 <div className="flex items-center justify-between">
                     <span className="text-sm text-red-600">{error}</span>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         size="sm"
                         onClick={generateRecommendations}
                         className="border-red-300 text-red-600 hover:bg-red-100"
@@ -173,8 +173,8 @@ Format your response as a JSON array with this structure:
                             <p className="text-xs text-neutral-600">Personalized for you</p>
                         </div>
                     </div>
-                    <Button 
-                        variant="ghost" 
+                    <Button
+                        variant="ghost"
                         size="sm"
                         onClick={generateRecommendations}
                         disabled={loading}
@@ -188,7 +188,7 @@ Format your response as a JSON array with this structure:
                     <AnimatePresence mode="popLayout">
                         {recommendations.map((rec, index) => {
                             const location = allLocations.find(l => l.name === rec.locationName);
-                            
+
                             return (
                                 <motion.div
                                     key={index}
@@ -219,7 +219,7 @@ Format your response as a JSON array with this structure:
                                                 <p className="text-sm text-neutral-600 line-clamp-2 mb-2">
                                                     {rec.reason}
                                                 </p>
-                                                <Badge 
+                                                <Badge
                                                     variant="secondary"
                                                     className="bg-purple-100 text-purple-700 text-xs"
                                                 >

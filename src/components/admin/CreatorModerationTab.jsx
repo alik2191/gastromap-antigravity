@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { 
+import {
     CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight,
     MessageSquare, Users, Clock, AlertCircle
 } from "lucide-react";
@@ -21,27 +21,27 @@ export default function CreatorModerationTab() {
     const { data: moderationRounds = [], isLoading, refetch } = useQuery({
         queryKey: ['moderationRounds'],
         queryFn: async () => {
-            const pendingReview = await base44.entities.ModerationRound.filter({ 
-                status: 'pending_admin_review' 
+            const pendingReview = await api.entities.ModerationRound.filter({
+                status: 'pending_admin_review'
             }, '-created_date');
-            
-            const pendingCreators = await base44.entities.ModerationRound.filter({ 
-                status: 'pending_creator_answers' 
+
+            const pendingCreators = await api.entities.ModerationRound.filter({
+                status: 'pending_creator_answers'
             }, '-created_date');
-            
+
             return [...pendingReview, ...pendingCreators];
         }
     });
 
     const { data: allAnswers = [] } = useQuery({
         queryKey: ['creatorAnswers'],
-        queryFn: () => base44.entities.CreatorAnswer.list('-created_date')
+        queryFn: () => api.entities.CreatorAnswer.list('-created_date')
     });
 
     const applyMutation = useMutation({
         mutationFn: async ({ roundId, locationId, fieldName, value, tags }) => {
-            const user = await base44.auth.me();
-            
+            const user = await api.auth.me();
+
             // Update location
             const updateData = {};
             if (fieldName === 'special_labels' && tags) {
@@ -49,11 +49,11 @@ export default function CreatorModerationTab() {
             } else if (value) {
                 updateData[fieldName] = value;
             }
-            
-            await base44.asServiceRole.entities.Location.update(locationId, updateData);
-            
+
+            await api.asServiceRole.entities.Location.update(locationId, updateData);
+
             // Update round status
-            await base44.entities.ModerationRound.update(roundId, {
+            await api.entities.ModerationRound.update(roundId, {
                 status: 'applied',
                 admin_id: user.id,
                 admin_decision_date: new Date().toISOString()
@@ -72,8 +72,8 @@ export default function CreatorModerationTab() {
 
     const rejectMutation = useMutation({
         mutationFn: async (roundId) => {
-            const user = await base44.auth.me();
-            await base44.entities.ModerationRound.update(roundId, {
+            const user = await api.auth.me();
+            await api.entities.ModerationRound.update(roundId, {
                 status: 'rejected',
                 admin_id: user.id,
                 admin_decision_date: new Date().toISOString()
@@ -108,7 +108,7 @@ export default function CreatorModerationTab() {
         // Find the question related to this round
         const round = moderationRounds.find(r => r.id === roundId);
         if (!round) return [];
-        
+
         return allAnswers.filter(a => {
             // This is simplified - you might need better logic to link answers to rounds
             return true; // For now, return all

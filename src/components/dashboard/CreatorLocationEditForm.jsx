@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,7 @@ export default function CreatorLocationEditForm({ isOpen, onOpenChange, location
     const loadLocationData = async () => {
         setIsLoading(true);
         try {
-            const locations = await base44.entities.Location.filter({ id: locationId });
+            const locations = await api.entities.Location.filter({ id: locationId });
             if (locations.length > 0) {
                 const location = locations[0];
                 setFormData({
@@ -128,13 +128,13 @@ export default function CreatorLocationEditForm({ isOpen, onOpenChange, location
             let prompt = '';
             let jsonSchema = {};
             const existingText = formData[field];
-            
+
             // Detect language from existing text
             const detectedLang = detectLanguage(existingText);
             const languageInstruction = detectedLang === 'russian' ? 'Write in Russian language.' :
-                                       detectedLang === 'ukrainian' ? 'Write in Ukrainian language.' :
-                                       detectedLang === 'spanish' ? 'Write in Spanish language.' :
-                                       'Write in English language.';
+                detectedLang === 'ukrainian' ? 'Write in Ukrainian language.' :
+                    detectedLang === 'spanish' ? 'Write in Spanish language.' :
+                        'Write in English language.';
 
             if (field === 'description') {
                 if (existingText && existingText.trim()) {
@@ -183,7 +183,7 @@ Provide a short, specific recommendation (just the dish name and brief descripti
                 };
             }
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await api.integrations.Core.InvokeLLM({
                 prompt,
                 add_context_from_internet: !existingText || !existingText.trim(),
                 response_json_schema: jsonSchema
@@ -245,10 +245,10 @@ Provide a short, specific recommendation (just the dish name and brief descripti
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!user) {
             toast.error('Please sign in to edit location');
-            base44.auth.redirectToLogin(window.location.href);
+            api.auth.redirectToLogin(window.location.href);
             return;
         }
 
@@ -262,12 +262,12 @@ Provide a short, specific recommendation (just the dish name and brief descripti
             // Parse and normalize tags through AI if changed
             let normalizedTags = [];
             const rawTags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-            
+
             if (rawTags.length > 0) {
                 try {
                     toast.info('Optimizing tags...');
-                    const tagsResponse = await base44.functions.invoke('normalizeTags', { 
-                        tags: rawTags 
+                    const tagsResponse = await api.functions.invoke('normalizeTags', {
+                        tags: rawTags
                     });
                     if (tagsResponse.data?.normalizedTags) {
                         normalizedTags = tagsResponse.data.normalizedTags;
@@ -293,10 +293,10 @@ Provide a short, specific recommendation (just the dish name and brief descripti
 
             // CRITICAL: Auto-translate ALL Russian content to English
             let translatedData = { ...dataToSubmit };
-            
+
             // Build fields array - translate ANY field with Russian characters
             const fieldsToTranslate = [];
-            
+
             if (dataToSubmit.description?.trim() && /[а-яА-ЯёЁ]/.test(dataToSubmit.description)) {
                 fieldsToTranslate.push({ field: 'description', text: dataToSubmit.description });
             }
@@ -309,10 +309,10 @@ Provide a short, specific recommendation (just the dish name and brief descripti
             if (dataToSubmit.opening_hours?.trim() && /[а-яА-ЯёЁ]/.test(dataToSubmit.opening_hours)) {
                 fieldsToTranslate.push({ field: 'opening_hours', text: dataToSubmit.opening_hours });
             }
-            
+
             if (fieldsToTranslate.length > 0) {
                 toast.info('Translating content to English...');
-                
+
                 const translationPrompt = `Translate the following location data from Russian to English with a LIVELY, HUMOROUS Instagram/Blog style. 
 
 TONE REQUIREMENTS:
@@ -334,7 +334,7 @@ Return format (keep the style fun and lively):
   "opening_hours": "translated opening hours (if provided)"
 }`;
 
-                const translation = await base44.integrations.Core.InvokeLLM({
+                const translation = await api.integrations.Core.InvokeLLM({
                     prompt: translationPrompt,
                     response_json_schema: {
                         type: "object",
@@ -355,7 +355,7 @@ Return format (keep the style fun and lively):
             }
 
             // Update location
-            await base44.entities.Location.update(locationId, {
+            await api.entities.Location.update(locationId, {
                 ...translatedData,
                 latitude: translatedData.latitude ? parseFloat(translatedData.latitude) : null,
                 longitude: translatedData.longitude ? parseFloat(translatedData.longitude) : null,
@@ -391,9 +391,9 @@ Return format (keep the style fun and lively):
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label className="text-neutral-900 dark:text-neutral-300">Name *</Label>
-                                <Input 
+                                <Input
                                     value={formData.name}
-                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder='E.g., "Blue Bottle Coffee"'
                                     required
                                     className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
@@ -401,7 +401,7 @@ Return format (keep the style fun and lively):
                             </div>
                             <div>
                                 <Label className="text-neutral-900 dark:text-neutral-300">Type</Label>
-                                <Select value={formData.type} onValueChange={(v) => setFormData({...formData, type: v})}>
+                                <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
                                     <SelectTrigger className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -421,18 +421,18 @@ Return format (keep the style fun and lively):
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label className="text-neutral-900 dark:text-neutral-300">Country *</Label>
-                                <Input 
+                                <Input
                                     value={formData.country}
-                                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                                     required
                                     className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                                 />
                             </div>
                             <div>
                                 <Label className="text-neutral-900 dark:text-neutral-300">City *</Label>
-                                <Input 
+                                <Input
                                     value={formData.city}
-                                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                                     required
                                     className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                                 />
@@ -441,9 +441,9 @@ Return format (keep the style fun and lively):
 
                         <div>
                             <Label className="text-neutral-900 dark:text-neutral-300">Address *</Label>
-                            <Input 
+                            <Input
                                 value={formData.address}
-                                onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                 required
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
@@ -455,13 +455,13 @@ Return format (keep the style fun and lively):
                                 Coordinates (click on map) *
                             </Label>
                             <div className="h-[200px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
-                                <MapContainer 
-                                    center={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : [52.2297, 21.0122]} 
-                                    zoom={formData.latitude ? 14 : 11} 
+                                <MapContainer
+                                    center={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : [52.2297, 21.0122]}
+                                    zoom={formData.latitude ? 14 : 11}
                                     style={{ height: '100%', width: '100%' }}
                                 >
                                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                    <LocationPicker 
+                                    <LocationPicker
                                         position={formData.latitude && formData.longitude ? [formData.latitude, formData.longitude] : null}
                                         onLocationSelect={(latlng) => {
                                             setFormData({
@@ -474,19 +474,19 @@ Return format (keep the style fun and lively):
                                 </MapContainer>
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-2">
-                                <Input 
+                                <Input
                                     type="number"
                                     step="any"
                                     value={formData.latitude}
-                                    onChange={(e) => setFormData({...formData, latitude: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                                     placeholder="Latitude"
                                     className="font-mono text-xs text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
                                 />
-                                <Input 
+                                <Input
                                     type="number"
                                     step="any"
                                     value={formData.longitude}
-                                    onChange={(e) => setFormData({...formData, longitude: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                                     placeholder="Longitude"
                                     className="font-mono text-xs text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
                                 />
@@ -512,9 +512,9 @@ Return format (keep the style fun and lively):
                                     AI Improve
                                 </Button>
                             </div>
-                            <Textarea 
+                            <Textarea
                                 value={formData.description}
-                                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 rows={3}
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
@@ -539,9 +539,9 @@ Return format (keep the style fun and lively):
                                     AI Improve
                                 </Button>
                             </div>
-                            <Textarea 
+                            <Textarea
                                 value={formData.insider_tip}
-                                onChange={(e) => setFormData({...formData, insider_tip: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, insider_tip: e.target.value })}
                                 rows={2}
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
@@ -566,9 +566,9 @@ Return format (keep the style fun and lively):
                                     AI Improve
                                 </Button>
                             </div>
-                            <Input 
+                            <Input
                                 value={formData.must_try}
-                                onChange={(e) => setFormData({...formData, must_try: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, must_try: e.target.value })}
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
                         </div>
@@ -576,7 +576,7 @@ Return format (keep the style fun and lively):
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label className="text-neutral-900 dark:text-neutral-300">Price Range</Label>
-                                <Select value={formData.price_range} onValueChange={(v) => setFormData({...formData, price_range: v})}>
+                                <Select value={formData.price_range} onValueChange={(v) => setFormData({ ...formData, price_range: v })}>
                                     <SelectTrigger className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -590,9 +590,9 @@ Return format (keep the style fun and lively):
                             </div>
                             <div>
                                 <Label className="text-neutral-900 dark:text-neutral-300">Phone</Label>
-                                <Input 
+                                <Input
                                     value={formData.phone}
-                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                                 />
                             </div>
@@ -600,27 +600,27 @@ Return format (keep the style fun and lively):
 
                         <div>
                             <Label className="text-neutral-900 dark:text-neutral-300">Opening Hours</Label>
-                            <Input 
+                            <Input
                                 value={formData.opening_hours}
-                                onChange={(e) => setFormData({...formData, opening_hours: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
                         </div>
 
                         <div>
                             <Label className="text-neutral-900 dark:text-neutral-300">Website</Label>
-                            <Input 
+                            <Input
                                 value={formData.website}
-                                onChange={(e) => setFormData({...formData, website: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
                         </div>
 
                         <div>
                             <Label className="text-neutral-900 dark:text-neutral-300">Booking URL</Label>
-                            <Input 
+                            <Input
                                 value={formData.booking_url}
-                                onChange={(e) => setFormData({...formData, booking_url: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, booking_url: e.target.value })}
                                 className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                             />
                         </div>
@@ -629,9 +629,9 @@ Return format (keep the style fun and lively):
                             <Label className="text-neutral-900 dark:text-neutral-300 mb-2 block">Image</Label>
                             <div className="space-y-3">
                                 <div className="flex gap-2">
-                                    <Input 
+                                    <Input
                                         value={formData.image_url}
-                                        onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                                         placeholder="https://..."
                                         className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                                     />
@@ -652,8 +652,8 @@ Return format (keep the style fun and lively):
                                             setUploadingImage(true);
                                             try {
                                                 toast.info('Uploading image...');
-                                                const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                                                setFormData(prev => ({...prev, image_url: file_url}));
+                                                const { file_url } = await api.integrations.Core.UploadFile({ file });
+                                                setFormData(prev => ({ ...prev, image_url: file_url }));
                                                 toast.success('Photo uploaded!');
                                             } catch (error) {
                                                 toast.error('Upload error: ' + (error.message || 'Unknown error'));
@@ -674,7 +674,7 @@ Return format (keep the style fun and lively):
                             <Label className="text-neutral-900 dark:text-neutral-300 mb-2 block">Social Media Links</Label>
                             <div className="space-y-2">
                                 <div className="flex gap-2">
-                                    <Input 
+                                    <Input
                                         value={socialLinkInput}
                                         onChange={(e) => setSocialLinkInput(e.target.value)}
                                         placeholder="https://instagram.com/..."
@@ -685,7 +685,7 @@ Return format (keep the style fun and lively):
                                         onClick={() => {
                                             if (socialLinkInput.trim() && socialLinkInput.startsWith('http')) {
                                                 setFormData({
-                                                    ...formData, 
+                                                    ...formData,
                                                     social_links: [...(formData.social_links || []), socialLinkInput.trim()]
                                                 });
                                                 setSocialLinkInput('');
@@ -749,16 +749,15 @@ Return format (keep the style fun and lively):
                                         onClick={() => {
                                             const current = formData.special_labels || [];
                                             if (current.includes(labelItem.id)) {
-                                                setFormData({...formData, special_labels: current.filter(l => l !== labelItem.id)});
+                                                setFormData({ ...formData, special_labels: current.filter(l => l !== labelItem.id) });
                                             } else {
-                                                setFormData({...formData, special_labels: [...current, labelItem.id]});
+                                                setFormData({ ...formData, special_labels: [...current, labelItem.id] });
                                             }
                                         }}
-                                        className={`text-xs ${
-                                            formData.special_labels?.includes(labelItem.id) 
-                                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                        className={`text-xs ${formData.special_labels?.includes(labelItem.id)
+                                                ? 'bg-blue-600 text-white hover:bg-blue-700'
                                                 : 'hover:bg-blue-50 hover:text-blue-600'
-                                        }`}
+                                            }`}
                                     >
                                         {labelItem.emoji} {labelItem.label}
                                     </Button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// import { base44 } from '@/api/client';
-import { base44 } from '@/api/client';
+
+import { api } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Bell, CreditCard, Trash2, Loader2, Upload, Camera, ArrowLeft, Settings, Heart, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from '../components/LanguageContext';
@@ -47,7 +48,7 @@ export default function Profile() {
     useEffect(() => {
         const loadUser = async () => {
             try {
-                const userData = await base44.auth.me();
+                const userData = await api.auth.me();
                 setUser(userData);
                 setFormData({
                     full_name: userData.full_name || '',
@@ -88,19 +89,19 @@ export default function Profile() {
 
     const { data: subscriptions = [] } = useQuery({
         queryKey: ['userSubscriptions', user?.email],
-        queryFn: () => base44.entities.Subscription.filter({ user_email: user.email }),
+        queryFn: () => api.entities.Subscription.filter({ user_email: user.email }),
         enabled: !!user
     });
 
     const { data: savedLocations = [] } = useQuery({
         queryKey: ['savedLocations', user?.email],
-        queryFn: () => base44.entities.SavedLocation.filter({ user_email: user.email }),
+        queryFn: () => api.entities.SavedLocation.filter({ user_email: user.email }),
         enabled: !!user
     });
 
     const { data: reviews = [] } = useQuery({
         queryKey: ['userReviews', user?.email],
-        queryFn: () => base44.entities.Review.filter({ user_email: user.email }),
+        queryFn: () => api.entities.Review.filter({ user_email: user.email }),
         enabled: !!user
     });
 
@@ -150,11 +151,14 @@ export default function Profile() {
     const visitedCount = savedLocations.filter(s => s.list_type === 'visited').length;
     const wishlistCount = savedLocations.filter(s => s.list_type === 'wishlist').length;
 
+    const { refreshUser } = useAuth(); // Get refresh function from context
+
     const updateProfileMutation = useMutation({
-        mutationFn: (data) => base44.auth.updateMe(data),
-        onSuccess: () => {
+        mutationFn: (data) => api.auth.updateMe(data),
+        onSuccess: async () => {
             toast.success(t('profileUpdated'));
             queryClient.invalidateQueries(['user']);
+            await refreshUser(); // Force global auth context to update
         }
     });
 
@@ -164,7 +168,7 @@ export default function Profile() {
 
         setUploadingAvatar(true);
         try {
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            const { file_url } = await api.integrations.Core.UploadFile({ file });
             setFormData({ ...formData, avatar_url: file_url });
             await updateProfileMutation.mutateAsync({ avatar_url: file_url });
         } catch (error) {
@@ -206,7 +210,7 @@ export default function Profile() {
         }
 
         try {
-            await base44.entities.Feedback.create({
+            await api.entities.Feedback.create({
                 user_email: user.email,
                 user_name: user.full_name,
                 type: 'general',

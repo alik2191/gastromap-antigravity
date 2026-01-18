@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/client';
+import { api } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ export default function LocationPublic() {
     const { data: location, isLoading } = useQuery({
         queryKey: ['public-location', locationId],
         queryFn: async () => {
-            const locs = await base44.entities.Location.filter({ id: locationId });
+            const locs = await api.entities.Location.filter({ id: locationId });
             return locs[0];
         },
         enabled: !!locationId
@@ -31,11 +31,11 @@ export default function LocationPublic() {
 
     const { data: reviews = [] } = useQuery({
         queryKey: ['reviews', locationId],
-        queryFn: () => base44.entities.Review.filter({ location_id: locationId, status: 'approved' }),
+        queryFn: () => api.entities.Review.filter({ location_id: locationId, status: 'approved' }),
         enabled: !!locationId
     });
 
-    const averageRating = reviews.length > 0 
+    const averageRating = reviews.length > 0
         ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
         : 0;
 
@@ -53,7 +53,7 @@ export default function LocationPublic() {
                 title: location.name,
                 text: `Посмотри это место: ${location.name}`,
                 url: shareUrl
-            }).catch(() => {});
+            }).catch(() => { });
         } else {
             navigator.clipboard.writeText(shareUrl);
             toast.success('Ссылка скопирована!');
@@ -91,22 +91,22 @@ export default function LocationPublic() {
         <div className="min-h-screen bg-[#F2F2F7]">
             {/* Hero Section */}
             <div className="relative h-[60vh] max-h-[500px]">
-                <img 
-                    src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80"} 
+                <img
+                    src={location.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80"}
                     alt={location.name}
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                
+
                 <div className="absolute top-6 left-6 right-6 flex items-center justify-between">
                     <Link to={createPageUrl("Home")}>
                         <Button variant="ghost" size="icon" className="bg-white/90 backdrop-blur-sm rounded-full hover:bg-white">
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
                     </Link>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleShare}
                         className="bg-white/90 backdrop-blur-sm rounded-full hover:bg-white"
                     >
@@ -124,8 +124,8 @@ export default function LocationPublic() {
                         <div className="flex items-center gap-2">
                             <div className="flex gap-0.5">
                                 {[...Array(5)].map((_, i) => (
-                                    <Star 
-                                        key={i} 
+                                    <Star
+                                        key={i}
                                         className={`w-5 h-5 ${i < Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-white/50'}`}
                                     />
                                 ))}
@@ -190,7 +190,7 @@ export default function LocationPublic() {
                 {(location.opening_hours || location.phone || location.booking_url || location.website) && (
                     <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
                         <h4 className="font-semibold text-neutral-900 mb-4">Дополнительная информация</h4>
-                        
+
                         {location.opening_hours && (
                             <div className="flex items-start gap-3">
                                 <Clock className="w-5 h-5 text-neutral-500 mt-0.5" />
@@ -200,7 +200,7 @@ export default function LocationPublic() {
                                 </div>
                             </div>
                         )}
-                        
+
                         {location.phone && (
                             <div className="flex items-start gap-3">
                                 <Phone className="w-5 h-5 text-neutral-500 mt-0.5" />
@@ -210,15 +210,15 @@ export default function LocationPublic() {
                                 </div>
                             </div>
                         )}
-                        
+
                         {location.website && (
                             <div className="flex items-start gap-3">
                                 <Globe className="w-5 h-5 text-neutral-500 mt-0.5" />
                                 <div>
                                     <p className="text-sm text-neutral-500">Сайт</p>
-                                    <a 
-                                        href={location.website} 
-                                        target="_blank" 
+                                    <a
+                                        href={location.website}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 hover:text-blue-700"
                                     >
@@ -227,15 +227,15 @@ export default function LocationPublic() {
                                 </div>
                             </div>
                         )}
-                        
+
                         {location.booking_url && (
                             <div className="flex items-start gap-3">
                                 <Calendar className="w-5 h-5 text-neutral-500 mt-0.5" />
                                 <div>
                                     <p className="text-sm text-neutral-500">Бронирование</p>
-                                    <a 
-                                        href={location.booking_url} 
-                                        target="_blank" 
+                                    <a
+                                        href={location.booking_url}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 hover:text-blue-700"
                                     >
@@ -254,7 +254,7 @@ export default function LocationPublic() {
                         {location.address || `${localizedCity}, {localizedCountry}`}
                     </p>
                     {location.latitude && location.longitude && (
-                        <a 
+                        <a
                             href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"

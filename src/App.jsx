@@ -14,7 +14,7 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
-const PUBLIC_PAGES = ['Home', 'Login', 'AuthCallback', 'Terms', 'Privacy', 'LocationPublic', 'Support', 'Pricing', 'Home2'];
+const PUBLIC_PAGES = ['Home', 'Login', 'AuthCallback', 'Terms', 'Privacy', 'LocationPublic', 'Support', 'Pricing'];
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
