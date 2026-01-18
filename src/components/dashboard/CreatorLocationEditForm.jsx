@@ -109,13 +109,7 @@ export default function CreatorLocationEditForm({ isOpen, onOpenChange, location
         }
     };
 
-    const detectLanguage = (text) => {
-        if (!text) return 'english';
-        if (/[а-яА-ЯёЁ]/.test(text)) return 'russian';
-        if (/[іїєґІЇЄҐ]/.test(text)) return 'ukrainian';
-        if (/[áéíóúñ¿¡]/.test(text)) return 'spanish';
-        return 'english';
-    };
+
 
     const generateContent = async (field) => {
         if (!formData.name) {
@@ -125,77 +119,28 @@ export default function CreatorLocationEditForm({ isOpen, onOpenChange, location
 
         setGeneratingContent(prev => ({ ...prev, [field]: true }));
         try {
-            let prompt = '';
-            let jsonSchema = {};
             const existingText = formData[field];
 
-            // Detect language from existing text
-            const detectedLang = detectLanguage(existingText);
-            const languageInstruction = detectedLang === 'russian' ? 'Write in Russian language.' :
-                detectedLang === 'ukrainian' ? 'Write in Ukrainian language.' :
-                    detectedLang === 'spanish' ? 'Write in Spanish language.' :
-                        'Write in English language.';
-
-            if (field === 'description') {
-                if (existingText && existingText.trim()) {
-                    prompt = `You are a professional copywriter and content editor. Improve and enhance the following description for "${formData.name}" - a ${formData.type} in ${formData.city}, ${formData.country}.
-                    
-Current description: "${existingText}"
-
-Rewrite it to be more compelling, engaging, and professional (2-3 sentences). Make it enticing and highlight what makes this place special. Keep the same tone and key information, but make it better written and more attractive. ${languageInstruction}`;
-                } else {
-                    prompt = `Write a compelling, engaging description (2-3 sentences) for "${formData.name}" - a ${formData.type} in ${formData.city}, ${formData.country}. 
-Make it enticing and highlight what makes this place special. Write in Russian language.`;
-                }
-                jsonSchema = {
-                    type: "object",
-                    properties: { description: { type: "string" } }
-                };
-            } else if (field === 'insider_tip') {
-                if (existingText && existingText.trim()) {
-                    prompt = `You are a professional copywriter and content editor. Improve and enhance the following insider tip for "${formData.name}" in ${formData.city}, ${formData.country}.
-                    
-Current tip: "${existingText}"
-
-Rewrite it to be more engaging and sound like advice from a knowledgeable local friend (1-2 sentences). Keep the essence but make it more compelling and natural. ${languageInstruction}`;
-                } else {
-                    prompt = `Write an insider tip (1-2 sentences) for "${formData.name}" in ${formData.city}, ${formData.country}. 
-Include local secrets, best time to visit, or hidden menu items. Make it feel like advice from a local friend. Write in Russian language.`;
-                }
-                jsonSchema = {
-                    type: "object",
-                    properties: { insider_tip: { type: "string" } }
-                };
-            } else if (field === 'must_try') {
-                if (existingText && existingText.trim()) {
-                    prompt = `You are a professional copywriter and content editor. Improve and enhance the following recommendation for "${formData.name}" (a ${formData.type} in ${formData.city}).
-                    
-Current recommendation: "${existingText}"
-
-Rewrite it to be more enticing and specific. Keep it short but make it sound more appetizing and compelling. ${languageInstruction}`;
-                } else {
-                    prompt = `What is the signature dish or must-try item at "${formData.name}" (a ${formData.type} in ${formData.city})? 
-Provide a short, specific recommendation (just the dish name and brief description). Write in Russian language.`;
-                }
-                jsonSchema = {
-                    type: "object",
-                    properties: { must_try: { type: "string" } }
-                };
-            }
-
-            const result = await api.integrations.Core.InvokeLLM({
-                prompt,
-                add_context_from_internet: !existingText || !existingText.trim(),
-                response_json_schema: jsonSchema
+            // Use the new centralized AI Helper Agent
+            // The prompt and tone are now managed in the database (ai_agents table)
+            const response = await api.functions.invoke('ai-helper-editor', {
+                inputText: existingText || `Generate for: ${formData.name}, ${formData.city}`,
+                locationName: formData.name,
+                // We could pass specific field context if needed, but the agent is generic editor for now
+                // In future can pass 'mode': field to select different prompts
             });
 
-            if (result && result[field]) {
-                setFormData(prev => ({ ...prev, [field]: result[field] }));
-                toast.success(existingText ? 'Text improved!' : 'Content generated!');
+            if (response.data && response.data.result) {
+                // Remove any quotes that might have been returned (optional cleanup)
+                let cleanedText = response.data.result.replace(/^"(.*)"$/, '$1');
+                setFormData(prev => ({ ...prev, [field]: cleanedText }));
+                toast.success(existingText ? 'Text improved by AI Helper!' : 'Content generated by AI Helper!');
+            } else {
+                throw new Error('No result from AI');
             }
         } catch (error) {
-            console.error(error);
-            toast.error('Content generation error');
+            console.error('AI Helper error:', error);
+            toast.error('AI Helper failed. Please try again.');
         } finally {
             setGeneratingContent(prev => ({ ...prev, [field]: false }));
         }
@@ -755,8 +700,8 @@ Return format (keep the style fun and lively):
                                             }
                                         }}
                                         className={`text-xs ${formData.special_labels?.includes(labelItem.id)
-                                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                : 'hover:bg-blue-50 hover:text-blue-600'
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'hover:bg-blue-50 hover:text-blue-600'
                                             }`}
                                     >
                                         {labelItem.emoji} {labelItem.label}

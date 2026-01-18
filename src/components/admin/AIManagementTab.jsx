@@ -12,6 +12,7 @@ import { Bot, Sparkles, MessageSquare, Play, Clock, CheckCircle, AlertCircle, Lo
 import { toast } from "sonner";
 import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AITestPlayground from './AITestPlayground';
 
 export default function AIManagementTab() {
     const [runningCheck, setRunningCheck] = useState(false);
@@ -22,6 +23,12 @@ export default function AIManagementTab() {
     const [processingRoundId, setProcessingRoundId] = useState(null);
     const [promptEdits, setPromptEdits] = useState({});
     const [savingPrompt, setSavingPrompt] = useState(null);
+
+    // Admin Agent Chat State
+    const [adminChatMessages, setAdminChatMessages] = useState([]);
+    const [adminChatInput, setAdminChatInput] = useState('');
+    const [adminChatLoading, setAdminChatLoading] = useState(false);
+
     const queryClient = useQueryClient();
 
     // Get unique countries and cities for filters
@@ -339,6 +346,14 @@ export default function AIManagementTab() {
                         <TabsTrigger value="ai-assistant" className="text-xs md:text-sm">
                             <Sparkles className="w-4 h-4 mr-1.5 hidden md:block" />
                             AI Помощник
+                        </TabsTrigger>
+                        <TabsTrigger value="admin-agent" className="text-xs md:text-sm">
+                            <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
+                            Admin Copilot
+                        </TabsTrigger>
+                        <TabsTrigger value="playground" className="text-xs md:text-sm">
+                            <Play className="w-4 h-4 mr-1.5 hidden md:block" />
+                            Test Playground
                         </TabsTrigger>
                     </TabsList>
 
@@ -802,6 +817,149 @@ export default function AIManagementTab() {
                                 </Button>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    {/* Admin Agent Tab */}
+                    <TabsContent value="admin-agent" className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Chat Interface */}
+                            <Card className="h-[600px] flex flex-col dark:bg-neutral-800 dark:border-neutral-700">
+                                <CardHeader>
+                                    <CardTitle className="text-lg md:text-xl dark:text-neutral-100">Admin Copilot Chat</CardTitle>
+                                    <CardDescription className="text-sm dark:text-neutral-400">
+                                        Выполняйте команды и получайте статистику через AI
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex-1 flex flex-col min-h-0">
+                                    <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 mb-4">
+                                        {adminChatMessages.length === 0 ? (
+                                            <div className="text-center text-neutral-500 mt-20">
+                                                <Bot className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                                <p>Введите команду, например "Show statistics" или "Check for missing descriptions"</p>
+                                            </div>
+                                        ) : (
+                                            adminChatMessages.map((msg, idx) => (
+                                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                    <div className={`max-w-[85%] rounded-lg p-3 ${msg.role === 'user'
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
+                                                        }`}>
+                                                        <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                                                        {msg.tool && (
+                                                            <Badge variant="outline" className="mt-2 text-[10px] bg-neutral-100 dark:bg-neutral-900">
+                                                                🛠️ Used tool: {msg.tool}
+                                                            </Badge>
+                                                        )}
+                                                        {msg.data && (
+                                                            <pre className="mt-2 p-2 bg-black/10 rounded text-[10px] overflow-x-auto">
+                                                                {JSON.stringify(msg.data, null, 2)}
+                                                            </pre>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                        {adminChatLoading && (
+                                            <div className="flex justify-start">
+                                                <div className="bg-white dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700">
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <form
+                                        onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            if (!adminChatInput.trim() || adminChatLoading) return;
+
+                                            const userMsg = { role: 'user', content: adminChatInput };
+                                            setAdminChatMessages(prev => [...prev, userMsg]);
+                                            setAdminChatInput('');
+                                            setAdminChatLoading(true);
+
+                                            try {
+                                                const response = await api.functions.invoke('ai-admin-actions', {
+                                                    command: userMsg.content,
+                                                    context: {}
+                                                });
+
+                                                if (response.error) throw new Error(response.error.message);
+                                                const data = response.data;
+
+                                                const aiMsg = {
+                                                    role: 'assistant',
+                                                    content: data.result,
+                                                    data: data.data,
+                                                    tool: data.tool_used
+                                                };
+                                                setAdminChatMessages(prev => [...prev, aiMsg]);
+
+                                            } catch (err) {
+                                                console.error(err);
+                                                setAdminChatMessages(prev => [...prev, { role: 'assistant', content: 'Ошибка при выполнении: ' + (err.message || 'Unknown error') }]);
+                                            } finally {
+                                                setAdminChatLoading(false);
+                                            }
+                                        }}
+                                        className="flex gap-2"
+                                    >
+                                        <Textarea
+                                            value={adminChatInput}
+                                            onChange={(e) => setAdminChatInput(e.target.value)}
+                                            placeholder="Команда для AI агента..."
+                                            className="resize-none dark:bg-neutral-900"
+                                            rows={2}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    e.currentTarget.form.requestSubmit();
+                                                }
+                                            }}
+                                        />
+                                        <Button type="submit" disabled={adminChatLoading || !adminChatInput.trim()} className="bg-blue-600 hover:bg-blue-700 text-white self-end">
+                                            <Play className="w-4 h-4" />
+                                        </Button>
+                                    </form>
+                                </CardContent>
+                            </Card>
+
+                            {/* Settings for Admin Agent */}
+                            <div className="space-y-4">
+                                <Card className="dark:bg-neutral-800 dark:border-neutral-700">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg md:text-xl dark:text-neutral-100">Настройки Агента</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label className="dark:text-neutral-200">Системный промпт</Label>
+                                            <Textarea
+                                                value={getPromptValue('admin_copilot', 'You are an admin assistant.')}
+                                                onChange={(e) => setPromptEdits({ ...promptEdits, admin_copilot: e.target.value })}
+                                                rows={10}
+                                                className="text-sm dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
+                                            />
+                                        </div>
+                                        <Button
+                                            onClick={() => handleSavePrompt('admin_copilot', 'Промпт для AI Admin Copilot')}
+                                            disabled={savingPrompt === 'admin_copilot'}
+                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                        >
+                                            {savingPrompt === 'admin_copilot' ? (
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            ) : (
+                                                <Save className="w-4 h-4 mr-2" />
+                                            )}
+                                            Сохранить промпт
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* Test Playground Tab */}
+                    <TabsContent value="playground" className="h-[730px]">
+                        <AITestPlayground aiPrompts={aiPrompts} />
                     </TabsContent>
 
                     {/* AI Assistant Tab */}

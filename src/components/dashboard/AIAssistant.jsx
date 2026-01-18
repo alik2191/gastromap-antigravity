@@ -67,36 +67,38 @@ export default function AIAssistant({
             if (!user || historyLoaded) return;
 
             try {
-                // Find or create conversation
-                const conversations = await api.entities.ChatMessage.filter({
-                    user_email: user.email
-                });
+                // Fetch latest session for user
+                const { data: sessions, error: sessionError } = await api.client
+                    .from('chat_sessions')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .order('updated_at', { ascending: false })
+                    .limit(1);
 
-                if (conversations.length > 0) {
-                    // Load existing conversation
-                    const convId = conversations[0].conversation_id;
+                if (sessionError) throw sessionError;
+
+                if (sessions && sessions.length > 0) {
+                    const convId = sessions[0].id;
                     setConversationId(convId);
 
-                    const history = await api.entities.ChatMessage.filter({
-                        conversation_id: convId
-                    });
+                    // Fetch messages
+                    const { data: messagesData, error: msgError } = await api.client
+                        .from('chat_messages')
+                        .select('*')
+                        .eq('session_id', convId)
+                        .order('created_at', { ascending: true });
 
-                    if (history.length > 0) {
-                        const loadedMessages = history
-                            .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
-                            .map(msg => ({
-                                role: msg.role,
-                                content: msg.content,
-                                timestamp: new Date(msg.created_date),
-                                recommendations: msg.location_data || undefined,
-                                verifiedInfo: {}
-                            }));
+                    if (msgError) throw msgError;
+
+                    if (messagesData && messagesData.length > 0) {
+                        const loadedMessages = messagesData.map(msg => ({
+                            role: msg.role,
+                            content: msg.content,
+                            timestamp: new Date(msg.created_at),
+                            // Recommendations parsing can be added if we structure the JSON response in future
+                        }));
                         setMessages(loadedMessages);
                     }
-                } else {
-                    // Create new conversation ID
-                    const newConvId = `conv_${user.email}_${Date.now()}`;
-                    setConversationId(newConvId);
                 }
 
                 setHistoryLoaded(true);
@@ -110,50 +112,6 @@ export default function AIAssistant({
             loadHistory();
         }
     }, [isOpen, user, historyLoaded]);
-
-    // Save message to DB
-    const saveMessageToDB = async (message, recommendations = null) => {
-        if (!user || !conversationId) return;
-
-        try {
-            await api.entities.ChatMessage.create({
-                conversation_id: conversationId,
-                user_email: user.email,
-                role: message.role,
-                content: message.content,
-                location_data: recommendations
-            });
-        } catch (error) {
-            console.error('Error saving message:', error);
-        }
-    };
-
-    // Extract user preferences from conversation history
-    const extractUserPreferences = () => {
-        const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
-        const mentionedTypes = [];
-        const mentionedCities = [];
-        const mentionedFeatures = [];
-
-        userMessages.forEach(msg => {
-            const lower = msg.toLowerCase();
-            // Extract types
-            if (lower.includes('cafe') || lower.includes('кафе') || lower.includes('coffee')) mentionedTypes.push('cafe');
-            if (lower.includes('bar') || lower.includes('бар')) mentionedTypes.push('bar');
-            if (lower.includes('restaurant') || lower.includes('ресторан')) mentionedTypes.push('restaurant');
-
-            // Extract features
-            if (lower.includes('cozy') || lower.includes('уютн')) mentionedFeatures.push('cozyRestaurant');
-            if (lower.includes('romantic') || lower.includes('романтич')) mentionedFeatures.push('romanticSetting');
-            if (lower.includes('wifi') || lower.includes('вай-фай')) mentionedFeatures.push('freeWifi');
-            if (lower.includes('terrace') || lower.includes('outdoor') || lower.includes('терраса')) mentionedFeatures.push('outdoorSeating');
-        });
-
-        return {
-            types: [...new Set(mentionedTypes)],
-            features: [...new Set(mentionedFeatures)]
-        };
-    };
 
     // Generate calendar event (.ics file)
     const generateICS = (location, date = new Date()) => {
@@ -202,308 +160,63 @@ export default function AIAssistant({
         };
 
         setMessages(prev => [...prev, userMessage]);
-        saveMessageToDB(userMessage);
         setInput('');
         setLoading(true);
 
-        // Check if this is a route planning request
-        const isRouteRequest = /route|маршрут|plan|путь|itinerary/i.test(input);
+        // Check if this is a route planning request for UI indication
+        const isRouteRequest = /route|маршрут|plan|путь|itinerary/i.test(userMessage.content);
         if (isRouteRequest) {
             setRouteMode(true);
         }
 
         try {
-            // Extract preferences from conversation history
-            const conversationPreferences = extractUserPreferences();
-            // Add user location distances to locations data
-            const locationsData = allLocations.map(l => {
-                const baseData = {
-                    id: l.id,
-                    name: l.name,
-                    type: l.type,
-                    city: l.city,
-                    country: l.country,
-                    address: l.address,
-                    description: l.description,
-                    description_en: l.description_en,
-                    price_range: l.price_range,
-                    insider_tip: l.insider_tip,
-                    insider_tip_en: l.insider_tip_en,
-                    must_try: l.must_try,
-                    must_try_en: l.must_try_en,
-                    tags: l.tags || [],
-                    special_labels: l.special_labels || [],
-                    best_time_to_visit: l.best_time_to_visit || [],
-                    is_hidden_gem: l.is_hidden_gem,
-                    average_rating: l.average_rating,
-                    reviews_count: l.reviews_count,
-                    website: l.website,
-                    opening_hours: l.opening_hours,
-                    phone: l.phone
-                };
-
-                // Add distance if user location is available
-                if (userLocation && l.latitude && l.longitude) {
-                    const R = 6371;
-                    const dLat = (l.latitude - userLocation.latitude) * Math.PI / 180;
-                    const dLon = (l.longitude - userLocation.longitude) * Math.PI / 180;
-                    const a =
-                        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                        Math.cos(userLocation.latitude * Math.PI / 180) * Math.cos(l.latitude * Math.PI / 180) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                    baseData.distance_km = Math.round(R * c * 10) / 10;
-                }
-
-                return baseData;
+            // Call the AI Guide Edge Function
+            // This function handles:
+            // 1. Fetching user context (wishlist, visited)
+            // 2. Maintaining chat history in DB (chat_sessions/chat_messages)
+            // 3. Calling Gemini with the system prompt
+            // 4. Returning the response
+            const response = await api.functions.invoke('ai-guide-chat', {
+                message: userMessage.content,
+                sessionId: conversationId,
+                userId: user?.id,
+                userLocation: userLocation
             });
 
-            // Prepare user context with analysis
-            const userWishlist = savedLocations
-                .filter(s => s.list_type === 'wishlist')
-                .map(s => allLocations.find(l => l.id === s.location_id))
-                .filter(Boolean);
+            if (response.data && response.data.reply) {
+                const aiReply = response.data.reply;
+                const newSessionId = response.data.sessionId;
 
-            const userVisited = savedLocations
-                .filter(s => s.list_type === 'visited')
-                .map(s => allLocations.find(l => l.id === s.location_id))
-                .filter(Boolean);
-
-            // Analyze user preferences
-            const preferredTypes = [...new Set([...userWishlist, ...userVisited].map(l => l.type))];
-            const preferredCities = [...new Set([...userWishlist, ...userVisited].map(l => l.city))];
-            const preferredLabels = [...new Set([...userWishlist, ...userVisited].flatMap(l => l.special_labels || []))];
-
-            const prompt = `You are a friendly guide helping people find perfect food & drink spots. Your tone is casual, warm, like chatting with a friend.
-
-CRITICAL: Reply in the SAME LANGUAGE the user writes in (English, Russian, Spanish, etc.). Match their language exactly.
-
-SCOPE: Answer ONLY questions about venues, restaurants, cafes, bars, and food/drink locations. If user asks about other topics (weather, news, general questions, etc.), politely remind them you only help with finding places to eat and drink.
-
-ROUTE PLANNING MODE: ${isRouteRequest ? 'YES - User wants a route/itinerary with multiple places' : 'NO - Single recommendation mode'}
-
-CONVERSATION MEMORY (preferences from chat history):
-- User previously mentioned types: ${conversationPreferences.types.join(', ') || 'None'}
-- User previously mentioned features: ${conversationPreferences.features.join(', ') || 'None'}
-- Use this context to personalize recommendations even if not explicitly mentioned in current message
-
-TIME-BASED PERSONALIZATION:
-- Current time of day: ${(() => {
-                    const hour = new Date().getHours();
-                    if (hour >= 6 && hour < 11) return 'УТРО (утро) - prioritize breakfast spots';
-                    if (hour >= 11 && hour < 18) return 'ДЕНЬ (день) - prioritize lunch/cafe spots';
-                    if (hour >= 18 && hour < 21) return 'ВЕЧЕР (вечер) - prioritize dinner/bars';
-                    return 'ПОЗДНЯЯ НОЧЬ (поздняя ночь) - prioritize late-night spots';
-                })()}
-- IMPORTANT: Prioritize locations with matching best_time_to_visit array values and relevant special_labels
-- For УТРО: prefer locations with special_labels containing "breakfastMenu" or "allDayBreakfast"
-- For ДЕНЬ: prefer locations with special_labels containing "lunchMenu" or "businessLunch"
-- For ВЕЧЕР/НОЧЬ: prefer locations with special_labels containing "lateDinner" or bars/restaurants
-
-User's question: "${userMessage.content}"
-
-Available locations database:
-${JSON.stringify(locationsData, null, 2)}
-
-User's wishlist:
-${JSON.stringify(userWishlist.map(l => ({ name: l.name, type: l.type, city: l.city })), null, 2)}
-
-Places user has visited:
-${JSON.stringify(userVisited.map(l => ({ name: l.name, type: l.type, city: l.city })), null, 2)}
-
-User Preferences Analysis:
-- Preferred types: ${preferredTypes.join(', ') || 'Not enough data'}
-- Preferred cities: ${preferredCities.join(', ') || 'Not enough data'}
-- Preferred features: ${preferredLabels.slice(0, 5).join(', ') || 'Not enough data'}
-${userLocation ? `- User's current location available: prioritize nearby places when relevant (use distance_km field)` : '- User location not available'}
-
-MATCHING INSTRUCTIONS (CRITICAL for accuracy):
-1. FIRST check if the question is about venues/food. If NOT - ask a clarifying question to understand what they're looking for
-2. REPLY IN THE SAME LANGUAGE the user wrote in
-3. PERSONALIZATION FIRST: Analyze user preferences from wishlist/visited and suggest similar places they might love
-
-4. SEMANTIC MATCHING PRIORITY (most important):
-   a) TIME OF DAY MATCH (NEW - HIGHEST PRIORITY): Filter and rank by current time:
-      - Check best_time_to_visit array first - locations matching current time get HUGE boost
-      - Check special_labels for time-relevant menus (breakfastMenu/lunchMenu/lateDinner)
-      - For УТРО: ONLY show locations with "breakfastMenu" OR "allDayBreakfast" OR best_time_to_visit contains "утро"
-      - For ДЕНЬ: prioritize "lunchMenu" OR "businessLunch" OR best_time_to_visit contains "день"
-      - For ВЕЧЕР/НОЧЬ: prioritize bars, restaurants, "lateDinner" OR best_time_to_visit contains "вечер"/"поздняя ночь"
-      - If NO time-matching locations found → fall back to user preferences
-   b) LOCATION PROXIMITY: If user mentions "near me", "nearby", "close" → PRIORITIZE by distance_km (ascending)
-   c) EXACT TYPE MATCH: If user asks for "cafe" → filter ONLY type="cafe". If "restaurant" → ONLY type="restaurant"
-   d) LOCATION: Match city/country exactly (e.g., "Krakow" → filter city="Krakow")
-   e) KEYWORDS & FEATURES: Search in description, insider_tip, must_try, tags, special_labels
-   f) PRICE: If user mentions "cheap"/"budget" → prefer "$" or "$$". If "expensive"/"fancy" → "$$$" or "$$$$"
-   g) RATING: Prefer locations with higher average_rating (4+) and more reviews_count
-   h) POPULARITY: If user asks for "popular" or "best" → prioritize average_rating >= 4.5 AND reviews_count > 10
-
-5. RANKING RULES:
-   - Sort recommendations by: TIME OF DAY MATCH → DISTANCE (if relevant) → RATING → CONFIDENCE → REVIEWS COUNT
-   - Give HIGH confidence ONLY if location matches ALL user criteria (time of day + type + city + special features)
-   - Give MEDIUM confidence if matches time of day + type + city but some features missing
-   - Give LOW confidence if approximate match or alternative suggestion
-   - ALWAYS mention in your response why you're recommending these places based on current time
-
-6. CLARIFYING QUESTIONS: If request is unclear (e.g., "something good"), ask 2-3 quick questions to narrow down:
-   - What type of place? (cafe/bar/restaurant)
-   - Which city/area?
-   - Any specific preferences? (budget, vibe, features)
-
-7. ONLINE CHECK: Request online verification for top 3 matches to get real-time info
-
-8. ROUTE PLANNING: If user asks for a route/itinerary (e.g., "plan a route", "3 cafes in a row"):
-   - Return 3-5 locations that are GEOGRAPHICALLY CLOSE to each other
-   - Sort by proximity to create an optimal walking route
-   - Mention estimated walking distances between stops
-   - Include variety (different vibes/specialties) within the route
-
-9. Response format: Give 3-5 recommendations, ranked by relevance. Be conversational and helpful.
-
-10. If NO MATCHES: Suggest closest alternatives OR ask clarifying questions to understand better
-
-Response format:
-{
-  "message": "Your brief friendly response (2-3 sentences max) OR clarifying question if needed",
-  "is_clarifying_question": false,
-  "is_route": false,
-  "route_description": "If is_route=true, describe the route (e.g., 'Start at X, walk 5min to Y, then 10min to Z')",
-  "need_online_check": true,
-  "locations_to_check": ["location_name1", "location_name2"],
-  "recommendations": [
-    {
-      "location_id": "id from database",
-      "confidence": "high/medium/low",
-      "reason": "why this matches user request",
-      "order_in_route": 1
-    }
-  ]
-}`;
-
-            const result = await api.integrations.Core.InvokeLLM({
-                prompt,
-                response_json_schema: {
-                    type: "object",
-                    properties: {
-                        message: { type: "string" },
-                        is_clarifying_question: { type: "boolean" },
-                        is_route: { type: "boolean" },
-                        route_description: { type: "string" },
-                        need_online_check: { type: "boolean" },
-                        locations_to_check: {
-                            type: "array",
-                            items: { type: "string" }
-                        },
-                        recommendations: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    location_id: { type: "string" },
-                                    confidence: { type: "string" },
-                                    reason: { type: "string" },
-                                    order_in_route: { type: "number" }
-                                }
-                            }
-                        }
-                    }
+                if (newSessionId && newSessionId !== conversationId) {
+                    setConversationId(newSessionId);
                 }
-            });
 
-            // If it's a clarifying question, just show the message and wait for user response
-            if (result.is_clarifying_question) {
+                // Parse structured parts if any (the edge function currently returns text, 
+                // but we can enhance it to return JSON for recommendations later. 
+                // For now, assume text reply, but we can parse simple recommendations if we structure the prompt output in the edge function later)
+
+                // Note: The current edge function implementation returns text. 
+                // If we want recommendations to be parsed, we need to ask the edge function to output JSON or parse the text.
+                // For this iteration, we display the text.
+
                 setMessages(prev => [...prev, {
                     role: 'assistant',
-                    content: result.message,
+                    content: aiReply,
                     timestamp: new Date()
                 }]);
-                saveMessageToDB({ role: 'assistant', content: result.message });
-                setLoading(false);
-                return;
+
+            } else {
+                throw new Error('No reply from AI Guide');
             }
-
-            // Check online if needed - use Google Places API for better accuracy
-            let finalMessage = result.message;
-            let verifiedInfo = {};
-
-            if (result.need_online_check && result.locations_to_check?.length > 0) {
-                for (const locationName of result.locations_to_check.slice(0, 3)) {
-                    const location = allLocations.find(l => l.name === locationName);
-                    if (location) {
-                        try {
-                            // Try Google Places API first
-                            const googlePlacesResult = await api.functions.invoke('searchGooglePlacesDetailed', {
-                                query: location.name,
-                                latitude: location.latitude,
-                                longitude: location.longitude
-                            });
-
-                            if (googlePlacesResult.data?.found && googlePlacesResult.data?.place) {
-                                const placeData = googlePlacesResult.data.place;
-                                verifiedInfo[location.id] = {
-                                    opening_hours: placeData.opening_hours,
-                                    average_bill: placeData.price_level,
-                                    popular_dishes: placeData.reviews?.length > 0
-                                        ? placeData.reviews.slice(0, 3).map(r => r.text.substring(0, 100)).join('; ')
-                                        : 'Check reviews',
-                                    website: placeData.website,
-                                    phone: placeData.phone,
-                                    google_rating: placeData.rating,
-                                    google_reviews_count: placeData.reviews_count,
-                                    google_maps_url: placeData.google_maps_url,
-                                    verified: true
-                                };
-                            } else {
-                                // Fallback to LLM with web search
-                                const onlineCheck = await api.integrations.Core.InvokeLLM({
-                                    prompt: `Search for real-time information about: ${location.name} in ${location.city}, ${location.country}. Return structured data.`,
-                                    add_context_from_internet: true,
-                                    response_json_schema: {
-                                        type: "object",
-                                        properties: {
-                                            opening_hours: { type: "string" },
-                                            average_bill: { type: "string" },
-                                            popular_dishes: { type: "string" },
-                                            website: { type: "string" },
-                                            verified: { type: "boolean" }
-                                        }
-                                    }
-                                });
-                                verifiedInfo[location.id] = onlineCheck;
-                            }
-                        } catch (e) {
-                            console.error('Online check failed:', e);
-                        }
-                    }
-                }
-            }
-
-            // Create assistant response with recommendations
-            const filteredRecommendations = result.recommendations?.filter(r =>
-                allLocations.find(l => l.id === r.location_id)
-            );
-
-            const assistantMessage = {
-                role: 'assistant',
-                content: finalMessage,
-                timestamp: new Date(),
-                recommendations: filteredRecommendations,
-                verifiedInfo,
-                isRoute: result.is_route || false,
-                routeDescription: result.route_description || null
-            };
-
-            setMessages(prev => [...prev, assistantMessage]);
-            saveMessageToDB(assistantMessage, filteredRecommendations);
 
         } catch (error) {
-            console.error('AI Assistant error:', error);
+            console.error('AI Guide error:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: 'Извините, произошла ошибка. Попробуйте переформулировать запрос.',
+                content: t('errorProcessingRequest') || 'Sorry, I encountered an error. Please try again.',
                 timestamp: new Date()
             }]);
-            toast.error('Ошибка при обработке запроса');
+            toast.error(t('errorProcessingRequest') || 'Error processing request');
         } finally {
             setLoading(false);
         }

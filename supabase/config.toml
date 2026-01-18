@@ -1,0 +1,10 @@
+project_id = "fglvibyyiqbfkqrdomyv"
+
+[functions.ai-helper-editor]
+verify_jwt = false
+
+[functions.ai-guide-chat]
+verify_jwt = false
+
+[functions.ai-admin-actions]
+verify_jwt = false
