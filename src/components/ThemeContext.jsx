@@ -31,19 +31,19 @@ export function ThemeProvider({ children }) {
     // Apply theme to DOM and Meta tags
     const applyTheme = (newTheme) => {
         const root = document.documentElement;
-        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
 
-        // Create if missing (failsafe)
-        if (!metaThemeColor) {
-            metaThemeColor = document.createElement('meta');
-            metaThemeColor.name = 'theme-color';
-            document.head.appendChild(metaThemeColor);
-        }
+        // Remove all existing theme-color tags (including media query ones)
+        const metaTags = document.querySelectorAll('meta[name="theme-color"]');
+        metaTags.forEach(tag => tag.remove());
+
+        // Create a single authoritative tag for the current state
+        const metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        document.head.appendChild(metaThemeColor);
 
         if (newTheme === 'dark') {
             root.classList.add('dark');
             root.style.colorScheme = 'dark';
-            // Use pure black or matching background
             metaThemeColor.setAttribute('content', '#0a0a0a');
         } else {
             root.classList.remove('dark');
