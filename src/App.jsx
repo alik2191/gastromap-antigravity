@@ -1,4 +1,6 @@
 import './App.css'
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -46,12 +48,21 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // Loading state for Suspense
+  const PageLoader = () => (
+    <div className="flex h-[50vh] w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+
   // Render the app routes
   return (
     <Routes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
+          <Suspense fallback={<PageLoader />}>
+            <MainPage />
+          </Suspense>
         </LayoutWrapper>
       } />
       {Object.entries(Pages).map(([path, Page]) => (
@@ -60,7 +71,9 @@ const AuthenticatedApp = () => {
           path={`/${path}`}
           element={
             <LayoutWrapper currentPageName={path}>
-              <Page />
+              <Suspense fallback={<PageLoader />}>
+                <Page />
+              </Suspense>
             </LayoutWrapper>
           }
         />

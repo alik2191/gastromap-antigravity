@@ -243,17 +243,7 @@ export const adapter = {
     // but the mock has integrations.Core.UploadFile
     integrations: {
         Core: {
-            InvokeLLM: async (params) => {
-                // Bridge to Supabase Edge Function 'invoke-llm'
-                const { data, error } = await supabase.functions.invoke('invoke-llm', {
-                    body: params
-                });
-                if (error) {
-                    console.error('LLM invocation failed:', error);
-                    throw error;
-                }
-                return data;
-            },
+
             UploadFile: async ({ file }) => {
                 // Upload to Supabase Storage 'uploads' bucket
                 const fileName = `${Date.now()}-${file.name}`;

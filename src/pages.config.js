@@ -1,37 +1,22 @@
-import Admin from './pages/Admin';
-import AuthCallback from './pages/AuthCallback';
-import CreatorDashboard from './pages/CreatorDashboard';
-import CreatorTools from './pages/CreatorTools';
-import Dashboard from './pages/Dashboard';
-import Home from './pages/Home';
-import Login from './pages/Login';
-
-import LocationDetail from './pages/LocationDetail';
-import LocationPublic from './pages/LocationPublic';
-import Pricing from './pages/Pricing';
-import Privacy from './pages/Privacy';
-import Profile from './pages/Profile';
-import Support from './pages/Support';
-import Terms from './pages/Terms';
+import { lazy } from 'react';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Admin": Admin,
-    "AuthCallback": AuthCallback,
-    "CreatorDashboard": CreatorDashboard,
-    "CreatorTools": CreatorTools,
-    "Dashboard": Dashboard,
-    "Home": Home,
-    "Login": Login,
-
-    "LocationDetail": LocationDetail,
-    "LocationPublic": LocationPublic,
-    "Pricing": Pricing,
-    "Privacy": Privacy,
-    "Profile": Profile,
-    "Support": Support,
-    "Terms": Terms,
+    "Admin": lazy(() => import('./pages/Admin')),
+    "AuthCallback": lazy(() => import('./pages/AuthCallback')),
+    "CreatorDashboard": lazy(() => import('./pages/CreatorDashboard')),
+    "CreatorTools": lazy(() => import('./pages/CreatorTools')),
+    "Dashboard": lazy(() => import('./pages/Dashboard')),
+    "Home": lazy(() => import('./pages/Home')),
+    "Login": lazy(() => import('./pages/Login')),
+    "LocationDetail": lazy(() => import('./pages/LocationDetail')),
+    "LocationPublic": lazy(() => import('./pages/LocationPublic')),
+    "Pricing": lazy(() => import('./pages/Pricing')),
+    "Privacy": lazy(() => import('./pages/Privacy')),
+    "Profile": lazy(() => import('./pages/Profile')),
+    "Support": lazy(() => import('./pages/Support')),
+    "Terms": lazy(() => import('./pages/Terms')),
 }
 
 export const pagesConfig = {
