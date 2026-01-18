@@ -50,7 +50,7 @@ export default function Header() {
                                     <Button
                                         onClick={handleLogin}
                                         variant="ghost"
-                                        className="rounded-full font-medium text-neutral-900 hover:bg-neutral-100"
+                                        className="rounded-full font-medium text-neutral-900 hover:bg-neutral-100 hover:text-neutral-900"
                                     >
                                         Sign In
                                     </Button>
