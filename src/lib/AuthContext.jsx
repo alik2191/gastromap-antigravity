@@ -86,14 +86,10 @@ export const AuthProvider = ({ children }) => {
       isLoadingPublicSettings,
       authError,
       appPublicSettings,
-      logout,
-      navigateToLogin,
-      logout,
-      navigateToLogin,
-      checkAppState,
       refreshUser: checkUserAuth
+    }}>
       {children}
-    </AuthContext.Provider >
+    </AuthContext.Provider>
   );
 };
 
