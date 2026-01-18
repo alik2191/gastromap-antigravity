@@ -20,11 +20,10 @@ serve(async (req) => {
             throw new Error('GEMINI_API_KEY is not set');
         }
 
-        // Use Gemini 1.5 Flash for speed and cost efficiency
-        const model = 'gemini-1.5-flash';
+        // Use Gemini Pro (Stable Fallback)
+        const model = 'gemini-2.0-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        let systemInstruction = "";
         let generationConfig = {};
 
         // Prepare JSON mode if schema is provided
@@ -33,9 +32,6 @@ serve(async (req) => {
                 response_mime_type: "application/json",
                 response_schema: response_json_schema
             };
-
-            // Some specialized prompting to ensure strict adherence if needed, 
-            // but 1.5 Flash is good at following schema.
         }
 
         const payload = {
