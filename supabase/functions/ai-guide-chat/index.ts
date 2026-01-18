@@ -37,61 +37,80 @@ Deno.serve(async (req) => {
         }
 
         // 1. Get User Context (Wishlist + Visited)
-        // Fetches saved locations using user ID or email context if available
-        let savedLocations = [];
-        if (userId) {
-            const userResp = await supabase.auth.admin.getUserById(userId);
-            const email = userResp.data.user?.email;
-            if (email) {
-                const { data } = await supabase
-                    .from('saved_locations')
-                    .select(`
-                        list_type,
-                        personal_note,
-                        locations ( id, name, city, type, special_labels )
-                    `)
-                    .eq('user_email', email);
-                savedLocations = data || [];
+        let wishlist = 'Empty';
+        let visited = 'Empty';
+
+        try {
+            if (userId) {
+                const userResp = await supabase.auth.admin.getUserById(userId);
+                const email = userResp.data.user?.email;
+                if (email) {
+                    const { data } = await supabase
+                        .from('saved_locations')
+                        .select(`
+                            list_type,
+                            personal_note,
+                            locations ( id, name, city, type, special_labels )
+                        `)
+                        .eq('user_email', email);
+
+                    const savedLocations = data || [];
+                    wishlist = savedLocations.filter(s => s.list_type === 'wishlist').map(s => s.locations?.name).join(', ') || 'Empty';
+                    visited = savedLocations.filter(s => s.list_type === 'visited').map(s => s.locations?.name).join(', ') || 'Empty';
+                }
             }
+        } catch (ctxError) {
+            console.error('Error fetching user context:', ctxError);
+            // Continue without context
         }
 
-        const wishlist = savedLocations?.filter(s => s.list_type === 'wishlist').map(s => s.locations?.name).join(', ') || 'Empty';
-        const visited = savedLocations?.filter(s => s.list_type === 'visited').map(s => s.locations?.name).join(', ') || 'Empty';
-
-        // 2. Fetch Chat History (Active Session)
+        // 2. Fetch/Create Chat Session (Non-blocking)
         let useSessionId = sessionId;
-        if (!useSessionId && userId) {
-            // Find or create session
-            const { data: session } = await supabase
-                .from('chat_sessions')
-                .select('id')
-                .eq('user_id', userId)
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .single();
-
-            if (session) {
-                useSessionId = session.id;
-            } else {
-                const { data: newSession } = await supabase
+        try {
+            if (!useSessionId && userId) {
+                // Find or create session
+                const { data: session } = await supabase
                     .from('chat_sessions')
-                    .insert({ user_id: userId, title: 'New Chat', agent_key: 'user_guide' })
                     .select('id')
+                    .eq('user_id', userId)
+                    .order('updated_at', { ascending: false })
+                    .limit(1)
                     .single();
-                useSessionId = newSession?.id;
+
+                if (session) {
+                    useSessionId = session.id;
+                } else {
+                    // Try to create new session
+                    // Note: If agent_key FK fails (e.g. agent not found), this insert might fail.
+                    // We try-catch this.
+                    const { data: newSession, error: createError } = await supabase
+                        .from('chat_sessions')
+                        .insert({ user_id: userId, title: 'New Chat', agent_key: 'user_guide' })
+                        .select('id')
+                        .single();
+
+                    if (!createError && newSession) {
+                        useSessionId = newSession.id;
+                    } else {
+                        console.error('Failed to create session:', createError);
+                    }
+                }
             }
+
+            // 3. Save User Message
+            if (useSessionId) {
+                await supabase.from('chat_messages').insert({
+                    session_id: useSessionId,
+                    role: 'user',
+                    content: message
+                });
+            }
+        } catch (sessionError) {
+            console.error('Session management error:', sessionError);
+            // Continue without persistent session
         }
 
-        // 3. Save User Message
-        if (useSessionId) {
-            await supabase.from('chat_messages').insert({
-                session_id: useSessionId,
-                role: 'user',
-                content: message
-            });
-        }
-
-        // 4. Determine System Prompt
+        // 4. System Prompt (Hardcoded for stability)
         let systemPrompt = requestSystemPrompt;
         if (!systemPrompt) {
             systemPrompt = `Ты — GastroMap Guide, персональный консьерж по ресторанам и барам. 
@@ -109,31 +128,33 @@ Deno.serve(async (req) => {
 - Не придумывай несуществующие места.`;
         }
 
-        // 4b. Fetch Relevant Locations for Context
-        // In a real scaled app, this should use vector search. For now, we fetch top 30 relevant locations.
-        let locationsQuery = supabase
-            .from('locations')
-            .select('id, name, city, type, special_labels, description, average_rating, opening_hours, best_time_to_visit')
-            .limit(30);
+        // 4b. Fetch Relevant Locations (Context)
+        let locationsContext = '[]';
+        try {
+            let locationsQuery = supabase
+                .from('locations')
+                .select('id, name, city, type, special_labels, description, average_rating, opening_hours, best_time_to_visit')
+                .limit(30)
+                .order('average_rating', { ascending: false });
 
-        // If user location is known, we could order by distance (requires PostGIS or huge memory calc).
-        // For simplicity, we order by rating desc to show best places first.
-        locationsQuery = locationsQuery.order('average_rating', { ascending: false });
+            const { data: locationsData } = await locationsQuery;
 
-        const { data: locationsData } = await locationsQuery;
+            if (locationsData) {
+                locationsContext = JSON.stringify(locationsData.map(l => ({
+                    id: l.id,
+                    name: l.name,
+                    city: l.city,
+                    type: l.type,
+                    rating: l.average_rating,
+                    labels: l.special_labels,
+                    best_time: l.best_time_to_visit
+                })));
+            }
+        } catch (locError) {
+            console.error('Error fetching locations context:', locError);
+        }
 
-        const locationsContext = locationsData ? JSON.stringify(locationsData.map(l => ({
-            id: l.id,
-            name: l.name,
-            city: l.city,
-            type: l.type,
-            rating: l.average_rating,
-            labels: l.special_labels,
-            best_time: l.best_time_to_visit
-        }))) : '[]';
-
-        // 5. Build Contextual Prompt
-        // Limited memory for standard calls - last 5 messages could be fetched here in a real production env
+        // 5. Build Final Prompt
         const finalPrompt = `
 ${systemPrompt}
 
@@ -148,20 +169,23 @@ ${locationsContext}
 User Message: "${message}"
 `;
 
-
         // 6. Call LLM
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const result = await model.generateContent(finalPrompt);
         const aiResponse = result.response.text();
 
-        // 7. Save AI Response
-        if (useSessionId) {
-            await supabase.from('chat_messages').insert({
-                session_id: useSessionId,
-                role: 'assistant',
-                content: aiResponse
-            });
+        // 7. Save AI Response (Non-blocking)
+        try {
+            if (useSessionId) {
+                await supabase.from('chat_messages').insert({
+                    session_id: useSessionId,
+                    role: 'assistant',
+                    content: aiResponse
+                });
+            }
+        } catch (saveError) {
+            console.error('Error saving AI response:', saveError);
         }
 
         return new Response(JSON.stringify({
