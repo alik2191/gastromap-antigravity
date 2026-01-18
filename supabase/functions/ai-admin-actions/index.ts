@@ -61,24 +61,21 @@ If no tool result is provided, just answer the admin question directly or explai
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        action.reply = `Found ${locations?.length || 0} locations missing descriptions: ${locations?.map(l => l.name).join(', ')}`;
-    } else {
-        action.reply = "Unknown moderation type";
+        const result = await model.generateContent(finalPrompt);
+        const aiResponse = result.response.text();
+
+        return new Response(JSON.stringify({
+            result: aiResponse,
+            data: { toolOutput },
+            tool_used: isToolCall ? command.includes('stats') ? 'get_statistics' : 'moderate_content' : null
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+        });
     }
-}
-
-    return new Response(JSON.stringify({
-    result: action.reply || JSON.stringify(responseData),
-    data: responseData,
-    tool_used: action.tool
-}), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-});
-
-} catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-    });
-}
 });
