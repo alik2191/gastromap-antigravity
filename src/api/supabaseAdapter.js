@@ -143,7 +143,7 @@ export const base44 = {
     // but the mock has integrations.Core.UploadFile
     integrations: {
         Core: {
-            UploadFile: async (file) => {
+            UploadFile: async ({ file }) => {
                 // Upload to Supabase Storage 'uploads' bucket
                 const fileName = `${Date.now()}-${file.name}`;
                 const { data, error } = await supabase.storage
@@ -161,7 +161,8 @@ export const base44 = {
 
                 return {
                     success: true,
-                    url: publicUrl
+                    url: publicUrl,
+                    file_url: publicUrl // Added for compatibility with Profile.jsx
                 };
             },
             InvokeLLM: async ({ prompt, response_json_schema }) => {
@@ -170,12 +171,28 @@ export const base44 = {
                     body: { prompt, response_json_schema }
                 });
                 if (error) throw error;
-                return data; // invoke-llm function should return the result directly or in { results }
+                return data;
             },
             SendEmail: async () => ({ success: true }),
             SendSMS: async () => ({ success: true }),
             GenerateImage: async () => ({ success: true }),
             ExtractDataFromUploadedFile: async () => ({ success: true })
+        }
+    },
+    agents: {
+        listConversations: async () => [],
+        getWhatsAppConnectURL: () => '#',
+        invoke: async () => ({ success: true })
+    },
+    storage: {
+        upload: async (path, file) => {
+            const { data, error } = await supabase.storage.from('uploads').upload(path, file);
+            if (error) throw error;
+            return data;
+        },
+        getPublicUrl: (path) => {
+            const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+            return data.publicUrl;
         }
     }
 };
