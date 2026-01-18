@@ -52,7 +52,6 @@ export const base44 = {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) return null;
 
-            // Fetch profile for role and other details
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('*')
@@ -60,12 +59,12 @@ export const base44 = {
                 .single();
 
             return {
+                ...user.user_metadata,
+                ...profile,
                 id: user.id,
                 email: user.email,
                 name: profile?.full_name || user.user_metadata?.full_name || user.email,
-                role: profile?.role || 'user',
-                ...user.user_metadata,
-                ...profile
+                role: profile?.role || user.user_metadata?.role || 'user'
             };
         },
         redirectToLogin: (redirectUrl) => {
@@ -84,12 +83,22 @@ export const base44 = {
                 data: data
             });
             if (error) throw error;
+
+            // Also update profiles table if needed
+            const { data: profile } = await supabase
+                .from('profiles')
+                .update(data)
+                .eq('id', user.id)
+                .select()
+                .single();
+
             return {
+                ...user.user_metadata,
+                ...profile,
                 id: user.id,
                 email: user.email,
-                name: user.user_metadata?.full_name || user.email,
-                role: user.user_metadata?.role || 'user',
-                ...user.user_metadata
+                name: profile?.full_name || user.user_metadata?.full_name || user.email,
+                role: profile?.role || user.user_metadata?.role || 'user'
             };
         }
     },
