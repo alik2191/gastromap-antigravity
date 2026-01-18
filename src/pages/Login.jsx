@@ -17,6 +17,16 @@ export default function Login() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const redirectUrl = searchParams.get('redirect') || createPageUrl('Dashboard');
+    const isConfirmed = searchParams.get('confirmed') === 'true';
+
+    useEffect(() => {
+        if (isConfirmed) {
+            toast.success('Электронная почта успешно подтверждена! Теперь вы можете войти.');
+            // Remove the param from URL without reloading
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [isConfirmed]);
 
     const handleAuth = async (e) => {
         e.preventDefault();
@@ -28,20 +38,21 @@ export default function Login() {
                     email,
                     password,
                     options: {
+                        emailRedirectTo: `${window.location.origin}/Login?confirmed=true`,
                         data: {
                             full_name: email.split('@')[0],
                         }
                     }
                 });
                 if (error) throw error;
-                toast.success('Check your email for confirmation!');
+                toast.success('Проверьте свою почту для подтверждения регистрации!');
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
                 if (error) throw error;
-                toast.success('Logged in successfully!');
+                toast.success('Вход выполнен успешно!');
                 navigate(redirectUrl);
             }
         } catch (error) {
