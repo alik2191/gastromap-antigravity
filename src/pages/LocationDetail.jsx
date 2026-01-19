@@ -230,14 +230,14 @@ export default function LocationDetail() {
 
     if (loadingLocation || !location) {
         return (
-            <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900 flex items-center justify-center">
+            <div className="min-h-screen bg-[#F2F2F7] dark:bg-black flex items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900">
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
             {/* Hero Section */}
             <div className="relative h-[40vh] md:h-[50vh] w-full">
                 <img
@@ -299,8 +299,8 @@ export default function LocationDetail() {
                             onClick={() => handleSave('wishlist')}
                             disabled={saving}
                             className={`flex-1 md:flex-none rounded-full h-12 font-medium px-4 md:px-6 ${savedLocation?.list_type === 'wishlist'
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
                                 }`}
                             aria-label="Save to wishlist"
                         >
@@ -595,7 +595,7 @@ export default function LocationDetail() {
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
                                     placeholder={t('addPersonalNotes')}
-                                    className="min-h-[200px] resize-none text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                    className="min-h-[200px] resize-none text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                 />
                             </div>
                             <Button

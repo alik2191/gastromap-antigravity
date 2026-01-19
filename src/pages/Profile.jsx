@@ -254,14 +254,14 @@ export default function Profile() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900 flex items-center justify-center">
+            <div className="min-h-screen bg-[#F2F2F7] dark:bg-black flex items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900">
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
             <AchievementNotification
                 achievement={newAchievement}
                 onClose={() => setNewAchievement(null)}
@@ -387,7 +387,7 @@ export default function Profile() {
 
                         {/* Profile Form */}
                         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 md:p-6 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
-                            <div className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl p-4">
+                            <div className="bg-neutral-50 dark:bg-black rounded-2xl p-4">
                                 <Label className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Email</Label>
                                 <p className="font-medium text-neutral-900 dark:text-neutral-100 break-all">{user?.email || ''}</p>
                                 <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{t('emailCannotChange')}</p>
@@ -399,7 +399,7 @@ export default function Profile() {
                                     value={formData.full_name}
                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                                     placeholder={t('yourName')}
-                                    className="h-12 rounded-xl text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                    className="h-12 rounded-xl text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                 />
                             </div>
 
@@ -410,11 +410,11 @@ export default function Profile() {
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                     placeholder={t('tellAboutYourself')}
                                     rows={4}
-                                    className="rounded-xl text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                    className="rounded-xl text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                 />
                             </div>
 
-                            <div className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl p-4">
+                            <div className="bg-neutral-50 dark:bg-black rounded-2xl p-4">
                                 <Label className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Role</Label>
                                 <p className="font-medium text-neutral-900 dark:text-neutral-100">
                                     {user?.role === 'admin' ? 'Administrator' : user?.role === 'creator' || user?.custom_role === 'creator' ? 'Creator' : 'User'}
@@ -484,7 +484,7 @@ export default function Profile() {
                             </div>
 
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-black rounded-xl">
                                     <div>
                                         <Label className="font-semibold text-neutral-900 dark:text-neutral-100">{t('emailNotifications')}</Label>
                                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t('receiveNotifications')}</p>
@@ -497,7 +497,7 @@ export default function Profile() {
                                     />
                                 </div>
 
-                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-black rounded-xl">
                                     <div>
                                         <Label className="font-semibold text-neutral-900 dark:text-neutral-100">{t('newLocationsNotif')}</Label>
                                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t('notifyNewPlaces')}</p>
@@ -510,7 +510,7 @@ export default function Profile() {
                                     />
                                 </div>
 
-                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-black rounded-xl">
                                     <div>
                                         <Label className="font-semibold text-neutral-900 dark:text-neutral-100">{t('locationUpdatesNotif')}</Label>
                                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t('notifySavedChanges')}</p>
@@ -523,7 +523,7 @@ export default function Profile() {
                                     />
                                 </div>
 
-                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                                <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 dark:bg-black rounded-xl">
                                     <div>
                                         <Label className="font-semibold text-neutral-900 dark:text-neutral-100">{t('marketingNotif')}</Label>
                                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t('specialOffers')}</p>
@@ -565,7 +565,7 @@ export default function Profile() {
                             ) : (
                                 <div className="space-y-4">
                                     {subscriptions.map((sub) => (
-                                        <div key={sub.id} className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl p-5 space-y-3">
+                                        <div key={sub.id} className="bg-neutral-50 dark:bg-black rounded-2xl p-5 space-y-3">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div>
                                                     <p className="font-bold text-lg text-neutral-900 dark:text-neutral-100">{getPlanLabel(sub.plan)}</p>

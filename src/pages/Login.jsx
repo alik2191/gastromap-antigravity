@@ -63,7 +63,7 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-neutral-900 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-black px-4">
             <Card className="w-full max-w-md shadow-xl border-none dark:bg-neutral-800">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center text-neutral-900 dark:text-neutral-100">GastroMap</CardTitle>
@@ -81,7 +81,7 @@ export default function Login() {
                                     id="email"
                                     type="email"
                                     placeholder="name@example.com"
-                                    className="pl-10 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+                                    className="pl-10 dark:bg-black dark:border-neutral-700 dark:text-neutral-100"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -95,7 +95,7 @@ export default function Login() {
                                 <Input
                                     id="password"
                                     type="password"
-                                    className="pl-10 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+                                    className="pl-10 dark:bg-black dark:border-neutral-700 dark:text-neutral-100"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required

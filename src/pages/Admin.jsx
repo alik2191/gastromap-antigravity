@@ -1087,7 +1087,7 @@ export default function Admin() {
                                                     placeholder="Например: France"
                                                     value={bulkImportCountry}
                                                     onChange={(e) => setBulkImportCountry(e.target.value)}
-                                                    className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                                    className="text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                                 />
                                             </div>
                                             <div>
@@ -1096,7 +1096,7 @@ export default function Admin() {
                                                     placeholder="Например: Paris"
                                                     value={bulkImportCity}
                                                     onChange={(e) => setBulkImportCity(e.target.value)}
-                                                    className="text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                                    className="text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                                 />
                                             </div>
                                         </div>
@@ -1107,7 +1107,7 @@ export default function Admin() {
                                                 value={bulkImportText}
                                                 onChange={(e) => setBulkImportText(e.target.value)}
                                                 rows={10}
-                                                className="font-mono text-sm resize-none text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                                className="font-mono text-sm resize-none text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                             />
                                         </div>
                                         <div className="flex gap-2">
@@ -1296,7 +1296,7 @@ export default function Admin() {
                                             <div
                                                 key={country.name}
                                                 onClick={() => selectCountry(country.name)}
-                                                className="group bg-white dark:bg-neutral-900 shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                                                className="group bg-white dark:bg-black shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl overflow-hidden hover:shadow-lg transition-all cursor-pointer"
                                             >
                                                 {/* Country Image */}
                                                 <div className="relative h-32 bg-stone-100 dark:bg-neutral-800">
@@ -1512,7 +1512,7 @@ export default function Admin() {
                                                 <div
                                                     key={city.name}
                                                     onClick={() => selectCity(city.name)}
-                                                    className="group bg-white dark:bg-neutral-900 shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                                                    className="group bg-white dark:bg-black shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl overflow-hidden hover:shadow-lg transition-all cursor-pointer"
                                                 >
                                                     {/* City Image */}
                                                     <div className="relative h-32 bg-stone-100 dark:bg-neutral-800">
@@ -1648,7 +1648,7 @@ export default function Admin() {
                                                         setBrowsingLevel('locations');
                                                     }
                                                 }}
-                                                className="pl-9 w-full text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                                className="pl-9 w-full text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                             />
                                         </div>
                                         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 -mx-6 px-6 md:mx-0 md:px-0 no-scrollbar">
@@ -1656,7 +1656,7 @@ export default function Admin() {
                                                 value={sortBy}
                                                 onValueChange={setSortBy}
                                             >
-                                                <SelectTrigger className="w-[150px] shrink-0 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
+                                                <SelectTrigger className="w-[150px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
                                                     <SelectValue placeholder="Сортировка" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -1668,7 +1668,7 @@ export default function Admin() {
                                                 value={filterCountry}
                                                 onValueChange={setFilterCountry}
                                             >
-                                                <SelectTrigger className="w-[130px] shrink-0 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
+                                                <SelectTrigger className="w-[130px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
                                                     <SelectValue placeholder="Страна" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -1682,7 +1682,7 @@ export default function Admin() {
                                                 value={filterCity}
                                                 onValueChange={setFilterCity}
                                             >
-                                                <SelectTrigger className="w-[130px] shrink-0 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
+                                                <SelectTrigger className="w-[130px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
                                                     <SelectValue placeholder="Город" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -1700,7 +1700,7 @@ export default function Admin() {
                                                 value={filterPrice}
                                                 onValueChange={setFilterPrice}
                                             >
-                                                <SelectTrigger className="w-[100px] shrink-0 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
+                                                <SelectTrigger className="w-[100px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
                                                     <SelectValue placeholder="Цена" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -2151,7 +2151,7 @@ export default function Admin() {
                                                                             review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
                                                                 </Badge>
                                                                 {review.is_hidden && (
-                                                                    <Badge variant="outline" className="bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 text-[10px]">
+                                                                    <Badge variant="outline" className="bg-neutral-100 dark:bg-black text-neutral-900 dark:text-neutral-300 text-[10px]">
                                                                         Скрыто
                                                                     </Badge>
                                                                 )}
@@ -2457,7 +2457,7 @@ export default function Admin() {
 
                         <div className="grid gap-4">
                             {formattedFeedback.map((item) => (
-                                <div key={item.id} className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
+                                <div key={item.id} className="bg-white dark:bg-black p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             <Badge variant="outline" className={

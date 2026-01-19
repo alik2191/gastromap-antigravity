@@ -725,7 +725,7 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900 flex items-center justify-center">
+            <div className="min-h-screen bg-[#F2F2F7] dark:bg-black flex items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
             </div>
         );
@@ -736,7 +736,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-neutral-900 dark:text-neutral-100 pb-24 md:pb-10 font-sans">
             {/* Desktop Header */}
-            <header className="hidden md:block sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-white/20 dark:border-neutral-800 pt-4 pb-4 px-4 lg:px-8">
+            <header className="hidden md:block sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-xl border-b border-white/20 dark:border-neutral-800 pt-4 pb-4 px-4 lg:px-8">
                 <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3 lg:gap-8">
                         <Link to={createPageUrl("Home")} className="flex items-center gap-2 lg:gap-3">
@@ -905,7 +905,7 @@ export default function Dashboard() {
             </header>
 
             {/* Mobile Header */}
-            <header className="md:hidden sticky top-0 z-40 bg-[#F2F2F7]/95 dark:bg-neutral-900/95 backdrop-blur-md px-5 py-2 border-b border-neutral-200 dark:border-neutral-800">
+            <header className="md:hidden sticky top-0 z-40 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md px-5 py-2 border-b border-neutral-200 dark:border-neutral-800">
                 <div className="flex items-center justify-between">
                     <Link to={createPageUrl("Home")} className="flex items-center gap-2">
                         <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
@@ -1146,7 +1146,7 @@ export default function Dashboard() {
                             {/* Mobile View */}
                             <div className="md:hidden min-h-[50vh]">
                                 {mobileTab === 'ai' ? (
-                                    <div className="fixed inset-0 top-[68px] bottom-16 z-[5] bg-[#F2F2F7] dark:bg-neutral-900">
+                                    <div className="fixed inset-0 top-[68px] bottom-16 z-[5] bg-[#F2F2F7] dark:bg-black">
                                         <AIAssistant
                                             allLocations={locations}
                                             savedLocations={savedLocations}
@@ -2005,7 +2005,7 @@ export default function Dashboard() {
                             <div>
                                 <label className="text-sm font-medium text-neutral-900 dark:text-neutral-300 mb-3 block">{t('type') || 'Тип заведения'}</label>
                                 <Select value={filterType} onValueChange={setFilterType}>
-                                    <SelectTrigger className="w-full h-12 rounded-xl bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
+                                    <SelectTrigger className="w-full h-12 rounded-xl bg-neutral-50 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -2056,7 +2056,7 @@ export default function Dashboard() {
                                             onClick={() => setFilterRating(option.value)}
                                             className={`h-12 rounded-xl font-semibold transition-all ${filterRating === option.value
                                                 ? 'bg-blue-600 text-white shadow-lg'
-                                                : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                                                : 'bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                                                 }`}
                                         >
                                             {option.label}
@@ -2081,7 +2081,7 @@ export default function Dashboard() {
                                             }}
                                             className={`h-12 rounded-xl font-semibold transition-all text-sm ${filterLabels.includes(label.id)
                                                 ? 'bg-blue-600 text-white shadow-lg'
-                                                : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                                                : 'bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                                                 }`}
                                         >
                                             {label.label}

@@ -316,7 +316,7 @@ export default function CreatorTools() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900 flex items-center justify-center">
+            <div className="min-h-screen bg-[#F2F2F7] dark:bg-black flex items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
             </div>
         );
@@ -325,9 +325,9 @@ export default function CreatorTools() {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     return (
-        <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900 pb-8">
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-8">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-white/20 dark:border-neutral-800 pt-4 md:pt-6 pb-3 md:pb-4 px-4 md:px-8">
+            <header className="sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-xl border-b border-white/20 dark:border-neutral-800 pt-4 md:pt-6 pb-3 md:pb-4 px-4 md:px-8">
                 <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 md:gap-4 min-w-0">
                         <Link to={createPageUrl("Dashboard")}>
@@ -460,7 +460,7 @@ export default function CreatorTools() {
                                 </CardHeader>
                                 <CardContent className="p-4 md:p-6 pt-0">
                                     <Tabs defaultValue="all" className="w-full">
-                                        <TabsList className="grid w-full grid-cols-4 mb-4 md:mb-6 bg-neutral-50 dark:bg-neutral-900 p-1 md:p-1 rounded-xl md:rounded-2xl h-10 md:h-12">
+                                        <TabsList className="grid w-full grid-cols-4 mb-4 md:mb-6 bg-neutral-50 dark:bg-black p-1 md:p-1 rounded-xl md:rounded-2xl h-10 md:h-12">
                                             <TabsTrigger
                                                 value="all"
                                                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-neutral-900 dark:text-neutral-300 rounded-lg md:rounded-xl text-xs md:text-sm h-full"
@@ -526,7 +526,7 @@ export default function CreatorTools() {
                                                                                 </div>
 
                                                                                 {location.status === 'published' && (
-                                                                                    <div className="flex flex-wrap items-center gap-3 md:gap-6 p-3 md:p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                                                                                    <div className="flex flex-wrap items-center gap-3 md:gap-6 p-3 md:p-4 bg-neutral-50 dark:bg-black rounded-xl">
                                                                                         <div className="flex items-center gap-1.5 md:gap-2">
                                                                                             <Heart className="w-3 h-3 md:w-4 md:h-4 text-rose-500" />
                                                                                             <span className="text-xs md:text-sm font-medium">{location.saves}</span>
@@ -573,7 +573,7 @@ export default function CreatorTools() {
                                                                                 })()}
 
                                                                                 {location.status === 'draft' && (
-                                                                                    <div className="p-3 md:p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl border-0 dark:border dark:border-neutral-700">
+                                                                                    <div className="p-3 md:p-4 bg-neutral-50 dark:bg-black rounded-xl border-0 dark:border dark:border-neutral-700">
                                                                                         <p className="text-xs md:text-sm text-neutral-900 dark:text-neutral-300">
                                                                                             {t('savedAsDraft')}
                                                                                         </p>
@@ -641,7 +641,7 @@ export default function CreatorTools() {
                                         {/* Progress */}
                                         <div className="flex items-center justify-between text-sm text-neutral-900 dark:text-neutral-400">
                                             <span>{remainingCount} questions remaining</span>
-                                            <Badge variant="outline" className="dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">Question {currentQuestion.field_name}</Badge>
+                                            <Badge variant="outline" className="dark:border-neutral-700 dark:bg-black dark:text-neutral-300">Question {currentQuestion.field_name}</Badge>
                                         </div>
 
                                         {/* Location Card */}
@@ -791,7 +791,7 @@ export default function CreatorTools() {
                                                             onChange={(e) => setCustomAnswer(e.target.value)}
                                                             placeholder="Write your answer or suggestion..."
                                                             rows={4}
-                                                            className="w-full text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
+                                                            className="w-full text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
                                                         />
                                                     )}
                                                 </div>
