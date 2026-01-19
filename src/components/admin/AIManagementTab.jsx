@@ -46,16 +46,26 @@ export default function AIManagementTab() {
     const { data: checkHistory = [], isLoading: loadingHistory } = useQuery({
         queryKey: ['moderation-check-history'],
         queryFn: async () => {
-            const history = await api.entities.ModerationCheckHistory.list('-check_date', 10);
-            return history;
+            try {
+                const history = await api.entities.ModerationRound.list({ sort: '-created_at', range: [0, 9] });
+                return history || [];
+            } catch (error) {
+                console.error('Error loading moderation history:', error);
+                return [];
+            }
         }
     });
 
     // Fetch AI Agents
-    const { data: aiAgents = [], refetch: refetchAgents } = useQuery({
+    const { data: aiAgents = [], refetch: refetchAgents, isLoading: loadingAgents } = useQuery({
         queryKey: ['ai-agents'],
         queryFn: async () => {
-            return await api.entities.AIAgent.list();
+            try {
+                return await api.entities.AIAgent.list();
+            } catch (error) {
+                console.error('Error loading AI agents:', error);
+                return [];
+            }
         }
     });
 

@@ -532,6 +532,19 @@ export default function Admin() {
         refetchInterval: 30000
     });
 
+    const { data: aiAgents = [] } = useQuery({
+        queryKey: ['admin-ai-agents'],
+        queryFn: async () => {
+            try {
+                return await api.entities.AIAgent.list();
+            } catch (error) {
+                console.error('Error loading AI agents:', error);
+                return [];
+            }
+        },
+        enabled: !loading
+    });
+
     const isAgentConnected = agentConversations.length > 0;
 
     const newFeedbackCount = feedback.filter(item => item.status === 'new').length;
@@ -871,7 +884,7 @@ export default function Admin() {
                         <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Admin Panel</h1>
                     </div>
                     <div className="flex items-center gap-2">
-                        <AIAgentStatusCard />
+                        <AIAgentStatusCard agent={aiAgents[0]} />
                     </div>
                 </div>
 
