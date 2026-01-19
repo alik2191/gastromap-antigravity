@@ -14,11 +14,14 @@ serve(async (req) => {
 
     try {
         const { prompt, system_instruction, response_json_schema } = await req.json();
-        const apiKey = Deno.env.get('GEMINI_API_KEY');
+        const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
+
 
         if (!apiKey) {
-            throw new Error('GEMINI_API_KEY is not set');
+            console.error('API Key Error: Neither GOOGLE_API_KEY nor GEMINI_API_KEY is set');
+            throw new Error('API Key not configured. Please set GOOGLE_API_KEY or GEMINI_API_KEY in Supabase Edge Function secrets.');
         }
+
 
         // Use Gemini Pro (Stable Fallback)
         const model = 'gemini-2.0-flash';
@@ -91,9 +94,34 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
 
+
     } catch (error) {
         console.error('Edge Function Error:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+
+        // Log error to system_logs table
+        try {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+            const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+            const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.0");
+            const supabase = createClient(supabaseUrl, supabaseKey);
+
+            await supabase.from('system_logs').insert({
+                level: 'ERROR',
+                component: 'invoke-llm',
+                message: error.message,
+                metadata: {
+                    stack: error.stack,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        } catch (logError) {
+            console.error('Failed to log error:', logError);
+        }
+
+        return new Response(JSON.stringify({
+            error: error.message,
+            type: 'llm_error'
+        }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

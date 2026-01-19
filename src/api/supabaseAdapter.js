@@ -297,26 +297,34 @@ export const adapter = {
                     file_url: publicUrl // Added for compatibility with Profile.jsx
                 };
             },
-            InvokeLLM: async ({ prompt, response_json_schema }) => {
+            InvokeLLM: async ({ prompt, response_json_schema, system_instruction }) => {
                 // Call Supabase Edge Function 'invoke-llm'
                 try {
                     const result = await adapter.functions.invoke('invoke-llm', {
                         prompt,
-                        response_json_schema
+                        response_json_schema,
+                        system_instruction
                     });
+
+                    // Check if result contains error
+                    if (result.error) {
+                        throw new Error(result.error.message || 'Edge Function returned error');
+                    }
+
                     return result.data;
                 } catch (error) {
                     console.error('InvokeLLM Error:', error);
-                    // Fallback to mock if function fails (e.g. not deployed yet)
-                    if (response_json_schema) {
-                        return {
-                            message: "⚠️ AI service is currently unavailable (Edge Function failed). Please check configuration.",
-                            description: "AI service unavailable.",
-                            tags: ["error"],
-                            category: "other"
-                        };
-                    }
-                    return "AI service is currently unavailable.";
+
+                    // Check if it's an API key error
+                    const isApiKeyError = error.message?.includes('API Key') || error.message?.includes('not configured');
+                    const isQuotaError = error.message?.includes('quota') || error.message?.includes('limit');
+
+                    // Throw error with type for better frontend handling
+                    const enhancedError = new Error(error.message || 'AI service is currently unavailable');
+                    enhancedError.type = isApiKeyError ? 'api_key_error' : isQuotaError ? 'quota_error' : 'llm_error';
+                    enhancedError.originalError = error;
+
+                    throw enhancedError;
                 }
             },
             SendEmail: async () => ({ success: true }),

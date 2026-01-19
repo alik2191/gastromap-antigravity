@@ -207,9 +207,34 @@ User Message: "${message}"
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
 
+
     } catch (error) {
         console.error('Edge Function Error:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+
+        // Log error to system_logs table
+        try {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+            const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+            const supabase = createClient(supabaseUrl, supabaseKey);
+
+            await supabase.from('system_logs').insert({
+                level: 'ERROR',
+                component: 'ai-guide-chat',
+                message: error.message,
+                metadata: {
+                    stack: error.stack,
+                    timestamp: new Date().toISOString(),
+                    userId: (await req.json().catch(() => ({})))?.userId
+                }
+            });
+        } catch (logError) {
+            console.error('Failed to log error:', logError);
+        }
+
+        return new Response(JSON.stringify({
+            error: error.message,
+            type: 'ai_guide_error'
+        }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400,
         });

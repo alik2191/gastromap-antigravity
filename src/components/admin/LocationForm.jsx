@@ -232,9 +232,21 @@ Analyze these reviews and generate the requested JSON fields based on the system
 
             toast.success('Location data filled intelligently!');
 
+
         } catch (error) {
             console.error('Smart Fill Error:', error);
-            toast.error('Failed to Smart Fill location');
+
+            // Show specific error message based on error type
+            let errorMessage = 'Failed to Smart Fill location';
+            if (error.type === 'api_key_error') {
+                errorMessage = '🔑 AI service not configured. Please contact administrator.';
+            } else if (error.type === 'quota_error') {
+                errorMessage = '⚠️ AI quota exceeded. Please try again later.';
+            } else if (error.message) {
+                errorMessage = `❌ ${error.message}`;
+            }
+
+            toast.error(errorMessage);
         } finally {
             setIsSearching(false);
         }
@@ -290,7 +302,18 @@ Please generate the content for "${field}" following the system instructions.`;
             }
         } catch (error) {
             console.error(error);
-            toast.error('Ошибка генерации контента');
+
+            // Show specific error message based on error type
+            let errorMessage = 'Ошибка генерации контента';
+            if (error.type === 'api_key_error') {
+                errorMessage = '🔑 AI сервис не настроен. Обратитесь к администратору.';
+            } else if (error.type === 'quota_error') {
+                errorMessage = '⚠️ Превышен лимит AI. Попробуйте позже.';
+            } else if (error.message) {
+                errorMessage = `❌ ${error.message}`;
+            }
+
+            toast.error(errorMessage);
         } finally {
             setGeneratingContent(prev => ({ ...prev, [field]: false }));
         }

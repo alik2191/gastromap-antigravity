@@ -209,14 +209,40 @@ export default function AIAssistant({
                 throw new Error('No reply from AI Guide');
             }
 
+
         } catch (error) {
             console.error('AI Guide error:', error);
+
+            // Parse error response if available
+            let errorMessage = t('errorProcessingRequest') || 'Sorry, I encountered an error. Please try again.';
+            let errorType = 'unknown';
+
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                errorType = errorData.type || 'unknown';
+
+                // Provide specific error messages based on type
+                if (errorType === 'ai_guide_error' || errorType === 'llm_error') {
+                    if (errorData.error?.includes('API Key')) {
+                        errorMessage = '🔑 AI service is not configured. Please contact support.';
+                    } else if (errorData.error?.includes('quota')) {
+                        errorMessage = '⚠️ AI service quota exceeded. Please try again later.';
+                    } else {
+                        errorMessage = `❌ ${errorData.error || errorMessage}`;
+                    }
+                }
+            } else if (error.message) {
+                errorMessage = `❌ ${error.message}`;
+            }
+
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: t('errorProcessingRequest') || 'Sorry, I encountered an error. Please try again.',
-                timestamp: new Date()
+                content: errorMessage,
+                timestamp: new Date(),
+                isError: true
             }]);
-            toast.error(t('errorProcessingRequest') || 'Error processing request');
+
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
