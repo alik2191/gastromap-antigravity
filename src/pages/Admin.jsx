@@ -939,950 +939,6 @@ export default function Admin() {
             )}
 
             {/* AI Management Tab */}
-            {activeTab === 'locations' && (
-                <div>
-                    <div className="mb-6 flex flex-col md:flex-row justify-end gap-3">
-                        {/* Import/Export Dropdown */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full md:w-auto" disabled={isImporting}>
-                                    {isImporting ? (
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    ) : (
-                                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                                    )}
-                                    Операции с файлами
-                                </Button>
-                            </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleExport}>
-                                <Download className="w-4 h-4 mr-2" />
-                                Экспорт CSV
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => document.getElementById('csv-upload').click()}>
-                                <Upload className="w-4 h-4 mr-2" />
-                                Импорт CSV
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleExportExcel}>
-                                <Download className="w-4 h-4 mr-2" />
-                                Экспорт Excel
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setShowBulkEditor(true)}>
-                                <Pencil className="w-4 h-4 mr-2" />
-                                Массовое редактирование
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => document.getElementById('excel-upload').click()}>
-                                <Upload className="w-4 h-4 mr-2" />
-                                Импорт Excel
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <input
-                        id="csv-upload"
-                        type="file"
-                        accept=".csv"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setImportFile(file);
-                            setImportType('csv');
-                            setShowImportWizard(true);
-                            e.target.value = '';
-                        }}
-                    />
-                    <input
-                        id="excel-upload"
-                        type="file"
-                        accept=".xlsx,.xls"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setImportFile(file);
-                            setImportType('excel');
-                            setShowImportWizard(true);
-                            e.target.value = '';
-                        }}
-                    />
-
-                    <Dialog open={showBulkImport} onOpenChange={setShowBulkImport}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full md:w-auto border-purple-200 text-purple-700 hover:bg-purple-50">
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Импорт списка AI
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
-                                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                    Импорт множества локаций через AI
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="bg-purple-50 dark:bg-purple-950/30 border-0 shadow-sm dark:border dark:border-purple-900 rounded-lg p-4">
-                                    <p className="text-sm text-neutral-900 dark:text-purple-200">
-                                        Укажите страну и город, затем введите список названий заведений (по одному на строку).
-                                        AI найдет информацию о каждом месте и создаст черновики для модерации.
-                                    </p>
-                                    <p className="text-xs text-neutral-700 dark:text-purple-400 mt-2">
-                                        Например: "Café de Flore" или "Roscioli"
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <Label className="text-neutral-900 dark:text-neutral-300">Страна *</Label>
-                                        <Input
-                                            placeholder="Например: France"
-                                            value={bulkImportCountry}
-                                            onChange={(e) => setBulkImportCountry(e.target.value)}
-                                            className="text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-neutral-900 dark:text-neutral-300">Город *</Label>
-                                        <Input
-                                            placeholder="Например: Paris"
-                                            value={bulkImportCity}
-                                            onChange={(e) => setBulkImportCity(e.target.value)}
-                                            className="text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-neutral-900 dark:text-neutral-300">Список локаций</Label>
-                                    <Textarea
-                                        placeholder="Café de Flore&#10;Roscioli&#10;El Xampanyet&#10;..."
-                                        value={bulkImportText}
-                                        onChange={(e) => setBulkImportText(e.target.value)}
-                                        rows={10}
-                                        className="font-mono text-sm resize-none text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        onClick={handleBulkImport}
-                                        disabled={isBulkImporting || !bulkImportText.trim() || !bulkImportCountry.trim() || !bulkImportCity.trim()}
-                                        className="flex-1 bg-purple-600 hover:bg-purple-700"
-                                    >
-                                        {isBulkImporting ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Обрабатываю...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Wand2 className="w-4 h-4 mr-2" />
-                                                Импортировать
-                                            </>
-                                        )}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            setShowBulkImport(false);
-                                            setBulkImportText('');
-                                            setBulkImportCountry('');
-                                            setBulkImportCity('');
-                                        }}
-                                        disabled={isBulkImporting}
-                                    >
-                                        Отмена
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-
-                    <Dialog open={showLocationForm} onOpenChange={setShowLocationForm}>
-                        <DialogTrigger asChild>
-                            <Button onClick={() => setEditingLocation(null)} className="w-full md:w-auto bg-stone-900 text-white hover:bg-stone-800">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Добавить локацию
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
-                            <DialogHeader>
-                                <DialogTitle className="text-neutral-900 dark:text-neutral-100">
-                                    {editingLocation ? 'Редактировать' : 'Добавить'} локацию
-                                </DialogTitle>
-                            </DialogHeader>
-                            <LocationForm
-                                location={editingLocation}
-                                onSubmit={(data) => locationMutation.mutate(data)}
-                                isLoading={locationMutation.isPending}
-                            />
-                        </DialogContent>
-                    </Dialog>
-                </div>
-
-                    {/* Undo import banner */}
-            {lastImportChanges && (lastImportChanges.createdIds?.length || lastImportChanges.updatedChanges?.length) ? (
-                <div className="mb-4 p-3 rounded-xl border-0 shadow-sm dark:border dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 flex items-center justify-between gap-3">
-                    <div className="text-sm text-neutral-900 dark:text-amber-200">
-                        Последний импорт: создано {lastImportChanges.createdIds?.length || 0}, обновлено {lastImportChanges.updatedChanges?.length || 0}
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            className="border-amber-300 text-amber-900 hover:bg-amber-100"
-                            onClick={async () => {
-                                try {
-                                    const payload = {
-                                        createdIds: lastImportChanges.createdIds || [],
-                                        updatedChanges: lastImportChanges.updatedChanges || []
-                                    };
-                                    const res = await api.functions.invoke('rollbackImport', payload);
-                                    if (res.data?.error) throw new Error(res.data.error);
-                                    toast.success(`Откат выполнен: удалено ${res.data.deleted}, восстановлено ${res.data.restored}`);
-                                    setLastImportChanges(null);
-                                    queryClient.invalidateQueries(['admin-locations']);
-                                    queryClient.invalidateQueries(['admin-pending-locations']);
-                                } catch (e) {
-                                    toast.error('Ошибка отката: ' + e.message);
-                                }
-                            }}
-                        >
-                            Отменить импорт
-                        </Button>
-                        <Button variant="ghost" onClick={() => setLastImportChanges(null)}>Скрыть</Button>
-                    </div>
-                </div>
-            ) : null}
-
-            {/* Import Wizard */}
-            {showImportWizard && (
-                <ImportWizard
-                    isOpen={showImportWizard}
-                    file={importFile}
-                    type={importType}
-                    onClose={() => { setShowImportWizard(false); setImportFile(null); }}
-                    onImported={(summary) => {
-                        setLastImportChanges({ createdIds: summary.createdIds || [], updatedChanges: summary.updatedChanges || [] });
-                        if (summary.errors > 0 && Array.isArray(summary.errorDetails) && summary.errorDetails.length) {
-                            setImportErrors(summary.errorDetails);
-                            setShowImportErrors(true);
-                        }
-                        queryClient.invalidateQueries(['admin-locations']);
-                    }}
-                />
-            )}
-
-
-
-            {/* Import Errors Dialog */}
-            <Dialog open={showImportErrors} onOpenChange={setShowImportErrors}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
-                    <DialogHeader>
-                        <DialogTitle className="text-neutral-900 dark:text-neutral-100">Ошибки импорта</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-2">
-                        {importErrors && importErrors.length > 0 ? (
-                            <div className="text-sm">
-                                <div className="grid grid-cols-6 gap-2 font-medium text-neutral-900 dark:text-neutral-300 mb-2">
-                                    <div className="col-span-1">Строка</div>
-                                    <div className="col-span-2">Название</div>
-                                    <div className="col-span-3">Ошибки</div>
-                                </div>
-                                {importErrors.map((err, idx) => (
-                                    <div key={idx} className="grid grid-cols-6 gap-2 py-2 border-t border-neutral-100 dark:border-neutral-700">
-                                        <div className="col-span-1 text-neutral-500 dark:text-neutral-400">{err.row ?? '-'}</div>
-                                        <div className="col-span-2 font-medium text-neutral-900 dark:text-neutral-100">{err.location || '-'}</div>
-                                        <div className="col-span-3 text-neutral-900 dark:text-neutral-300">
-                                            {Array.isArray(err.errors) ? err.errors.join('; ') : String(err.errors || '-')}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-sm text-neutral-900 dark:text-neutral-300">Нет деталей ошибок.</p>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Breadcrumbs Navigation */}
-            {!searchQuery && browsingLevel !== 'countries' && (
-                <div className="mb-4 flex items-center gap-2 text-sm">
-                    <button
-                        onClick={goHome}
-                        className="text-neutral-700 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 font-medium"
-                    >
-                        Все страны
-                    </button>
-                    {selectedCountry && (
-                        <>
-                            <span className="text-neutral-400 dark:text-neutral-600">/</span>
-                            <button
-                                onClick={() => {
-                                    setBrowsingLevel('cities');
-                                    setSelectedCity(null);
-                                }}
-                                className={`hover:text-neutral-900 dark:hover:text-neutral-100 font-medium ${browsingLevel === 'cities' ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-700 dark:text-neutral-400'}`}
-                            >
-                                {selectedCountry}
-                            </button>
-                        </>
-                    )}
-                    {selectedCity && (
-                        <>
-                            <span className="text-neutral-400 dark:text-neutral-600">/</span>
-                            <span className="text-neutral-900 dark:text-neutral-100 font-semibold">{selectedCity}</span>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* COUNTRIES VIEW */}
-            {!searchQuery && browsingLevel === 'countries' && (
-                <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg md:text-xl text-neutral-900 dark:text-neutral-100">Страны</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                            {countryData.map(country => (
-                                <div
-                                    key={country.name}
-                                    onClick={() => selectCountry(country.name)}
-                                    className="group bg-white dark:bg-black shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl overflow-hidden hover:shadow-lg transition-all cursor-pointer"
-                                >
-                                    {/* Country Image */}
-                                    <div className="relative h-32 bg-stone-100 dark:bg-neutral-800">
-                                        {country.image_url ? (
-                                            <img
-                                                src={country.image_url}
-                                                alt={country.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-neutral-600">
-                                                <Globe className="w-8 h-8" />
-                                            </div>
-                                        )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                                        <div className="absolute bottom-2 left-3">
-                                            <h3 className="text-lg font-bold text-white drop-shadow-lg">
-                                                {country.name}
-                                            </h3>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-3 text-xs text-neutral-700 dark:text-neutral-400">
-                                                <span>{country.citiesCount} городов</span>
-                                                <span>•</span>
-                                                <span>{country.count} локаций</span>
-                                            </div>
-                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        updateRegionStatusMutation.mutate({
-                                                            region_name: country.name,
-                                                            region_type: 'country',
-                                                            parent_region: null,
-                                                            is_active: !country.is_active || country.is_coming_soon,
-                                                            is_coming_soon: false
-                                                        });
-                                                    }}
-                                                    className={`h-6 px-2 text-xs ${country.is_active && !country.is_coming_soon
-                                                        ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
-                                                        : 'hover:bg-red-50 text-red-600 border-red-300'
-                                                        }`}
-                                                    title={country.is_active && !country.is_coming_soon ? "Скрыть от пользователей" : "Активировать"}
-                                                >
-                                                    {country.is_active && !country.is_coming_soon ? "Active" : "Hidden"}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        updateRegionStatusMutation.mutate({
-                                                            region_name: country.name,
-                                                            region_type: 'country',
-                                                            parent_region: null,
-                                                            is_active: true,
-                                                            is_coming_soon: !country.is_coming_soon
-                                                        });
-                                                    }}
-                                                    className={`h-6 px-2 text-xs ${country.is_coming_soon
-                                                        ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
-                                                        : 'hover:bg-amber-50 text-amber-600 border-amber-300'
-                                                        }`}
-                                                    title="Coming Soon"
-                                                >
-                                                    CS
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        {/* Image Upload Section - Time of Day */}
-                                        <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700" onClick={(e) => e.stopPropagation()}>
-                                            <Label className="text-xs text-neutral-700 dark:text-neutral-400 mb-2 block">Изображения по времени суток</Label>
-                                            <div className="space-y-2">
-                                                <div>
-                                                    <div className="flex items-center justify-between mb-0.5">
-                                                        <Label className="text-[10px] text-neutral-500 dark:text-neutral-500">☀️ День</Label>
-                                                        {country.image_url_day && (
-                                                            <Badge variant="outline" className="h-4 px-1 text-[9px] bg-green-50 text-green-700 border-green-300">
-                                                                Загружено
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        key={`day-${country.image_url_day}`}
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (!file) return;
-                                                            try {
-                                                                toast.info('Загрузка изображения дня...');
-                                                                const { file_url } = await api.integrations.Core.UploadFile({ file });
-                                                                await updateRegionStatusMutation.mutateAsync({
-                                                                    region_name: country.name,
-                                                                    region_type: 'country',
-                                                                    parent_region: null,
-                                                                    is_active: country.is_active,
-                                                                    is_coming_soon: country.is_coming_soon,
-                                                                    image_url_day: file_url
-                                                                });
-                                                                toast.success('Фото дня загружено!');
-                                                                e.target.value = '';
-                                                            } catch (error) {
-                                                                toast.error('Ошибка: ' + error.message);
-                                                            }
-                                                        }}
-                                                        className="text-xs h-7"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center justify-between mb-0.5">
-                                                        <Label className="text-[10px] text-neutral-500 dark:text-neutral-500">🌆 Вечер</Label>
-                                                        {country.image_url_evening && (
-                                                            <Badge variant="outline" className="h-4 px-1 text-[9px] bg-green-50 text-green-700 border-green-300">
-                                                                Загружено
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        key={`evening-${country.image_url_evening}`}
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (!file) return;
-                                                            try {
-                                                                toast.info('Загрузка изображения вечера...');
-                                                                const { file_url } = await api.integrations.Core.UploadFile({ file });
-                                                                await updateRegionStatusMutation.mutateAsync({
-                                                                    region_name: country.name,
-                                                                    region_type: 'country',
-                                                                    parent_region: null,
-                                                                    is_active: country.is_active,
-                                                                    is_coming_soon: country.is_coming_soon,
-                                                                    image_url_evening: file_url
-                                                                });
-                                                                toast.success('Фото вечера загружено!');
-                                                                e.target.value = '';
-                                                            } catch (error) {
-                                                                toast.error('Ошибка: ' + error.message);
-                                                            }
-                                                        }}
-                                                        className="text-xs h-7"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center justify-between mb-0.5">
-                                                        <Label className="text-[10px] text-neutral-500 dark:text-neutral-500">🌙 Ночь</Label>
-                                                        {country.image_url_night && (
-                                                            <Badge variant="outline" className="h-4 px-1 text-[9px] bg-green-50 text-green-700 border-green-300">
-                                                                Загружено
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        key={`night-${country.image_url_night}`}
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (!file) return;
-                                                            try {
-                                                                toast.info('Загрузка изображения ночи...');
-                                                                const { file_url } = await api.integrations.Core.UploadFile({ file });
-                                                                await updateRegionStatusMutation.mutateAsync({
-                                                                    region_name: country.name,
-                                                                    region_type: 'country',
-                                                                    parent_region: null,
-                                                                    is_active: country.is_active,
-                                                                    is_coming_soon: country.is_coming_soon,
-                                                                    image_url_night: file_url
-                                                                });
-                                                                toast.success('Фото ночи загружено!');
-                                                                e.target.value = '';
-                                                            } catch (error) {
-                                                                toast.error('Ошибка: ' + error.message);
-                                                            }
-                                                        }}
-                                                        className="text-xs h-7"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* CITIES VIEW */}
-            {!searchQuery && browsingLevel === 'cities' && (
-                <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg md:text-xl text-neutral-900 dark:text-neutral-100">Города в {selectedCountry}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                            {cityData.map(city => {
-                                const regionStatus = regionStatuses.find(rs =>
-                                    rs.region_name === city.name &&
-                                    rs.region_type === 'city' &&
-                                    rs.parent_region === selectedCountry
-                                );
-                                return (
-                                    <div
-                                        key={city.name}
-                                        onClick={() => selectCity(city.name)}
-                                        className="group bg-white dark:bg-black shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl overflow-hidden hover:shadow-lg transition-all cursor-pointer"
-                                    >
-                                        {/* City Image */}
-                                        <div className="relative h-32 bg-stone-100 dark:bg-neutral-800">
-                                            {city.image_url ? (
-                                                <img
-                                                    src={city.image_url}
-                                                    alt={city.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-neutral-600">
-                                                    <MapPin className="w-8 h-8" />
-                                                </div>
-                                            )}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                                            <div className="absolute bottom-2 left-3">
-                                                <h3 className="text-lg font-bold text-white drop-shadow-lg">
-                                                    {city.name}
-                                                </h3>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="text-xs text-neutral-700 dark:text-neutral-400">
-                                                    {city.count} локаций
-                                                </div>
-                                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            updateRegionStatusMutation.mutate({
-                                                                region_name: city.name,
-                                                                region_type: 'city',
-                                                                parent_region: selectedCountry,
-                                                                is_active: !city.is_active || city.is_coming_soon,
-                                                                is_coming_soon: false
-                                                            });
-                                                        }}
-                                                        className={`h-6 px-2 text-xs ${city.is_active && !city.is_coming_soon
-                                                            ? 'bg-green-500 hover:bg-green-600 text-white border-green-500'
-                                                            : 'hover:bg-red-50 text-red-600 border-red-300'
-                                                            }`}
-                                                        title={city.is_active && !city.is_coming_soon ? "Скрыть от пользователей" : "Активировать"}
-                                                    >
-                                                        {city.is_active && !city.is_coming_soon ? "Active" : "Hidden"}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            updateRegionStatusMutation.mutate({
-                                                                region_name: city.name,
-                                                                region_type: 'city',
-                                                                parent_region: selectedCountry,
-                                                                is_active: true,
-                                                                is_coming_soon: !city.is_coming_soon
-                                                            });
-                                                        }}
-                                                        className={`h-6 px-2 text-xs ${city.is_coming_soon
-                                                            ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
-                                                            : 'hover:bg-amber-50 text-amber-600 border-amber-300'
-                                                            }`}
-                                                        title="Coming Soon"
-                                                    >
-                                                        CS
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {/* Image Upload Section */}
-                                            <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700" onClick={(e) => e.stopPropagation()}>
-                                                <Label className="text-xs text-neutral-700 dark:text-neutral-400 mb-1 block">Изображение города</Label>
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (!file) return;
-
-                                                            try {
-                                                                toast.info('Загрузка изображения...');
-
-                                                                const { file_url } = await api.integrations.Core.UploadFile({ file });
-
-                                                                updateRegionStatusMutation.mutate({
-                                                                    region_name: city.name,
-                                                                    region_type: 'city',
-                                                                    parent_region: selectedCountry,
-                                                                    is_active: city.is_active,
-                                                                    is_coming_soon: city.is_coming_soon,
-                                                                    image_url: file_url
-                                                                });
-                                                                toast.success('Изображение загружено!');
-                                                            } catch (error) {
-                                                                console.error(error);
-                                                                toast.error('Ошибка загрузки: ' + (error.message || 'Unknown error'));
-                                                            }
-                                                        }}
-                                                        className="text-xs h-8"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* LOCATIONS VIEW */}
-            {(searchQuery || browsingLevel === 'locations') && (
-                <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                    <CardHeader className="flex flex-col md:flex-row gap-4 md:items-center justify-between space-y-0">
-                        <CardTitle className="text-lg md:text-xl text-neutral-900 dark:text-neutral-100">
-                            {browsingLevel === 'locations' && !searchQuery ? `${selectedCity}` : 'Управление локациями'}
-                        </CardTitle>
-                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <div className="relative w-full sm:w-[200px] shrink-0">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-                                <Input
-                                    placeholder="Поиск..."
-                                    value={searchQuery}
-                                    onChange={(e) => {
-                                        setSearchQuery(e.target.value);
-                                        if (e.target.value) {
-                                            setBrowsingLevel('locations');
-                                        }
-                                    }}
-                                    className="pl-9 w-full text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700 dark:placeholder:text-neutral-500"
-                                />
-                            </div>
-                            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 -mx-6 px-6 md:mx-0 md:px-0 no-scrollbar">
-                                <Select
-                                    value={sortBy}
-                                    onValueChange={setSortBy}
-                                >
-                                    <SelectTrigger className="w-[150px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
-                                        <SelectValue placeholder="Сортировка" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="updated_date">Дата обновления</SelectItem>
-                                        <SelectItem value="created_date">Дата создания</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Select
-                                    value={filterCountry}
-                                    onValueChange={setFilterCountry}
-                                >
-                                    <SelectTrigger className="w-[130px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
-                                        <SelectValue placeholder="Страна" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Все страны</SelectItem>
-                                        {Array.from(new Set(locations.map(l => l.country).filter(Boolean))).sort().map(c => (
-                                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select
-                                    value={filterCity}
-                                    onValueChange={setFilterCity}
-                                >
-                                    <SelectTrigger className="w-[130px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
-                                        <SelectValue placeholder="Город" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Все города</SelectItem>
-                                        {Array.from(new Set(locations
-                                            .filter(l => filterCountry === 'all' || l.country === filterCountry)
-                                            .map(l => l.city)
-                                            .filter(Boolean)
-                                        )).sort().map(c => (
-                                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select
-                                    value={filterPrice}
-                                    onValueChange={setFilterPrice}
-                                >
-                                    <SelectTrigger className="w-[100px] shrink-0 text-neutral-900 dark:bg-black dark:text-neutral-100 dark:border-neutral-700">
-                                        <SelectValue placeholder="Цена" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Любая</SelectItem>
-                                        <SelectItem value="$">$</SelectItem>
-                                        <SelectItem value="$$">$$</SelectItem>
-                                        <SelectItem value="$$$">$$$</SelectItem>
-                                        <SelectItem value="$$$$">$$$$</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {/* Mobile List View */}
-                        <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
-                            <MobileCardList
-                                data={paginatedLocations}
-                                isLoading={loading}
-                                renderItem={(location) => (
-                                    <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm active:scale-[0.99] transition-transform cursor-pointer" onClick={() => {
-                                        setEditingLocation(location);
-                                        setShowLocationForm(true);
-                                    }}>
-                                        <CardContent className="p-4">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="flex-1 mr-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1 text-sm">{location.name}</h3>
-                                                        {location.is_hidden_gem && <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
-                                                    </div>
-                                                    <p className="text-xs text-neutral-500 mt-1 line-clamp-1">{location.city}, {location.country}</p>
-                                                </div>
-                                                <Badge variant={location.status === 'published' ? 'default' : 'secondary'} className="text-[10px] h-5 shrink-0 px-1.5">
-                                                    {location.status === 'published' ? 'Active' : 'Draft'}
-                                                </Badge>
-                                            </div>
-                                            <div className="flex items-center gap-3 text-xs text-neutral-500 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                                                <div className="flex items-center text-amber-600 dark:text-amber-500 font-medium">
-                                                    <Star className="w-3 h-3 mr-1 fill-current" />
-                                                    {location.rating || 'New'}
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <Eye className="w-3 h-3 mr-1" />
-                                                    {location.views || 0}
-                                                </div>
-                                                <div className="ml-auto text-[10px] text-neutral-400">
-                                                    {location.updated_date ? format(new Date(location.updated_date), 'd MMM') : ''}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            />
-                        </div>
-
-                        <div className="hidden md:block overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[35%]">Название</TableHead>
-                                        <TableHead>Локация</TableHead>
-                                        <TableHead className="w-[100px]">Создано</TableHead>
-                                        <TableHead className="w-[100px]">Обновлено</TableHead>
-                                        <TableHead className="w-[80px]">Инфо</TableHead>
-                                        <TableHead className="text-right w-[80px]"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {paginatedLocations.length > 0 ? (
-                                        paginatedLocations.map(location => (
-                                            <TableRow
-                                                key={location.id}
-                                                className="hover:bg-stone-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors h-10"
-                                                onClick={() => {
-                                                    setEditingLocation(location);
-                                                    setShowLocationForm(true);
-                                                }}
-                                            >
-                                                <TableCell className="font-medium py-2">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <div className="truncate max-w-[180px] md:max-w-[250px] text-neutral-900 dark:text-neutral-100" title={location.name}>
-                                                            {location.name}
-                                                        </div>
-                                                        <span className="w-fit inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-300 border-0 dark:border dark:border-neutral-600">
-                                                            {location.type}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="py-2 text-sm text-neutral-700 dark:text-neutral-400">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-neutral-900 dark:text-neutral-100 truncate max-w-[100px] md:max-w-[180px]" title={location.city}>
-                                                            {location.city}
-                                                        </span>
-                                                        <span className="text-[10px] text-neutral-500 dark:text-neutral-500 truncate max-w-[100px] md:max-w-[180px]" title={location.country}>
-                                                            {location.country}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                    <div className="text-xs text-neutral-600 dark:text-neutral-400">
-                                                        {location.created_date ? format(new Date(location.created_date), 'dd.MM.yy') : '—'}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="text-xs text-neutral-600 dark:text-neutral-400 cursor-help">
-                                                                    {location.updated_date ? format(new Date(location.updated_date), 'dd.MM.yy') : '—'}
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent className="max-w-xs">
-                                                                <div className="text-xs space-y-1">
-                                                                    <p className="font-semibold">Последнее обновление:</p>
-                                                                    <p>{location.updated_date ? format(new Date(location.updated_date), 'dd MMMM yyyy, HH:mm') : 'Нет данных'}</p>
-                                                                    <p className="text-neutral-400 text-[10px] mt-2">Детали изменений доступны в логах системы</p>
-                                                                </div>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                </TableCell>
-                                                <TableCell className="py-2">
-                                                    <div className="flex gap-1">
-                                                        {location.is_hidden_gem && (
-                                                            <div title="Скрытая жемчужина" className="p-1 rounded bg-amber-100 text-amber-600 flex items-center justify-center w-6 h-6">
-                                                                <Star className="w-3.5 h-3.5 fill-current" />
-                                                            </div>
-                                                        )}
-                                                        {location.is_featured && (
-                                                            <div title="На главной" className="p-1 rounded bg-blue-100 text-blue-600 flex items-center justify-center w-6 h-6">
-                                                                <TrendingUp className="w-3.5 h-3.5" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right py-2" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-neutral-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-300"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setEditingLocationId(location.id);
-                                                                setShowEditForm(true);
-                                                            }}
-                                                        >
-                                                            <Pencil className="w-3.5 h-3.5" />
-                                                        </Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-7 w-7 text-neutral-400 dark:text-neutral-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                >
-                                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Удалить локацию?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        Это действие нельзя отменить. Локация "{location.name}" будет удалена навсегда.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Отмена</AlertDialogCancel>
-                                                                    <AlertDialogAction
-                                                                        onClick={() => deleteMutation.mutate(location.id)}
-                                                                        className="bg-red-600 hover:bg-red-700"
-                                                                    >
-                                                                        Удалить
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                                                Нет локаций, соответствующих запросу
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        {/* Pagination Controls */}
-                        {paginatedLocations.length > 0 && filteredLocations.length > itemsPerPage && (
-                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-700">
-                                <div className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:block">
-                                    Показано {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredLocations.length)} из {filteredLocations.length}
-                                </div>
-                                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                        disabled={currentPage === 1}
-                                        className="h-8"
-                                    >
-                                        <ChevronLeft className="w-4 h-4 mr-1" />
-                                        Назад
-                                    </Button>
-                                    <span className="text-sm font-medium text-neutral-900 dark:text-neutral-300">
-                                        Стр. {currentPage} из {totalPages || 1}
-                                    </span>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                        disabled={currentPage === totalPages}
-                                        className="h-8"
-                                    >
-                                        Вперед
-                                        <ChevronRight className="w-4 h-4 ml-1" />
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
-        </div>
-    )
-}
 
 {/* Creator Moderation Tab */ }
 {
@@ -1930,566 +986,452 @@ export default function Admin() {
 {/* Moderation Tab */ }
 {
     activeTab === 'moderation' && (
-        {/* Moderation Dialog */ }
-        < Dialog open = { showLocationForm && editingLocation?.status === 'pending'
-} onOpenChange = {(open) => {
-    if (!open) {
-        setShowLocationForm(false);
-        setEditingLocation(null);
-    }
-}}>
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
-        <DialogHeader>
-            <DialogTitle className="text-neutral-900 dark:text-neutral-100">
-                Модерация локации
-            </DialogTitle>
-        </DialogHeader>
-        <LocationForm
-            location={editingLocation}
-            onSubmit={(data) => locationMutation.mutate(data)}
-            isLoading={locationMutation.isPending}
-        />
-    </DialogContent>
-                </Dialog >
+        <>
+            <Dialog open={showLocationForm && editingLocation?.status === 'pending'
+            } onOpenChange={(open) => {
+                if (!open) {
+                    setShowLocationForm(false);
+                    setEditingLocation(null);
+                }
+            }}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
+                    <DialogHeader>
+                        <DialogTitle className="text-neutral-900 dark:text-neutral-100">
+                            Модерация локации
+                        </DialogTitle>
+                    </DialogHeader>
+                    <LocationForm
+                        location={editingLocation}
+                        onSubmit={(data) => locationMutation.mutate(data)}
+                        isLoading={locationMutation.isPending}
+                    />
+                </DialogContent>
+            </Dialog >
 
-    <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-        <CardHeader>
-            <CardTitle className="text-neutral-900 dark:text-neutral-100">Локации на модерации</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <div className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Название</TableHead>
-                            <TableHead>Создатель</TableHead>
-                            <TableHead>Локация</TableHead>
-                            <TableHead>Дата подачи</TableHead>
-                            <TableHead className="text-right">Действия</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {pendingLocations.length > 0 ? (
-                            pendingLocations.map(location => (
-                                <TableRow
-                                    key={location.id}
-                                    className="hover:bg-stone-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors"
-                                    onClick={() => {
-                                        setEditingLocation(location);
-                                        setShowLocationForm(true);
-                                    }}
-                                >
-                                    <TableCell className="font-medium">
-                                        <div className="flex flex-col gap-0.5">
-                                            <span className="truncate max-w-[200px] text-neutral-900 dark:text-neutral-100" title={location.name}>
-                                                {location.name}
-                                            </span>
-                                            <Badge variant="outline" className="w-fit text-[10px]">
-                                                {location.type}
-                                            </Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{location.created_by_name}</span>
-                                            <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.created_by}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-neutral-900 dark:text-neutral-100">{location.city}</span>
-                                            <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.country}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-xs text-neutral-500 dark:text-neutral-500">
-                                        {location.created_date && format(new Date(location.created_date), 'dd.MM.yyyy HH:mm')}
-                                    </TableCell>
-                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-neutral-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-300"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingLocation(location);
-                                                    setShowLocationForm(true);
-                                                }}
-                                                title="Редактировать"
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    publishLocationMutation.mutate(location.id);
-                                                }}
-                                                title="Опубликовать"
-                                            >
-                                                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                                                Опубликовать
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
+            <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+                <CardHeader>
+                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Локации на модерации</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Название</TableHead>
+                                    <TableHead>Создатель</TableHead>
+                                    <TableHead>Локация</TableHead>
+                                    <TableHead>Дата подачи</TableHead>
+                                    <TableHead className="text-right">Действия</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingLocations.length > 0 ? (
+                                    pendingLocations.map(location => (
+                                        <TableRow
+                                            key={location.id}
+                                            className="hover:bg-stone-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                setEditingLocation(location);
+                                                setShowLocationForm(true);
+                                            }}
+                                        >
+                                            <TableCell className="font-medium">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="truncate max-w-[200px] text-neutral-900 dark:text-neutral-100" title={location.name}>
+                                                        {location.name}
+                                                    </span>
+                                                    <Badge variant="outline" className="w-fit text-[10px]">
+                                                        {location.type}
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{location.created_by_name}</span>
+                                                    <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.created_by}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm">
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-neutral-900 dark:text-neutral-100">{location.city}</span>
+                                                    <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.country}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-xs text-neutral-500 dark:text-neutral-500">
+                                                {location.created_date && format(new Date(location.created_date), 'dd.MM.yyyy HH:mm')}
+                                            </TableCell>
+                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-neutral-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-300"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingLocation(location);
+                                                            setShowLocationForm(true);
+                                                        }}
+                                                        title="Редактировать"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                    </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        title="Отклонить"
+                                                        className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            publishLocationMutation.mutate(location.id);
+                                                        }}
+                                                        title="Опубликовать"
                                                     >
-                                                        <X className="w-3.5 h-3.5 mr-1" />
-                                                        Отклонить
+                                                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                                        Опубликовать
                                                     </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Отклонить локацию?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Локация "{location.name}" будет отклонена и не будет опубликована.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Отмена</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            onClick={() => rejectLocationMutation.mutate(location.id)}
-                                                            className="bg-red-600 hover:bg-red-700"
-                                                        >
-                                                            Отклонить
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </TableCell>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                title="Отклонить"
+                                                            >
+                                                                <X className="w-3.5 h-3.5 mr-1" />
+                                                                Отклонить
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Отклонить локацию?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Локация "{location.name}" будет отклонена и не будет опубликована.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => rejectLocationMutation.mutate(location.id)}
+                                                                    className="bg-red-600 hover:bg-red-700"
+                                                                >
+                                                                    Отклонить
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
+                                            Нет локаций на модерации
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+        </>
+    )
+}
+
+{/* Reviews Tab */ }
+{
+    activeTab === 'reviews' && (
+        <>
+            <Dialog open={showReviewDetail} onOpenChange={setShowReviewDetail}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
+                    <DialogHeader>
+                        <DialogTitle className="text-neutral-900 dark:text-neutral-100">Детали отзыва</DialogTitle>
+                    </DialogHeader>
+                    <ReviewDetail
+                        review={selectedReview}
+                        onStatusChange={(id, status, is_hidden) => reviewMutation.mutate({ id, status, is_hidden })}
+                        onClose={() => setShowReviewDetail(false)}
+                    />
+                </DialogContent>
+            </Dialog>
+            <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+                <CardHeader>
+                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Отзывы</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Дата</TableHead>
+                                    <TableHead>Локация ID</TableHead>
+                                    <TableHead>Пользователь</TableHead>
+                                    <TableHead>Рейтинг</TableHead>
+                                    <TableHead>Статус</TableHead>
+                                    <TableHead className="text-right">Действия</TableHead>
                                 </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {reviews.length > 0 ? (
+                                    reviews.map(review => (
+                                        <TableRow
+                                            key={review.id}
+                                            className="cursor-pointer hover:bg-stone-50 dark:hover:bg-neutral-900 transition-colors"
+                                            onClick={() => {
+                                                setSelectedReview(review);
+                                                setShowReviewDetail(true);
+                                            }}
+                                        >
+                                            <TableCell className="whitespace-nowrap text-xs text-neutral-500 dark:text-neutral-400">
+                                                {review.created_date && format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs max-w-[100px] truncate text-neutral-900 dark:text-neutral-300" title={review.location_id}>
+                                                {review.location_id}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{review.user_name}</span>
+                                                    <span className="text-xs text-neutral-500 dark:text-neutral-500">{review.user_email}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-1">
+                                                    {[...Array(review.rating)].map((_, i) => (
+                                                        <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge className={
+                                                        review.status === 'pending' ? 'bg-orange-500' :
+                                                            review.status === 'approved' ? 'bg-green-500' :
+                                                                review.status === 'rejected' ? 'bg-red-500' : 'bg-stone-500'
+                                                    }>
+                                                        {review.status === 'pending' ? 'На модерации' :
+                                                            review.status === 'approved' ? 'Одобрено' :
+                                                                review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
+                                                    </Badge>
+                                                    {review.is_hidden && (
+                                                        <Badge variant="outline" className="bg-neutral-100 dark:bg-black text-neutral-900 dark:text-neutral-300 text-[10px]">
+                                                            Скрыто
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
+                                                            disabled={review.status === 'approved' && !review.is_hidden}
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Одобрить
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
+                                                            disabled={review.status === 'rejected'}
+                                                        >
+                                                            <X className="w-4 h-4 mr-2" /> Отклонить
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}>
+                                                            {review.is_hidden ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                                                            {review.is_hidden ? 'Показать' : 'Скрыть'}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
+                                            Нет отзывов
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-3">
+                        {reviews.length > 0 ? (
+                            reviews.map(review => (
+                                <div
+                                    key={review.id}
+                                    className="bg-white dark:bg-neutral-800 shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl p-4 active:bg-neutral-50 dark:active:bg-neutral-900 transition-colors"
+                                    onClick={() => {
+                                        setSelectedReview(review);
+                                        setShowReviewDetail(true);
+                                    }}
+                                >
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100">{review.user_name}</div>
+                                            <div className="text-xs text-neutral-500 dark:text-neutral-500 truncate">{review.user_email}</div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            {[...Array(review.rating)].map((_, i) => (
+                                                <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        <Badge className={
+                                            review.status === 'pending' ? 'bg-orange-500' :
+                                                review.status === 'approved' ? 'bg-green-500' :
+                                                    review.status === 'rejected' ? 'bg-red-500' : 'bg-stone-500'
+                                        }>
+                                            {review.status === 'pending' ? 'На модерации' :
+                                                review.status === 'approved' ? 'Одобрено' :
+                                                    review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
+                                        </Badge>
+                                        {review.is_hidden && (
+                                            <Badge variant="outline" className="bg-stone-100 text-stone-600 text-[10px]">
+                                                Скрыто
+                                            </Badge>
+                                        )}
+                                    </div>
+
+                                    {review.comment && (
+                                        <p className="text-xs text-neutral-900 dark:text-neutral-300 line-clamp-2 mb-3">
+                                            {review.comment}
+                                        </p>
+                                    )}
+
+                                    <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-500">
+                                        <span>{review.created_date && format(new Date(review.created_date), 'dd.MM HH:mm')}</span>
+                                        <span className="font-mono truncate max-w-[120px]" title={review.location_id}>
+                                            {review.location_id}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
+                                            disabled={review.status === 'approved' && !review.is_hidden}
+                                        >
+                                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                                            Одобрить
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
+                                            disabled={review.status === 'rejected'}
+                                        >
+                                            <X className="w-3 h-3 mr-1" />
+                                            Отклонить
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}
+                                        >
+                                            {review.is_hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                        </Button>
+                                    </div>
+                                </div>
                             ))
                         ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                                    Нет локаций на модерации
-                                </TableCell>
-                            </TableRow>
+                            <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+                                Нет отзывов
+                            </div>
                         )}
-                    </TableBody>
-                </Table>
-            </div>
-        </CardContent>
-    </Card>
-            </TabsContent >
+                    </div>
+                </CardContent>
+            </Card>
+        </>
+    )
+}
 
-        {/* Reviews Tab */ }
-    {
-        activeTab === 'reviews' && (
-                <Dialog open={showReviewDetail} onOpenChange={setShowReviewDetail}>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
+{/* Subscriptions Tab */ }
+{
+    activeTab === 'subscriptions' && (
+        <>
+            <div className="mb-6 flex justify-end">
+                <Dialog open={showSubscriptionForm} onOpenChange={setShowSubscriptionForm}>
+                    <DialogTrigger asChild>
+                        <Button className="w-full md:w-auto bg-stone-900 text-white hover:bg-stone-800">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Добавить подписку
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md dark:bg-neutral-800 dark:border-neutral-700">
                         <DialogHeader>
-                            <DialogTitle className="text-neutral-900 dark:text-neutral-100">Детали отзыва</DialogTitle>
+                            <DialogTitle className="text-neutral-900 dark:text-neutral-100">Добавить подписку</DialogTitle>
                         </DialogHeader>
-                        <ReviewDetail
-                            review={selectedReview}
-                            onStatusChange={(id, status, is_hidden) => reviewMutation.mutate({ id, status, is_hidden })}
-                            onClose={() => setShowReviewDetail(false)}
+                        <SubscriptionForm
+                            users={users}
+                            onSubmit={(data) => createSubscriptionMutation.mutate(data)}
+                            isLoading={createSubscriptionMutation.isPending}
                         />
                     </DialogContent>
                 </Dialog>
-                <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                    <CardHeader>
-                        <CardTitle className="text-neutral-900 dark:text-neutral-100">Отзывы</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                        {/* Desktop Table View */}
-                        <div className="hidden md:block overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Дата</TableHead>
-                                        <TableHead>Локация ID</TableHead>
-                                        <TableHead>Пользователь</TableHead>
-                                        <TableHead>Рейтинг</TableHead>
-                                        <TableHead>Статус</TableHead>
-                                        <TableHead className="text-right">Действия</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {reviews.length > 0 ? (
-                                        reviews.map(review => (
-                                            <TableRow
-                                                key={review.id}
-                                                className="cursor-pointer hover:bg-stone-50 dark:hover:bg-neutral-900 transition-colors"
-                                                onClick={() => {
-                                                    setSelectedReview(review);
-                                                    setShowReviewDetail(true);
-                                                }}
-                                            >
-                                                <TableCell className="whitespace-nowrap text-xs text-neutral-500 dark:text-neutral-400">
-                                                    {review.created_date && format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}
-                                                </TableCell>
-                                                <TableCell className="font-mono text-xs max-w-[100px] truncate text-neutral-900 dark:text-neutral-300" title={review.location_id}>
-                                                    {review.location_id}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{review.user_name}</span>
-                                                        <span className="text-xs text-neutral-500 dark:text-neutral-500">{review.user_email}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-1">
-                                                        {[...Array(review.rating)].map((_, i) => (
-                                                            <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                                        ))}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge className={
-                                                            review.status === 'pending' ? 'bg-orange-500' :
-                                                                review.status === 'approved' ? 'bg-green-500' :
-                                                                    review.status === 'rejected' ? 'bg-red-500' : 'bg-stone-500'
-                                                        }>
-                                                            {review.status === 'pending' ? 'На модерации' :
-                                                                review.status === 'approved' ? 'Одобрено' :
-                                                                    review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
-                                                        </Badge>
-                                                        {review.is_hidden && (
-                                                            <Badge variant="outline" className="bg-neutral-100 dark:bg-black text-neutral-900 dark:text-neutral-300 text-[10px]">
-                                                                Скрыто
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem
-                                                                onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
-                                                                disabled={review.status === 'approved' && !review.is_hidden}
-                                                            >
-                                                                <CheckCircle2 className="w-4 h-4 mr-2" /> Одобрить
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
-                                                                disabled={review.status === 'rejected'}
-                                                            >
-                                                                <X className="w-4 h-4 mr-2" /> Отклонить
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}>
-                                                                {review.is_hidden ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
-                                                                {review.is_hidden ? 'Показать' : 'Скрыть'}
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                                                Нет отзывов
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="md:hidden space-y-3">
-                            {reviews.length > 0 ? (
-                                reviews.map(review => (
-                                    <div
-                                        key={review.id}
-                                        className="bg-white dark:bg-neutral-800 shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl p-4 active:bg-neutral-50 dark:active:bg-neutral-900 transition-colors"
-                                        onClick={() => {
-                                            setSelectedReview(review);
-                                            setShowReviewDetail(true);
-                                        }}
-                                    >
-                                        <div className="flex items-start justify-between gap-3 mb-3">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100">{review.user_name}</div>
-                                                <div className="text-xs text-neutral-500 dark:text-neutral-500 truncate">{review.user_email}</div>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                {[...Array(review.rating)].map((_, i) => (
-                                                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2 mb-3">
-                                            <Badge className={
-                                                review.status === 'pending' ? 'bg-orange-500' :
-                                                    review.status === 'approved' ? 'bg-green-500' :
-                                                        review.status === 'rejected' ? 'bg-red-500' : 'bg-stone-500'
-                                            }>
-                                                {review.status === 'pending' ? 'На модерации' :
-                                                    review.status === 'approved' ? 'Одобрено' :
-                                                        review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
-                                            </Badge>
-                                            {review.is_hidden && (
-                                                <Badge variant="outline" className="bg-stone-100 text-stone-600 text-[10px]">
-                                                    Скрыто
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {review.comment && (
-                                            <p className="text-xs text-neutral-900 dark:text-neutral-300 line-clamp-2 mb-3">
-                                                {review.comment}
-                                            </p>
-                                        )}
-
-                                        <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-500">
-                                            <span>{review.created_date && format(new Date(review.created_date), 'dd.MM HH:mm')}</span>
-                                            <span className="font-mono truncate max-w-[120px]" title={review.location_id}>
-                                                {review.location_id}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700" onClick={(e) => e.stopPropagation()}>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
-                                                onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
-                                                disabled={review.status === 'approved' && !review.is_hidden}
-                                            >
-                                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                                Одобрить
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                                                onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
-                                                disabled={review.status === 'rejected'}
-                                            >
-                                                <X className="w-3 h-3 mr-1" />
-                                                Отклонить
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}
-                                            >
-                                                {review.is_hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                                    Нет отзывов
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-        )
-    }
-
-    {/* Subscriptions Tab */ }
-    {
-        activeTab === 'subscriptions' && (
-                <div className="mb-6 flex justify-end">
-                    <Dialog open={showSubscriptionForm} onOpenChange={setShowSubscriptionForm}>
-                        <DialogTrigger asChild>
-                            <Button className="w-full md:w-auto bg-stone-900 text-white hover:bg-stone-800">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Добавить подписку
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md dark:bg-neutral-800 dark:border-neutral-700">
-                            <DialogHeader>
-                                <DialogTitle className="text-neutral-900 dark:text-neutral-100">Добавить подписку</DialogTitle>
-                            </DialogHeader>
-                            <SubscriptionForm
-                                users={users}
-                                onSubmit={(data) => createSubscriptionMutation.mutate(data)}
-                                isLoading={createSubscriptionMutation.isPending}
-                            />
-                        </DialogContent>
-                    </Dialog>
-                </div>
-                <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                    <CardHeader>
-                        <CardTitle className="text-neutral-900 dark:text-neutral-100">Подписки</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {/* Mobile List View */}
-                        <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
-                             <MobileCardList
-                                data={subscriptions}
-                                renderItem={(sub) => (
-                                    <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
-                                        <CardContent className="p-4 space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">{sub.user_email}</div>
-                                                    <div className="flex gap-2 mt-1">
-                                                        <Badge variant="outline" className="text-[10px] h-5">{sub.plan}</Badge>
-                                                        <Badge className={`text-[10px] h-5 ${
-                                                            sub.status === 'active' ? 'bg-green-500' :
-                                                            sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
-                                                        }`}>
-                                                            {sub.status}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                                                    ${sub.amount_paid?.toLocaleString()}
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-between text-xs text-neutral-500 pt-2">
-                                                 <span>Start: {sub.start_date && format(new Date(sub.start_date), 'dd.MM')}</span>
-                                                 <span>End: {sub.end_date && format(new Date(sub.end_date), 'dd.MM')}</span>
-                                            </div>
-                                            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                                                <Select
-                                                    value={sub.status}
-                                                    onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
-                                                >
-                                                    <SelectTrigger className="w-full h-8 text-xs">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="active">Active</SelectItem>
-                                                        <SelectItem value="expired">Expired</SelectItem>
-                                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                             />
-                        </div>
-
-                        <div className="hidden md:block overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Пользователь</TableHead>
-                                        <TableHead>План</TableHead>
-                                        <TableHead>Статус</TableHead>
-                                        <TableHead>Дата начала</TableHead>
-                                        <TableHead>Дата окончания</TableHead>
-                                        <TableHead>Сумма</TableHead>
-                                        <TableHead className="text-right">Действия</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {subscriptions.map(sub => (
-                                        <TableRow key={sub.id}>
-                                            <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{sub.user_email}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{sub.plan}</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className={
-                                                    sub.status === 'active' ? 'bg-green-500' :
-                                                        sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
-                                                }>
-                                                    {sub.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {sub.start_date && format(new Date(sub.start_date), 'dd.MM.yyyy')}
-                                            </TableCell>
-                                            <TableCell>
-                                                {sub.end_date && format(new Date(sub.end_date), 'dd.MM.yyyy')}
-                                            </TableCell>
-                                            <TableCell>${sub.amount_paid?.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Select
-                                                    value={sub.status}
-                                                    onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
-                                                >
-                                                    <SelectTrigger className="w-[120px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="active">Active</SelectItem>
-                                                        <SelectItem value="expired">Expired</SelectItem>
-                                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-        )
-    }
-
-    {/* Users Tab */ }
-    {
-        activeTab === 'users' && (
+            </div>
             <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
                 <CardHeader>
-                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Пользователи</CardTitle>
+                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Подписки</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {/* Mobile List View */}
                     <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
                         <MobileCardList
-                            data={users}
-                            renderItem={(u) => {
-                                const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
-                                return (
-                                    <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
-                                        <CardContent className="p-4 space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">{u.full_name}</div>
-                                                    <div className="text-xs text-neutral-500">{u.email}</div>
+                            data={subscriptions}
+                            renderItem={(sub) => (
+                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
+                                    <CardContent className="p-4 space-y-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">{sub.user_email}</div>
+                                                <div className="flex gap-2 mt-1">
+                                                    <Badge variant="outline" className="text-[10px] h-5">{sub.plan}</Badge>
+                                                    <Badge className={`text-[10px] h-5 ${sub.status === 'active' ? 'bg-green-500' :
+                                                        sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
+                                                        }`}>
+                                                        {sub.status}
+                                                    </Badge>
                                                 </div>
-                                                <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
-                                                    {u.custom_role || u.role}
-                                                </Badge>
                                             </div>
-                                            <div className="flex justify-between items-center text-xs">
-                                                <div className="text-neutral-500">
-                                                    Since: {u.created_date ? format(new Date(u.created_date), 'dd.MM.yyyy') : '-'}
-                                                </div>
-                                                {userSub ? (
-                                                    <Badge className="bg-green-500 h-5 px-1.5">{userSub.plan}</Badge>
-                                                ) : (
-                                                    <Badge variant="outline" className="h-5 px-1.5 text-neutral-400">No Sub</Badge>
-                                                )}
+                                            <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                                                ${sub.amount_paid?.toLocaleString()}
                                             </div>
-                                            <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                                                <Select
-                                                    value={u.custom_role || u.role}
-                                                    onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
-                                                >
-                                                    <SelectTrigger className="w-full h-8 text-xs">
-                                                        <SelectValue placeholder="Role" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="user">User</SelectItem>
-                                                        <SelectItem value="creator">Creator</SelectItem>
-                                                        <SelectItem value="admin">Admin</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            }}
+                                        </div>
+                                        <div className="flex justify-between text-xs text-neutral-500 pt-2">
+                                            <span>Start: {sub.start_date && format(new Date(sub.start_date), 'dd.MM')}</span>
+                                            <span>End: {sub.end_date && format(new Date(sub.end_date), 'dd.MM')}</span>
+                                        </div>
+                                        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                                            <Select
+                                                value={sub.status}
+                                                onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
+                                            >
+                                                <SelectTrigger className="w-full h-8 text-xs">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="active">Active</SelectItem>
+                                                    <SelectItem value="expired">Expired</SelectItem>
+                                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         />
                     </div>
 
@@ -2497,161 +1439,280 @@ export default function Admin() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Имя</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Роль</TableHead>
-                                    <TableHead>Подписка</TableHead>
-                                    <TableHead>Дата регистрации</TableHead>
+                                    <TableHead>Пользователь</TableHead>
+                                    <TableHead>План</TableHead>
+                                    <TableHead>Статус</TableHead>
+                                    <TableHead>Дата начала</TableHead>
+                                    <TableHead>Дата окончания</TableHead>
+                                    <TableHead>Сумма</TableHead>
                                     <TableHead className="text-right">Действия</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {users.map(u => {
-                                    const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
-                                    return (
-                                        <TableRow key={u.id}>
-                                            <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{u.full_name}</TableCell>
-                                            <TableCell className="text-neutral-900 dark:text-neutral-100">{u.email}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
-                                                    {u.custom_role || u.role}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {userSub ? (
-                                                    <Badge className="bg-green-500">{userSub.plan}</Badge>
-                                                ) : (
-                                                    <Badge variant="outline">Нет</Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {u.created_date && format(new Date(u.created_date), 'dd.MM.yyyy')}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Select
-                                                    value={u.custom_role || u.role}
-                                                    onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
-                                                >
-                                                    <SelectTrigger className="w-[120px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="user">User</SelectItem>
-                                                        <SelectItem value="creator">Creator</SelectItem>
-                                                        <SelectItem value="admin">Admin</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
+                                {subscriptions.map(sub => (
+                                    <TableRow key={sub.id}>
+                                        <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{sub.user_email}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{sub.plan}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={
+                                                sub.status === 'active' ? 'bg-green-500' :
+                                                    sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
+                                            }>
+                                                {sub.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {sub.start_date && format(new Date(sub.start_date), 'dd.MM.yyyy')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {sub.end_date && format(new Date(sub.end_date), 'dd.MM.yyyy')}
+                                        </TableCell>
+                                        <TableCell>${sub.amount_paid?.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Select
+                                                value={sub.status}
+                                                onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
+                                            >
+                                                <SelectTrigger className="w-[120px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="active">Active</SelectItem>
+                                                    <SelectItem value="expired">Expired</SelectItem>
+                                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     </div>
                 </CardContent>
             </Card>
-        )
-    }
+        </>
+    )
+}
 
-    {/* AI Management Tab */ }
-    {
-        activeTab === 'ai-management' && (
-            <AIManagementTab />
-        )
-    }
-
-    {/* Feedback Tab */ }
-    {
-        activeTab === 'feedback' && (
-            <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">User Feedback</h2>
+{/* Users Tab */ }
+{
+    activeTab === 'users' && (
+        <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+            <CardHeader>
+                <CardTitle className="text-neutral-900 dark:text-neutral-100">Пользователи</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {/* Mobile List View */}
+                <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
+                    <MobileCardList
+                        data={users}
+                        renderItem={(u) => {
+                            const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
+                            return (
+                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
+                                    <CardContent className="p-4 space-y-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-semibold text-neutral-900 dark:text-neutral-100">{u.full_name}</div>
+                                                <div className="text-xs text-neutral-500">{u.email}</div>
+                                            </div>
+                                            <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
+                                                {u.custom_role || u.role}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <div className="text-neutral-500">
+                                                Since: {u.created_date ? format(new Date(u.created_date), 'dd.MM.yyyy') : '-'}
+                                            </div>
+                                            {userSub ? (
+                                                <Badge className="bg-green-500 h-5 px-1.5">{userSub.plan}</Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="h-5 px-1.5 text-neutral-400">No Sub</Badge>
+                                            )}
+                                        </div>
+                                        <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                                            <Select
+                                                value={u.custom_role || u.role}
+                                                onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
+                                            >
+                                                <SelectTrigger className="w-full h-8 text-xs">
+                                                    <SelectValue placeholder="Role" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="user">User</SelectItem>
+                                                    <SelectItem value="creator">Creator</SelectItem>
+                                                    <SelectItem value="admin">Admin</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        }}
+                    />
                 </div>
 
-                <div className="grid gap-4">
-                    {formattedFeedback.map((item) => (
-                        <div key={item.id} className="bg-white dark:bg-black p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant="outline" className={
-                                        item.type === 'bug' ? 'bg-red-50 text-red-700 border-red-200' :
-                                            item.type === 'feature' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                item.type === 'partnership' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''
-                                    }>
-                                        {item.type === 'bug' ? 'Ошибка' :
-                                            item.type === 'feature' ? 'Идея' :
-                                                item.type === 'partnership' ? 'Партнёрство' : 'Вопрос'}
-                                    </Badge>
-                                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.user_name}</span>
-                                    <span className="text-sm text-neutral-500">{item.user_email}</span>
-                                </div>
-                                <p className="text-neutral-600 dark:text-neutral-300 line-clamp-2">{item.message}</p>
-                                <span className="text-xs text-neutral-400 mt-2 block">{item.created_date ? format(new Date(item.created_date), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
+                <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Имя</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Роль</TableHead>
+                                <TableHead>Подписка</TableHead>
+                                <TableHead>Дата регистрации</TableHead>
+                                <TableHead className="text-right">Действия</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map(u => {
+                                const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
+                                return (
+                                    <TableRow key={u.id}>
+                                        <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{u.full_name}</TableCell>
+                                        <TableCell className="text-neutral-900 dark:text-neutral-100">{u.email}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
+                                                {u.custom_role || u.role}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {userSub ? (
+                                                <Badge className="bg-green-500">{userSub.plan}</Badge>
+                                            ) : (
+                                                <Badge variant="outline">Нет</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {u.created_date && format(new Date(u.created_date), 'dd.MM.yyyy')}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Select
+                                                value={u.custom_role || u.role}
+                                                onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
+                                            >
+                                                <SelectTrigger className="w-[120px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="user">User</SelectItem>
+                                                    <SelectItem value="creator">Creator</SelectItem>
+                                                    <SelectItem value="admin">Admin</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+{/* AI Management Tab */ }
+{
+    activeTab === 'ai-management' && (
+        <AIManagementTab />
+    )
+}
+
+{/* Feedback Tab */ }
+{
+    activeTab === 'feedback' && (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">User Feedback</h2>
+            </div>
+
+            <div className="grid gap-4">
+                {formattedFeedback.map((item) => (
+                    <div key={item.id} className="bg-white dark:bg-black p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline" className={
+                                    item.type === 'bug' ? 'bg-red-50 text-red-700 border-red-200' :
+                                        item.type === 'feature' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                            item.type === 'partnership' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''
+                                }>
+                                    {item.type === 'bug' ? 'Ошибка' :
+                                        item.type === 'feature' ? 'Идея' :
+                                            item.type === 'partnership' ? 'Партнёрство' : 'Вопрос'}
+                                </Badge>
+                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.user_name}</span>
+                                <span className="text-sm text-neutral-500">{item.user_email}</span>
                             </div>
-                            <Badge className={
-                                item.status === 'new' ? 'bg-amber-500' :
-                                    item.status === 'in_progress' ? 'bg-blue-500' :
-                                        item.status === 'resolved' ? 'bg-green-500' : 'bg-stone-500'
-                            }>
-                                {item.status === 'new' ? 'Новое' :
-                                    item.status === 'in_progress' ? 'В работе' :
-                                        item.status === 'resolved' ? 'Решено' : 'Архив'}
-                            </Badge>
+                            <p className="text-neutral-600 dark:text-neutral-300 line-clamp-2">{item.message}</p>
+                            <span className="text-xs text-neutral-400 mt-2 block">{item.created_date ? format(new Date(item.created_date), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
                         </div>
-                    ))}
-                    {feedback.length === 0 && (
-                        <div className="text-center p-8 text-neutral-500">
-                            Запросов пока нет
-                        </div>
-                    )}
-                </div>
+                        <Badge className={
+                            item.status === 'new' ? 'bg-amber-500' :
+                                item.status === 'in_progress' ? 'bg-blue-500' :
+                                    item.status === 'resolved' ? 'bg-green-500' : 'bg-stone-500'
+                        }>
+                            {item.status === 'new' ? 'Новое' :
+                                item.status === 'in_progress' ? 'В работе' :
+                                    item.status === 'resolved' ? 'Решено' : 'Архив'}
+                        </Badge>
+                    </div>
+                ))}
+                {feedback.length === 0 && (
+                    <div className="text-center p-8 text-neutral-500">
+                        Запросов пока нет
+                    </div>
+                )}
             </div>
-        )
+        </div>
+    )
+}
+
+{
+    activeTab === 'system-logs' && (
+        <div className="h-[calc(100vh-200px)]">
+            <SystemLogsTab />
+        </div>
+    )
+}
+
+{
+    activeTab === 'media' && (
+        <div className="h-[calc(100vh-200px)]">
+            <MediaLibraryTab />
+        </div>
+    )
+}
+
+{/* Bulk Editor */ }
+< BulkEditor
+    isOpen={showBulkEditor}
+    onOpenChange={setShowBulkEditor}
+    rows={filteredLocations}
+    onSaved={() => {
+        setShowBulkEditor(false);
+        queryClient.invalidateQueries(['admin-locations']);
+        queryClient.invalidateQueries(['admin-pending-locations']);
     }
-
-    {
-        activeTab === 'system-logs' && (
-            <div className="h-[calc(100vh-200px)]">
-                <SystemLogsTab />
-            </div>
-        )
     }
+/>
 
-    {
-        activeTab === 'media' && (
-            <div className="h-[calc(100vh-200px)]">
-                <MediaLibraryTab />
-            </div>
-        )
-    }
+{/* Creator Location Edit Form */ }
+<CreatorLocationEditForm
+    isOpen={showEditForm}
+    onOpenChange={setShowEditForm}
+    locationId={editingLocationId}
+    user={user}
+    onSuccess={() => {
+        setShowEditForm(false);
+        setEditingLocationId(null);
+        queryClient.invalidateQueries(['admin-locations']);
+        queryClient.invalidateQueries(['admin-pending-locations']);
+    }}
+/>
 
-    {/* Bulk Editor */ }
-    < BulkEditor
-        isOpen={showBulkEditor}
-        onOpenChange={setShowBulkEditor}
-        rows={filteredLocations}
-        onSaved={() => {
-            setShowBulkEditor(false);
-            queryClient.invalidateQueries(['admin-locations']);
-            queryClient.invalidateQueries(['admin-pending-locations']);
-        }
-        }
-    />
-
-    {/* Creator Location Edit Form */ }
-    <CreatorLocationEditForm
-        isOpen={showEditForm}
-        onOpenChange={setShowEditForm}
-        locationId={editingLocationId}
-        user={user}
-        onSuccess={() => {
-            setShowEditForm(false);
-            setEditingLocationId(null);
-            queryClient.invalidateQueries(['admin-locations']);
-            queryClient.invalidateQueries(['admin-pending-locations']);
-        }}
-    />
-
-            </AdminLayout >
+        </AdminLayout >
     );
 }
