@@ -25,7 +25,7 @@ export default function QuickActionsPanel({
             label: 'Invite User',
             onClick: onInviteUser,
             variant: 'default',
-            className: 'bg-emerald-500 hover:bg-emerald-600 dark:bg-lime-400 dark:hover:bg-lime-500 dark:text-black'
+            className: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white'
         },
         {
             icon: Search,
