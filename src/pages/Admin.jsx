@@ -939,272 +939,368 @@ export default function Admin() {
             )}
 
             {/* AI Management Tab */}
+            {activeTab === 'locations' && (
+                <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 space-y-4">
+                    <div className="p-4 rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="w-8 h-8" />
+                    </div>
+                    <div className="max-w-md space-y-2">
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                            Вкладка временно недоступна
+                        </h3>
+                        <p className="text-neutral-500 dark:text-neutral-400">
+                            Мы работаем над исправлением ошибки отображения в этом разделе.
+                            Пожалуйста, используйте другие разделы панели управления.
+                        </p>
+                    </div>
+                </div>
+            )}
+            {/* Creator Moderation Tab */}
+            {
+                activeTab === 'creator-moderation' && (
+                    <Tabs defaultValue="moderation" className="space-y-6">
+                        <TabsList className="bg-white dark:bg-neutral-800 p-1 rounded-2xl border-0 shadow-sm dark:border dark:border-neutral-700 w-full grid grid-cols-2 gap-0.5 md:h-12">
+                            <TabsTrigger
+                                value="locations"
+                                className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-xl h-full flex items-center justify-center text-sm"
+                            >
+                                <MapPin className="w-4 h-4 mr-2" />
+                                Локации
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="moderation"
+                                className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-xl h-full flex items-center justify-center text-sm relative"
+                            >
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                На Модерации
+                                {newModerationRoundsCount > 0 && (
+                                    <span className="ml-2 bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                        {newModerationRoundsCount > 99 ? '99+' : newModerationRoundsCount}
+                                    </span>
+                                )}
+                            </TabsTrigger>
+                        </TabsList>
 
-{/* Creator Moderation Tab */ }
-{
-    activeTab === 'creator-moderation' && (
-        <Tabs defaultValue="moderation" className="space-y-6">
-            <TabsList className="bg-white dark:bg-neutral-800 p-1 rounded-2xl border-0 shadow-sm dark:border dark:border-neutral-700 w-full grid grid-cols-2 gap-0.5 md:h-12">
-                <TabsTrigger
-                    value="locations"
-                    className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-xl h-full flex items-center justify-center text-sm"
-                >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Локации
-                </TabsTrigger>
-                <TabsTrigger
-                    value="moderation"
-                    className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-xl h-full flex items-center justify-center text-sm relative"
-                >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    На Модерации
-                    {newModerationRoundsCount > 0 && (
-                        <span className="ml-2 bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                            {newModerationRoundsCount > 99 ? '99+' : newModerationRoundsCount}
-                        </span>
-                    )}
-                </TabsTrigger>
-            </TabsList>
+                        <TabsContent value="locations">
+                            <ModerationLocationsTab locations={locations} />
+                        </TabsContent>
 
-            <TabsContent value="locations">
-                <ModerationLocationsTab locations={locations} />
-            </TabsContent>
+                        <TabsContent value="moderation">
+                            <CreatorModerationTab />
+                        </TabsContent>
+                    </Tabs>
+                )
+            }
 
-            <TabsContent value="moderation">
-                <CreatorModerationTab />
-            </TabsContent>
-        </Tabs>
-    )
-}
+            {/* Modals */}
+            <InviteUserDialog
+                open={showInviteDialog}
+                onOpenChange={setShowInviteDialog}
+            />
 
-{/* Modals */ }
-<InviteUserDialog
-    open={showInviteDialog}
-    onOpenChange={setShowInviteDialog}
-/>
+            {/* Moderation Tab */}
+            {
+                activeTab === 'moderation' && (
+                    <>
+                        <Dialog open={showLocationForm && editingLocation?.status === 'pending'
+                        } onOpenChange={(open) => {
+                            if (!open) {
+                                setShowLocationForm(false);
+                                setEditingLocation(null);
+                            }
+                        }}>
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
+                                <DialogHeader>
+                                    <DialogTitle className="text-neutral-900 dark:text-neutral-100">
+                                        Модерация локации
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <LocationForm
+                                    location={editingLocation}
+                                    onSubmit={(data) => locationMutation.mutate(data)}
+                                    isLoading={locationMutation.isPending}
+                                />
+                            </DialogContent>
+                        </Dialog >
 
-{/* Moderation Tab */ }
-{
-    activeTab === 'moderation' && (
-        <>
-            <Dialog open={showLocationForm && editingLocation?.status === 'pending'
-            } onOpenChange={(open) => {
-                if (!open) {
-                    setShowLocationForm(false);
-                    setEditingLocation(null);
-                }
-            }}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
-                    <DialogHeader>
-                        <DialogTitle className="text-neutral-900 dark:text-neutral-100">
-                            Модерация локации
-                        </DialogTitle>
-                    </DialogHeader>
-                    <LocationForm
-                        location={editingLocation}
-                        onSubmit={(data) => locationMutation.mutate(data)}
-                        isLoading={locationMutation.isPending}
-                    />
-                </DialogContent>
-            </Dialog >
-
-            <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                <CardHeader>
-                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Локации на модерации</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Название</TableHead>
-                                    <TableHead>Создатель</TableHead>
-                                    <TableHead>Локация</TableHead>
-                                    <TableHead>Дата подачи</TableHead>
-                                    <TableHead className="text-right">Действия</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {pendingLocations.length > 0 ? (
-                                    pendingLocations.map(location => (
-                                        <TableRow
-                                            key={location.id}
-                                            className="hover:bg-stone-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors"
-                                            onClick={() => {
-                                                setEditingLocation(location);
-                                                setShowLocationForm(true);
-                                            }}
-                                        >
-                                            <TableCell className="font-medium">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className="truncate max-w-[200px] text-neutral-900 dark:text-neutral-100" title={location.name}>
-                                                        {location.name}
-                                                    </span>
-                                                    <Badge variant="outline" className="w-fit text-[10px]">
-                                                        {location.type}
-                                                    </Badge>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{location.created_by_name}</span>
-                                                    <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.created_by}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-sm">
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-neutral-900 dark:text-neutral-100">{location.city}</span>
-                                                    <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.country}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-xs text-neutral-500 dark:text-neutral-500">
-                                                {location.created_date && format(new Date(location.created_date), 'dd.MM.yyyy HH:mm')}
-                                            </TableCell>
-                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-neutral-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-300"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
+                        <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+                            <CardHeader>
+                                <CardTitle className="text-neutral-900 dark:text-neutral-100">Локации на модерации</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Название</TableHead>
+                                                <TableHead>Создатель</TableHead>
+                                                <TableHead>Локация</TableHead>
+                                                <TableHead>Дата подачи</TableHead>
+                                                <TableHead className="text-right">Действия</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {pendingLocations.length > 0 ? (
+                                                pendingLocations.map(location => (
+                                                    <TableRow
+                                                        key={location.id}
+                                                        className="hover:bg-stone-50 dark:hover:bg-neutral-900 cursor-pointer transition-colors"
+                                                        onClick={() => {
                                                             setEditingLocation(location);
                                                             setShowLocationForm(true);
                                                         }}
-                                                        title="Редактировать"
                                                     >
-                                                        <Pencil className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            publishLocationMutation.mutate(location.id);
-                                                        }}
-                                                        title="Опубликовать"
-                                                    >
-                                                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                                                        Опубликовать
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                title="Отклонить"
-                                                            >
-                                                                <X className="w-3.5 h-3.5 mr-1" />
-                                                                Отклонить
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Отклонить локацию?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Локация "{location.name}" будет отклонена и не будет опубликована.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Отмена</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    onClick={() => rejectLocationMutation.mutate(location.id)}
-                                                                    className="bg-red-600 hover:bg-red-700"
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="truncate max-w-[200px] text-neutral-900 dark:text-neutral-100" title={location.name}>
+                                                                    {location.name}
+                                                                </span>
+                                                                <Badge variant="outline" className="w-fit text-[10px]">
+                                                                    {location.type}
+                                                                </Badge>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{location.created_by_name}</span>
+                                                                <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.created_by}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-sm">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium text-neutral-900 dark:text-neutral-100">{location.city}</span>
+                                                                <span className="text-xs text-neutral-500 dark:text-neutral-500">{location.country}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-xs text-neutral-500 dark:text-neutral-500">
+                                                            {location.created_date && format(new Date(location.created_date), 'dd.MM.yyyy HH:mm')}
+                                                        </TableCell>
+                                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7 text-neutral-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-300"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setEditingLocation(location);
+                                                                        setShowLocationForm(true);
+                                                                    }}
+                                                                    title="Редактировать"
                                                                 >
-                                                                    Отклонить
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                                            Нет локаций на модерации
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </>
-    )
-}
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        publishLocationMutation.mutate(location.id);
+                                                                    }}
+                                                                    title="Опубликовать"
+                                                                >
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                                                    Опубликовать
+                                                                </Button>
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            title="Отклонить"
+                                                                        >
+                                                                            <X className="w-3.5 h-3.5 mr-1" />
+                                                                            Отклонить
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Отклонить локацию?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Локация "{location.name}" будет отклонена и не будет опубликована.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                                                            <AlertDialogAction
+                                                                                onClick={() => rejectLocationMutation.mutate(location.id)}
+                                                                                className="bg-red-600 hover:bg-red-700"
+                                                                            >
+                                                                                Отклонить
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
+                                                        Нет локаций на модерации
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )
+            }
 
-{/* Reviews Tab */ }
-{
-    activeTab === 'reviews' && (
-        <>
-            <Dialog open={showReviewDetail} onOpenChange={setShowReviewDetail}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
-                    <DialogHeader>
-                        <DialogTitle className="text-neutral-900 dark:text-neutral-100">Детали отзыва</DialogTitle>
-                    </DialogHeader>
-                    <ReviewDetail
-                        review={selectedReview}
-                        onStatusChange={(id, status, is_hidden) => reviewMutation.mutate({ id, status, is_hidden })}
-                        onClose={() => setShowReviewDetail(false)}
-                    />
-                </DialogContent>
-            </Dialog>
-            <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                <CardHeader>
-                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Отзывы</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Дата</TableHead>
-                                    <TableHead>Локация ID</TableHead>
-                                    <TableHead>Пользователь</TableHead>
-                                    <TableHead>Рейтинг</TableHead>
-                                    <TableHead>Статус</TableHead>
-                                    <TableHead className="text-right">Действия</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {reviews.length > 0 ? (
-                                    reviews.map(review => (
-                                        <TableRow
-                                            key={review.id}
-                                            className="cursor-pointer hover:bg-stone-50 dark:hover:bg-neutral-900 transition-colors"
-                                            onClick={() => {
-                                                setSelectedReview(review);
-                                                setShowReviewDetail(true);
-                                            }}
-                                        >
-                                            <TableCell className="whitespace-nowrap text-xs text-neutral-500 dark:text-neutral-400">
-                                                {review.created_date && format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}
-                                            </TableCell>
-                                            <TableCell className="font-mono text-xs max-w-[100px] truncate text-neutral-900 dark:text-neutral-300" title={review.location_id}>
-                                                {review.location_id}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{review.user_name}</span>
-                                                    <span className="text-xs text-neutral-500 dark:text-neutral-500">{review.user_email}</span>
+            {/* Reviews Tab */}
+            {
+                activeTab === 'reviews' && (
+                    <>
+                        <Dialog open={showReviewDetail} onOpenChange={setShowReviewDetail}>
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
+                                <DialogHeader>
+                                    <DialogTitle className="text-neutral-900 dark:text-neutral-100">Детали отзыва</DialogTitle>
+                                </DialogHeader>
+                                <ReviewDetail
+                                    review={selectedReview}
+                                    onStatusChange={(id, status, is_hidden) => reviewMutation.mutate({ id, status, is_hidden })}
+                                    onClose={() => setShowReviewDetail(false)}
+                                />
+                            </DialogContent>
+                        </Dialog>
+                        <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+                            <CardHeader>
+                                <CardTitle className="text-neutral-900 dark:text-neutral-100">Отзывы</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4">
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Дата</TableHead>
+                                                <TableHead>Локация ID</TableHead>
+                                                <TableHead>Пользователь</TableHead>
+                                                <TableHead>Рейтинг</TableHead>
+                                                <TableHead>Статус</TableHead>
+                                                <TableHead className="text-right">Действия</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {reviews.length > 0 ? (
+                                                reviews.map(review => (
+                                                    <TableRow
+                                                        key={review.id}
+                                                        className="cursor-pointer hover:bg-stone-50 dark:hover:bg-neutral-900 transition-colors"
+                                                        onClick={() => {
+                                                            setSelectedReview(review);
+                                                            setShowReviewDetail(true);
+                                                        }}
+                                                    >
+                                                        <TableCell className="whitespace-nowrap text-xs text-neutral-500 dark:text-neutral-400">
+                                                            {review.created_date && format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}
+                                                        </TableCell>
+                                                        <TableCell className="font-mono text-xs max-w-[100px] truncate text-neutral-900 dark:text-neutral-300" title={review.location_id}>
+                                                            {review.location_id}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{review.user_name}</span>
+                                                                <span className="text-xs text-neutral-500 dark:text-neutral-500">{review.user_email}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-1">
+                                                                {[...Array(review.rating)].map((_, i) => (
+                                                                    <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                                                ))}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge className={
+                                                                    review.status === 'pending' ? 'bg-orange-500' :
+                                                                        review.status === 'approved' ? 'bg-green-500' :
+                                                                            review.status === 'rejected' ? 'bg-red-500' : 'bg-stone-500'
+                                                                }>
+                                                                    {review.status === 'pending' ? 'На модерации' :
+                                                                        review.status === 'approved' ? 'Одобрено' :
+                                                                            review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
+                                                                </Badge>
+                                                                {review.is_hidden && (
+                                                                    <Badge variant="outline" className="bg-neutral-100 dark:bg-black text-neutral-900 dark:text-neutral-300 text-[10px]">
+                                                                        Скрыто
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
+                                                                        disabled={review.status === 'approved' && !review.is_hidden}
+                                                                    >
+                                                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Одобрить
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
+                                                                        disabled={review.status === 'rejected'}
+                                                                    >
+                                                                        <X className="w-4 h-4 mr-2" /> Отклонить
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}>
+                                                                        {review.is_hidden ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                                                                        {review.is_hidden ? 'Показать' : 'Скрыть'}
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
+                                                        Нет отзывов
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="md:hidden space-y-3">
+                                    {reviews.length > 0 ? (
+                                        reviews.map(review => (
+                                            <div
+                                                key={review.id}
+                                                className="bg-white dark:bg-neutral-800 shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl p-4 active:bg-neutral-50 dark:active:bg-neutral-900 transition-colors"
+                                                onClick={() => {
+                                                    setSelectedReview(review);
+                                                    setShowReviewDetail(true);
+                                                }}
+                                            >
+                                                <div className="flex items-start justify-between gap-3 mb-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100">{review.user_name}</div>
+                                                        <div className="text-xs text-neutral-500 dark:text-neutral-500 truncate">{review.user_email}</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        {[...Array(review.rating)].map((_, i) => (
+                                                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-1">
-                                                    {[...Array(review.rating)].map((_, i) => (
-                                                        <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
+
+                                                <div className="flex flex-wrap gap-2 mb-3">
                                                     <Badge className={
                                                         review.status === 'pending' ? 'bg-orange-500' :
                                                             review.status === 'approved' ? 'bg-green-500' :
@@ -1215,503 +1311,422 @@ export default function Admin() {
                                                                 review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
                                                     </Badge>
                                                     {review.is_hidden && (
-                                                        <Badge variant="outline" className="bg-neutral-100 dark:bg-black text-neutral-900 dark:text-neutral-300 text-[10px]">
+                                                        <Badge variant="outline" className="bg-stone-100 text-stone-600 text-[10px]">
                                                             Скрыто
                                                         </Badge>
                                                     )}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
-                                                            disabled={review.status === 'approved' && !review.is_hidden}
-                                                        >
-                                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Одобрить
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
-                                                            disabled={review.status === 'rejected'}
-                                                        >
-                                                            <X className="w-4 h-4 mr-2" /> Отклонить
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}>
-                                                            {review.is_hidden ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
-                                                            {review.is_hidden ? 'Показать' : 'Скрыть'}
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                                            Нет отзывов
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
 
-                    {/* Mobile Card View */}
-                    <div className="md:hidden space-y-3">
-                        {reviews.length > 0 ? (
-                            reviews.map(review => (
-                                <div
-                                    key={review.id}
-                                    className="bg-white dark:bg-neutral-800 shadow-sm border-0 dark:border dark:border-neutral-700 rounded-xl p-4 active:bg-neutral-50 dark:active:bg-neutral-900 transition-colors"
-                                    onClick={() => {
-                                        setSelectedReview(review);
-                                        setShowReviewDetail(true);
-                                    }}
-                                >
-                                    <div className="flex items-start justify-between gap-3 mb-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-sm mb-1 text-neutral-900 dark:text-neutral-100">{review.user_name}</div>
-                                            <div className="text-xs text-neutral-500 dark:text-neutral-500 truncate">{review.user_email}</div>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            {[...Array(review.rating)].map((_, i) => (
-                                                <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                            ))}
-                                        </div>
-                                    </div>
+                                                {review.comment && (
+                                                    <p className="text-xs text-neutral-900 dark:text-neutral-300 line-clamp-2 mb-3">
+                                                        {review.comment}
+                                                    </p>
+                                                )}
 
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        <Badge className={
-                                            review.status === 'pending' ? 'bg-orange-500' :
-                                                review.status === 'approved' ? 'bg-green-500' :
-                                                    review.status === 'rejected' ? 'bg-red-500' : 'bg-stone-500'
-                                        }>
-                                            {review.status === 'pending' ? 'На модерации' :
-                                                review.status === 'approved' ? 'Одобрено' :
-                                                    review.status === 'rejected' ? 'Отклонено' : 'Скрыто'}
-                                        </Badge>
-                                        {review.is_hidden && (
-                                            <Badge variant="outline" className="bg-stone-100 text-stone-600 text-[10px]">
-                                                Скрыто
-                                            </Badge>
-                                        )}
-                                    </div>
+                                                <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-500">
+                                                    <span>{review.created_date && format(new Date(review.created_date), 'dd.MM HH:mm')}</span>
+                                                    <span className="font-mono truncate max-w-[120px]" title={review.location_id}>
+                                                        {review.location_id}
+                                                    </span>
+                                                </div>
 
-                                    {review.comment && (
-                                        <p className="text-xs text-neutral-900 dark:text-neutral-300 line-clamp-2 mb-3">
-                                            {review.comment}
-                                        </p>
-                                    )}
-
-                                    <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-500">
-                                        <span>{review.created_date && format(new Date(review.created_date), 'dd.MM HH:mm')}</span>
-                                        <span className="font-mono truncate max-w-[120px]" title={review.location_id}>
-                                            {review.location_id}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700" onClick={(e) => e.stopPropagation()}>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
-                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
-                                            disabled={review.status === 'approved' && !review.is_hidden}
-                                        >
-                                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                                            Одобрить
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                                            onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
-                                            disabled={review.status === 'rejected'}
-                                        >
-                                            <X className="w-3 h-3 mr-1" />
-                                            Отклонить
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}
-                                        >
-                                            {review.is_hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                                Нет отзывов
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </>
-    )
-}
-
-{/* Subscriptions Tab */ }
-{
-    activeTab === 'subscriptions' && (
-        <>
-            <div className="mb-6 flex justify-end">
-                <Dialog open={showSubscriptionForm} onOpenChange={setShowSubscriptionForm}>
-                    <DialogTrigger asChild>
-                        <Button className="w-full md:w-auto bg-stone-900 text-white hover:bg-stone-800">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Добавить подписку
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md dark:bg-neutral-800 dark:border-neutral-700">
-                        <DialogHeader>
-                            <DialogTitle className="text-neutral-900 dark:text-neutral-100">Добавить подписку</DialogTitle>
-                        </DialogHeader>
-                        <SubscriptionForm
-                            users={users}
-                            onSubmit={(data) => createSubscriptionMutation.mutate(data)}
-                            isLoading={createSubscriptionMutation.isPending}
-                        />
-                    </DialogContent>
-                </Dialog>
-            </div>
-            <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                <CardHeader>
-                    <CardTitle className="text-neutral-900 dark:text-neutral-100">Подписки</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {/* Mobile List View */}
-                    <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
-                        <MobileCardList
-                            data={subscriptions}
-                            renderItem={(sub) => (
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
-                                    <CardContent className="p-4 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">{sub.user_email}</div>
-                                                <div className="flex gap-2 mt-1">
-                                                    <Badge variant="outline" className="text-[10px] h-5">{sub.plan}</Badge>
-                                                    <Badge className={`text-[10px] h-5 ${sub.status === 'active' ? 'bg-green-500' :
-                                                        sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
-                                                        }`}>
-                                                        {sub.status}
-                                                    </Badge>
+                                                <div className="flex gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700" onClick={(e) => e.stopPropagation()}>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
+                                                        disabled={review.status === 'approved' && !review.is_hidden}
+                                                    >
+                                                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                                                        Одобрить
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
+                                                        disabled={review.status === 'rejected'}
+                                                    >
+                                                        <X className="w-3 h-3 mr-1" />
+                                                        Отклонить
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}
+                                                    >
+                                                        {review.is_hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                                    </Button>
                                                 </div>
                                             </div>
-                                            <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                                                ${sub.amount_paid?.toLocaleString()}
-                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+                                            Нет отзывов
                                         </div>
-                                        <div className="flex justify-between text-xs text-neutral-500 pt-2">
-                                            <span>Start: {sub.start_date && format(new Date(sub.start_date), 'dd.MM')}</span>
-                                            <span>End: {sub.end_date && format(new Date(sub.end_date), 'dd.MM')}</span>
-                                        </div>
-                                        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                                            <Select
-                                                value={sub.status}
-                                                onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
-                                            >
-                                                <SelectTrigger className="w-full h-8 text-xs">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="active">Active</SelectItem>
-                                                    <SelectItem value="expired">Expired</SelectItem>
-                                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        />
-                    </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )
+            }
 
-                    <div className="hidden md:block overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Пользователь</TableHead>
-                                    <TableHead>План</TableHead>
-                                    <TableHead>Статус</TableHead>
-                                    <TableHead>Дата начала</TableHead>
-                                    <TableHead>Дата окончания</TableHead>
-                                    <TableHead>Сумма</TableHead>
-                                    <TableHead className="text-right">Действия</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {subscriptions.map(sub => (
-                                    <TableRow key={sub.id}>
-                                        <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{sub.user_email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">{sub.plan}</Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge className={
-                                                sub.status === 'active' ? 'bg-green-500' :
-                                                    sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
-                                            }>
-                                                {sub.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {sub.start_date && format(new Date(sub.start_date), 'dd.MM.yyyy')}
-                                        </TableCell>
-                                        <TableCell>
-                                            {sub.end_date && format(new Date(sub.end_date), 'dd.MM.yyyy')}
-                                        </TableCell>
-                                        <TableCell>${sub.amount_paid?.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Select
-                                                value={sub.status}
-                                                onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
-                                            >
-                                                <SelectTrigger className="w-[120px]">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="active">Active</SelectItem>
-                                                    <SelectItem value="expired">Expired</SelectItem>
-                                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </>
-    )
-}
-
-{/* Users Tab */ }
-{
-    activeTab === 'users' && (
-        <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-            <CardHeader>
-                <CardTitle className="text-neutral-900 dark:text-neutral-100">Пользователи</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {/* Mobile List View */}
-                <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
-                    <MobileCardList
-                        data={users}
-                        renderItem={(u) => {
-                            const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
-                            return (
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
-                                    <CardContent className="p-4 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <div className="font-semibold text-neutral-900 dark:text-neutral-100">{u.full_name}</div>
-                                                <div className="text-xs text-neutral-500">{u.email}</div>
-                                            </div>
-                                            <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
-                                                {u.custom_role || u.role}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center text-xs">
-                                            <div className="text-neutral-500">
-                                                Since: {u.created_date ? format(new Date(u.created_date), 'dd.MM.yyyy') : '-'}
-                                            </div>
-                                            {userSub ? (
-                                                <Badge className="bg-green-500 h-5 px-1.5">{userSub.plan}</Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="h-5 px-1.5 text-neutral-400">No Sub</Badge>
-                                            )}
-                                        </div>
-                                        <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                                            <Select
-                                                value={u.custom_role || u.role}
-                                                onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
-                                            >
-                                                <SelectTrigger className="w-full h-8 text-xs">
-                                                    <SelectValue placeholder="Role" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="user">User</SelectItem>
-                                                    <SelectItem value="creator">Creator</SelectItem>
-                                                    <SelectItem value="admin">Admin</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        }}
-                    />
-                </div>
-
-                <div className="hidden md:block overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Имя</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Роль</TableHead>
-                                <TableHead>Подписка</TableHead>
-                                <TableHead>Дата регистрации</TableHead>
-                                <TableHead className="text-right">Действия</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {users.map(u => {
-                                const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
-                                return (
-                                    <TableRow key={u.id}>
-                                        <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{u.full_name}</TableCell>
-                                        <TableCell className="text-neutral-900 dark:text-neutral-100">{u.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
-                                                {u.custom_role || u.role}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {userSub ? (
-                                                <Badge className="bg-green-500">{userSub.plan}</Badge>
-                                            ) : (
-                                                <Badge variant="outline">Нет</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {u.created_date && format(new Date(u.created_date), 'dd.MM.yyyy')}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Select
-                                                value={u.custom_role || u.role}
-                                                onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
-                                            >
-                                                <SelectTrigger className="w-[120px]">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="user">User</SelectItem>
-                                                    <SelectItem value="creator">Creator</SelectItem>
-                                                    <SelectItem value="admin">Admin</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
-
-{/* AI Management Tab */ }
-{
-    activeTab === 'ai-management' && (
-        <AIManagementTab />
-    )
-}
-
-{/* Feedback Tab */ }
-{
-    activeTab === 'feedback' && (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">User Feedback</h2>
-            </div>
-
-            <div className="grid gap-4">
-                {formattedFeedback.map((item) => (
-                    <div key={item.id} className="bg-white dark:bg-black p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className={
-                                    item.type === 'bug' ? 'bg-red-50 text-red-700 border-red-200' :
-                                        item.type === 'feature' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                            item.type === 'partnership' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''
-                                }>
-                                    {item.type === 'bug' ? 'Ошибка' :
-                                        item.type === 'feature' ? 'Идея' :
-                                            item.type === 'partnership' ? 'Партнёрство' : 'Вопрос'}
-                                </Badge>
-                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.user_name}</span>
-                                <span className="text-sm text-neutral-500">{item.user_email}</span>
-                            </div>
-                            <p className="text-neutral-600 dark:text-neutral-300 line-clamp-2">{item.message}</p>
-                            <span className="text-xs text-neutral-400 mt-2 block">{item.created_date ? format(new Date(item.created_date), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
+            {/* Subscriptions Tab */}
+            {
+                activeTab === 'subscriptions' && (
+                    <>
+                        <div className="mb-6 flex justify-end">
+                            <Dialog open={showSubscriptionForm} onOpenChange={setShowSubscriptionForm}>
+                                <DialogTrigger asChild>
+                                    <Button className="w-full md:w-auto bg-stone-900 text-white hover:bg-stone-800">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Добавить подписку
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md dark:bg-neutral-800 dark:border-neutral-700">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-neutral-900 dark:text-neutral-100">Добавить подписку</DialogTitle>
+                                    </DialogHeader>
+                                    <SubscriptionForm
+                                        users={users}
+                                        onSubmit={(data) => createSubscriptionMutation.mutate(data)}
+                                        isLoading={createSubscriptionMutation.isPending}
+                                    />
+                                </DialogContent>
+                            </Dialog>
                         </div>
-                        <Badge className={
-                            item.status === 'new' ? 'bg-amber-500' :
-                                item.status === 'in_progress' ? 'bg-blue-500' :
-                                    item.status === 'resolved' ? 'bg-green-500' : 'bg-stone-500'
-                        }>
-                            {item.status === 'new' ? 'Новое' :
-                                item.status === 'in_progress' ? 'В работе' :
-                                    item.status === 'resolved' ? 'Решено' : 'Архив'}
-                        </Badge>
+                        <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+                            <CardHeader>
+                                <CardTitle className="text-neutral-900 dark:text-neutral-100">Подписки</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {/* Mobile List View */}
+                                <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
+                                    <MobileCardList
+                                        data={subscriptions}
+                                        renderItem={(sub) => (
+                                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
+                                                <CardContent className="p-4 space-y-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">{sub.user_email}</div>
+                                                            <div className="flex gap-2 mt-1">
+                                                                <Badge variant="outline" className="text-[10px] h-5">{sub.plan}</Badge>
+                                                                <Badge className={`text-[10px] h-5 ${sub.status === 'active' ? 'bg-green-500' :
+                                                                    sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
+                                                                    }`}>
+                                                                    {sub.status}
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                                                            ${sub.amount_paid?.toLocaleString()}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs text-neutral-500 pt-2">
+                                                        <span>Start: {sub.start_date && format(new Date(sub.start_date), 'dd.MM')}</span>
+                                                        <span>End: {sub.end_date && format(new Date(sub.end_date), 'dd.MM')}</span>
+                                                    </div>
+                                                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                                                        <Select
+                                                            value={sub.status}
+                                                            onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
+                                                        >
+                                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="active">Active</SelectItem>
+                                                                <SelectItem value="expired">Expired</SelectItem>
+                                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="hidden md:block overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Пользователь</TableHead>
+                                                <TableHead>План</TableHead>
+                                                <TableHead>Статус</TableHead>
+                                                <TableHead>Дата начала</TableHead>
+                                                <TableHead>Дата окончания</TableHead>
+                                                <TableHead>Сумма</TableHead>
+                                                <TableHead className="text-right">Действия</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {subscriptions.map(sub => (
+                                                <TableRow key={sub.id}>
+                                                    <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{sub.user_email}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{sub.plan}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge className={
+                                                            sub.status === 'active' ? 'bg-green-500' :
+                                                                sub.status === 'expired' ? 'bg-stone-500' : 'bg-red-500'
+                                                        }>
+                                                            {sub.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {sub.start_date && format(new Date(sub.start_date), 'dd.MM.yyyy')}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {sub.end_date && format(new Date(sub.end_date), 'dd.MM.yyyy')}
+                                                    </TableCell>
+                                                    <TableCell>${sub.amount_paid?.toLocaleString()}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Select
+                                                            value={sub.status}
+                                                            onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
+                                                        >
+                                                            <SelectTrigger className="w-[120px]">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="active">Active</SelectItem>
+                                                                <SelectItem value="expired">Expired</SelectItem>
+                                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )
+            }
+
+            {/* Users Tab */}
+            {
+                activeTab === 'users' && (
+                    <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+                        <CardHeader>
+                            <CardTitle className="text-neutral-900 dark:text-neutral-100">Пользователи</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {/* Mobile List View */}
+                            <div className="md:hidden p-4 bg-neutral-50/50 dark:bg-black/20">
+                                <MobileCardList
+                                    data={users}
+                                    renderItem={(u) => {
+                                        const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
+                                        return (
+                                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-sm">
+                                                <CardContent className="p-4 space-y-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <div className="font-semibold text-neutral-900 dark:text-neutral-100">{u.full_name}</div>
+                                                            <div className="text-xs text-neutral-500">{u.email}</div>
+                                                        </div>
+                                                        <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
+                                                            {u.custom_role || u.role}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <div className="text-neutral-500">
+                                                            Since: {u.created_date ? format(new Date(u.created_date), 'dd.MM.yyyy') : '-'}
+                                                        </div>
+                                                        {userSub ? (
+                                                            <Badge className="bg-green-500 h-5 px-1.5">{userSub.plan}</Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="h-5 px-1.5 text-neutral-400">No Sub</Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                                                        <Select
+                                                            value={u.custom_role || u.role}
+                                                            onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
+                                                        >
+                                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                                <SelectValue placeholder="Role" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="user">User</SelectItem>
+                                                                <SelectItem value="creator">Creator</SelectItem>
+                                                                <SelectItem value="admin">Admin</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    }}
+                                />
+                            </div>
+
+                            <div className="hidden md:block overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Имя</TableHead>
+                                            <TableHead>Email</TableHead>
+                                            <TableHead>Роль</TableHead>
+                                            <TableHead>Подписка</TableHead>
+                                            <TableHead>Дата регистрации</TableHead>
+                                            <TableHead className="text-right">Действия</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {users.map(u => {
+                                            const userSub = subscriptions.find(s => s.user_email === u.email && s.status === 'active');
+                                            return (
+                                                <TableRow key={u.id}>
+                                                    <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">{u.full_name}</TableCell>
+                                                    <TableCell className="text-neutral-900 dark:text-neutral-100">{u.email}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={(u.role === 'admin' || u.custom_role === 'admin') ? 'default' : (u.custom_role === 'creator' ? 'outline' : 'secondary')}>
+                                                            {u.custom_role || u.role}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {userSub ? (
+                                                            <Badge className="bg-green-500">{userSub.plan}</Badge>
+                                                        ) : (
+                                                            <Badge variant="outline">Нет</Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {u.created_date && format(new Date(u.created_date), 'dd.MM.yyyy')}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Select
+                                                            value={u.custom_role || u.role}
+                                                            onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
+                                                        >
+                                                            <SelectTrigger className="w-[120px]">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="user">User</SelectItem>
+                                                                <SelectItem value="creator">Creator</SelectItem>
+                                                                <SelectItem value="admin">Admin</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            }
+
+            {/* AI Management Tab */}
+            {
+                activeTab === 'ai-management' && (
+                    <AIManagementTab />
+                )
+            }
+
+            {/* Feedback Tab */}
+            {
+                activeTab === 'feedback' && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">User Feedback</h2>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {formattedFeedback.map((item) => (
+                                <div key={item.id} className="bg-white dark:bg-black p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant="outline" className={
+                                                item.type === 'bug' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                    item.type === 'feature' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                        item.type === 'partnership' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''
+                                            }>
+                                                {item.type === 'bug' ? 'Ошибка' :
+                                                    item.type === 'feature' ? 'Идея' :
+                                                        item.type === 'partnership' ? 'Партнёрство' : 'Вопрос'}
+                                            </Badge>
+                                            <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.user_name}</span>
+                                            <span className="text-sm text-neutral-500">{item.user_email}</span>
+                                        </div>
+                                        <p className="text-neutral-600 dark:text-neutral-300 line-clamp-2">{item.message}</p>
+                                        <span className="text-xs text-neutral-400 mt-2 block">{item.created_date ? format(new Date(item.created_date), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
+                                    </div>
+                                    <Badge className={
+                                        item.status === 'new' ? 'bg-amber-500' :
+                                            item.status === 'in_progress' ? 'bg-blue-500' :
+                                                item.status === 'resolved' ? 'bg-green-500' : 'bg-stone-500'
+                                    }>
+                                        {item.status === 'new' ? 'Новое' :
+                                            item.status === 'in_progress' ? 'В работе' :
+                                                item.status === 'resolved' ? 'Решено' : 'Архив'}
+                                    </Badge>
+                                </div>
+                            ))}
+                            {feedback.length === 0 && (
+                                <div className="text-center p-8 text-neutral-500">
+                                    Запросов пока нет
+                                </div>
+                            )}
+                        </div>
                     </div>
-                ))}
-                {feedback.length === 0 && (
-                    <div className="text-center p-8 text-neutral-500">
-                        Запросов пока нет
+                )
+            }
+
+            {
+                activeTab === 'system-logs' && (
+                    <div className="h-[calc(100vh-200px)]">
+                        <SystemLogsTab />
                     </div>
-                )}
-            </div>
-        </div>
-    )
-}
+                )
+            }
 
-{
-    activeTab === 'system-logs' && (
-        <div className="h-[calc(100vh-200px)]">
-            <SystemLogsTab />
-        </div>
-    )
-}
+            {
+                activeTab === 'media' && (
+                    <div className="h-[calc(100vh-200px)]">
+                        <MediaLibraryTab />
+                    </div>
+                )
+            }
 
-{
-    activeTab === 'media' && (
-        <div className="h-[calc(100vh-200px)]">
-            <MediaLibraryTab />
-        </div>
-    )
-}
+            {/* Bulk Editor */}
+            < BulkEditor
+                isOpen={showBulkEditor}
+                onOpenChange={setShowBulkEditor}
+                rows={filteredLocations}
+                onSaved={() => {
+                    setShowBulkEditor(false);
+                    queryClient.invalidateQueries(['admin-locations']);
+                    queryClient.invalidateQueries(['admin-pending-locations']);
+                }
+                }
+            />
 
-{/* Bulk Editor */ }
-< BulkEditor
-    isOpen={showBulkEditor}
-    onOpenChange={setShowBulkEditor}
-    rows={filteredLocations}
-    onSaved={() => {
-        setShowBulkEditor(false);
-        queryClient.invalidateQueries(['admin-locations']);
-        queryClient.invalidateQueries(['admin-pending-locations']);
-    }
-    }
-/>
-
-{/* Creator Location Edit Form */ }
-<CreatorLocationEditForm
-    isOpen={showEditForm}
-    onOpenChange={setShowEditForm}
-    locationId={editingLocationId}
-    user={user}
-    onSuccess={() => {
-        setShowEditForm(false);
-        setEditingLocationId(null);
-        queryClient.invalidateQueries(['admin-locations']);
-        queryClient.invalidateQueries(['admin-pending-locations']);
-    }}
-/>
+            {/* Creator Location Edit Form */}
+            <CreatorLocationEditForm
+                isOpen={showEditForm}
+                onOpenChange={setShowEditForm}
+                locationId={editingLocationId}
+                user={user}
+                onSuccess={() => {
+                    setShowEditForm(false);
+                    setEditingLocationId(null);
+                    queryClient.invalidateQueries(['admin-locations']);
+                    queryClient.invalidateQueries(['admin-pending-locations']);
+                }}
+            />
 
         </AdminLayout >
     );
