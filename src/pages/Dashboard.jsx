@@ -734,7 +734,7 @@ export default function Dashboard() {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     return (
-        <div className="min-h-screen bg-[#F2F2F7] dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 pb-24 md:pb-10 font-sans">
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-neutral-900 dark:text-neutral-100 pb-24 md:pb-10 font-sans">
             {/* Desktop Header */}
             <header className="hidden md:block sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-white/20 dark:border-neutral-800 pt-4 pb-4 px-4 lg:px-8">
                 <div className="max-w-[1600px] mx-auto flex items-center justify-between">

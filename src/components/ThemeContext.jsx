@@ -48,7 +48,7 @@ export function ThemeProvider({ children }) {
         } else {
             root.classList.remove('dark');
             root.style.colorScheme = 'light';
-            metaThemeColor.setAttribute('content', '#ffffff');
+            metaThemeColor.setAttribute('content', '#F2F2F7');
         }
     };
 
