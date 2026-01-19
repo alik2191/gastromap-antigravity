@@ -2436,74 +2436,85 @@ export default function Admin() {
                     </TabsContent>
 
                     {/* Feedback Tab */}
-                    <div className="flex justify-end gap-1">
-                        {item.status !== 'resolved' && (
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
-                                onClick={() => feedbackMutation.mutate({ id: item.id, status: 'resolved' })}
-                                title="Отметить решенным"
-                            >
-                                <CheckCircle2 className="w-4 h-4" />
-                            </Button>
-                        )}
-                        {item.status !== 'archived' && (
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 hover:bg-stone-100"
-                                onClick={() => feedbackMutation.mutate({ id: item.id, status: 'archived' })}
-                                title="В архив"
-                            >
-                                <Archive className="w-4 h-4" />
-                            </Button>
-                        )}
-                    </div>
-                </TableCell>
-            </TableRow>
-                                            ))}
-            {feedback.length === 0 && (
-                <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                        Запросов пока нет
-                    </TableCell>
-                </TableRow>
-            )}
-        </TableBody>
-                                    </Table >
-                                </div >
-                            </CardContent >
-                        </Card >
-                    </TabsContent >
-                </Tabs >
+                    <TabsContent value="feedback" className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">User Feedback</h2>
+                        </div>
 
-        {/* Bulk Editor */ }
-        < BulkEditor
-    isOpen = { showBulkEditor }
-    onOpenChange = { setShowBulkEditor }
-    rows = { filteredLocations }
-    onSaved = {() => {
-        setShowBulkEditor(false);
-        queryClient.invalidateQueries(['admin-locations']);
-        queryClient.invalidateQueries(['admin-pending-locations']);
-    }
-}
+                        <div className="grid gap-4">
+                            {formattedFeedback.map((item) => (
+                                <div key={item.id} className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-start cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedFeedback(item)}>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant="outline" className={
+                                                item.type === 'bug' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                    item.type === 'feature' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                        item.type === 'partnership' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''
+                                            }>
+                                                {item.type === 'bug' ? 'Ошибка' :
+                                                    item.type === 'feature' ? 'Идея' :
+                                                        item.type === 'partnership' ? 'Партнёрство' : 'Вопрос'}
+                                            </Badge>
+                                            <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.user_name}</span>
+                                            <span className="text-sm text-neutral-500">{item.user_email}</span>
+                                        </div>
+                                        <p className="text-neutral-600 dark:text-neutral-300 line-clamp-2">{item.message}</p>
+                                        <span className="text-xs text-neutral-400 mt-2 block">{item.created_date ? format(new Date(item.created_date), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
+                                    </div>
+                                    <Badge className={
+                                        item.status === 'new' ? 'bg-amber-500' :
+                                            item.status === 'in_progress' ? 'bg-blue-500' :
+                                                item.status === 'resolved' ? 'bg-green-500' : 'bg-stone-500'
+                                    }>
+                                        {item.status === 'new' ? 'Новое' :
+                                            item.status === 'in_progress' ? 'В работе' :
+                                                item.status === 'resolved' ? 'Решено' : 'Архив'}
+                                    </Badge>
+                                </div>
+                            ))}
+                            {feedback.length === 0 && (
+                                <div className="text-center p-8 text-neutral-500">
+                                    Запросов пока нет
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="system_logs" className="h-[calc(100vh-200px)]">
+                        <SystemLogsTab />
+                    </TabsContent>
+
+                    <TabsContent value="media" className="h-[calc(100vh-200px)]">
+                        <MediaLibraryTab />
+                    </TabsContent>
+                </Tabs>
+
+                {/* Bulk Editor */}
+                < BulkEditor
+                    isOpen={showBulkEditor}
+                    onOpenChange={setShowBulkEditor}
+                    rows={filteredLocations}
+                    onSaved={() => {
+                        setShowBulkEditor(false);
+                        queryClient.invalidateQueries(['admin-locations']);
+                        queryClient.invalidateQueries(['admin-pending-locations']);
+                    }
+                    }
                 />
 
-{/* Creator Location Edit Form */ }
-<CreatorLocationEditForm
-    isOpen={showEditForm}
-    onOpenChange={setShowEditForm}
-    locationId={editingLocationId}
-    user={user}
-    onSuccess={() => {
-        setShowEditForm(false);
-        setEditingLocationId(null);
-        queryClient.invalidateQueries(['admin-locations']);
-        queryClient.invalidateQueries(['admin-pending-locations']);
-    }}
-/>
+                {/* Creator Location Edit Form */}
+                <CreatorLocationEditForm
+                    isOpen={showEditForm}
+                    onOpenChange={setShowEditForm}
+                    locationId={editingLocationId}
+                    user={user}
+                    onSuccess={() => {
+                        setShowEditForm(false);
+                        setEditingLocationId(null);
+                        queryClient.invalidateQueries(['admin-locations']);
+                        queryClient.invalidateQueries(['admin-pending-locations']);
+                    }}
+                />
 
             </main >
         </div >
