@@ -90,13 +90,20 @@ import ReviewDetail from '../components/admin/ReviewDetail';
 import CreatorModerationTab from '../components/admin/CreatorModerationTab';
 import ModerationLocationsTab from '../components/admin/ModerationLocationsTab';
 import AIManagementTab from '../components/admin/AIManagementTab';
-import CreatorLocationEditForm from '../components/dashboard/CreatorLocationEditForm';
+import CreatorLocationEditForm from '@/components/admin/CreatorLocationEditForm';
+import SystemLogsTab from '@/components/admin/SystemLogsTab';
+import DashboardTab from '@/components/admin/DashboardTab';
+import MediaLibraryTab from '@/components/admin/MediaLibraryTab';
+import { useAuth } from '@/context/AuthContext';
+import AIAgentStatusCard from '@/components/admin/AIAgentStatusCard';
+import FeedbackDetail from '@/components/admin/FeedbackDetail';
+import LocationForm from '@/components/admin/LocationForm';
 
 export default function Admin() {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('locations');
+    const [activeTab, setActiveTab] = useState('dashboard'); // Changed default to dashboard
     const [showLocationForm, setShowLocationForm] = useState(false);
     const [editingLocation, setEditingLocation] = useState(null);
     const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
@@ -392,7 +399,7 @@ export default function Admin() {
             // Process sequentially to avoid overwhelming the client/network
             for (const line of lines) {
                 try {
-                    // Simple parsing: Assumes the line IS the name. 
+                    // Simple parsing: Assumes the line IS the name.
                     // Can be improved later if format is "Name | Address" etc.
                     const locationData = {
                         name: line,
@@ -837,6 +844,12 @@ export default function Admin() {
         currentPage * itemsPerPage
     );
 
+    const formattedFeedback = feedback.map(item => ({
+        ...item,
+        user_name: item.user_name || 'Аноним',
+        user_email: item.user_email || 'N/A'
+    }));
+
     if (loading) {
         return (
             <div className="min-h-screen bg-stone-50 dark:bg-neutral-900 flex items-center justify-center">
@@ -847,147 +860,42 @@ export default function Admin() {
 
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-neutral-900">
-            {/* Header */}
-            <header className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Link to={createPageUrl('Dashboard')}>
-                                <Button variant="ghost" size="sm">
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
-                                    Back
-                                </Button>
-                            </Link>
-                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Admin Panel</h1>
-                        </div>
+            <div className="container mx-auto p-4 max-w-[1600px]">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" onClick={() => window.location.href = '/dashboard'}>
+                            <LayoutDashboard className="w-5 h-5 mr-2" />
+                            Back to App
+                        </Button>
+                        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Admin Panel</h1>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <AIAgentStatusCard />
                     </div>
                 </div>
-            </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-4">
-                {/* Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
-                    <Card className="border-l-2 border-l-amber-500 shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                        <CardContent className="p-2.5">
-                            <div className="flex items-center justify-between gap-1.5">
-                                <div>
-                                    <p className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Локаций</p>
-                                    <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">{locations.length}</p>
-                                </div>
-                                <div className="w-7 h-7 bg-amber-50 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
-                                    <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-l-2 border-l-blue-500 shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                        <CardContent className="p-2.5">
-                            <div className="flex items-center justify-between gap-1.5">
-                                <div>
-                                    <p className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Пользователей</p>
-                                    <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">{users.length}</p>
-                                </div>
-                                <div className="w-7 h-7 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                                    <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-l-2 border-l-green-500 shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                        <CardContent className="p-2.5">
-                            <div className="flex items-center justify-between gap-1.5">
-                                <div>
-                                    <p className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Подписок</p>
-                                    <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">{activeSubscriptions}</p>
-                                </div>
-                                <div className="w-7 h-7 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                                    <CreditCard className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-l-2 border-l-purple-500 shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                        <CardContent className="p-2.5">
-                            <div className="flex items-center justify-between gap-1.5">
-                                <div>
-                                    <p className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Доход</p>
-                                    <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">${totalRevenue.toLocaleString()}</p>
-                                </div>
-                                <div className="w-7 h-7 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                                    <TrendingUp className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* WhatsApp Agent Card */}
-                <Card className={`border-l-2 ${isAgentConnected ? 'border-l-green-500 bg-gradient-to-r from-green-50 to-white dark:from-green-950/20 dark:to-neutral-800' : 'border-l-gray-400 bg-gradient-to-r from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800'} dark:border-neutral-700`}>
-                    <CardContent className="p-3 md:p-4">
-                        {isAgentConnected ? (
-                            <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <div className="shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 flex items-center justify-center shadow-lg">
-                                        <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                                        <div className="absolute w-3 h-3 bg-green-400 rounded-full animate-ping" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-sm md:text-base text-green-900 dark:text-green-200 mb-0.5">AI Агент подключен</h3>
-                                        <p className="text-xs md:text-sm text-green-700 dark:text-green-300">
-                                            Управление локациями через WhatsApp активно
-                                        </p>
-                                    </div>
-                                </div>
-                                <Badge className="bg-green-600 text-white shrink-0 md:ml-auto">
-                                    Работает
-                                </Badge>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-sm md:text-base text-neutral-900 dark:text-neutral-100 mb-1">AI Агент для управления локациями</h3>
-                                    <p className="text-xs md:text-sm text-neutral-700 dark:text-neutral-400">
-                                        Управляйте локациями через WhatsApp - добавляйте, редактируйте, получайте уведомления
-                                    </p>
-                                </div>
-                                <a
-                                    href={api.agents.getWhatsAppConnectURL('location_manager')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="shrink-0 w-full md:w-auto"
-                                >
-                                    <Button className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto">
-                                        <MessageSquare className="w-4 h-4 mr-2" />
-                                        Подключить
-                                    </Button>
-                                </a>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="bg-white dark:bg-neutral-800 p-0.5 rounded-2xl border border-0 shadow-sm dark:border dark:border-neutral-700 w-full grid grid-cols-2 md:grid-cols-5 gap-0.5 h-auto">
-                        <TabsTrigger
-                            value="analytics"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
-                        >
-                            Аналитика
+                    <TabsList className="bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl w-full justify-start overflow-x-auto">
+                        <TabsTrigger value="dashboard" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <LayoutDashboard className="w-4 h-4 mr-2" />
+                            Dashboard
+                        </TabsTrigger>
+                        <TabsTrigger value="analytics" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Analytics
                         </TabsTrigger>
                         <TabsTrigger
                             value="locations"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <MapPin className="w-4 h-4 mr-2" />
                             Локации
                         </TabsTrigger>
                         <TabsTrigger
                             value="moderation"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <Plus className="w-4 h-4 mr-2" />
                             Новые локации
                             {pendingLocations.length > 0 && (
                                 <span className="ml-1.5 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -997,8 +905,9 @@ export default function Admin() {
                         </TabsTrigger>
                         <TabsTrigger
                             value="creator-moderation"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
                             Модерация
                             {newModerationRoundsCount > 0 && (
                                 <span className="ml-1.5 bg-purple-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -1008,8 +917,9 @@ export default function Admin() {
                         </TabsTrigger>
                         <TabsTrigger
                             value="reviews"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <Star className="w-4 h-4 mr-2" />
                             Отзывы
                             {newReviewsCount > 0 && (
                                 <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -1019,31 +929,23 @@ export default function Admin() {
                         </TabsTrigger>
                         <TabsTrigger
                             value="subscriptions"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <CreditCard className="w-4 h-4 mr-2" />
                             Подписки
                         </TabsTrigger>
                         <TabsTrigger
                             value="users"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <Users className="w-4 h-4 mr-2" />
                             Пользователи
                         </TabsTrigger>
                         <TabsTrigger
-                            value="feedback"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
-                        >
-                            Обратная связь
-                            {newFeedbackCount > 0 && (
-                                <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {newFeedbackCount}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger
                             value="ai-management"
-                            className="data-[state=active]:bg-neutral-900 dark:data-[state=active]:bg-neutral-100 data-[state=active]:text-white dark:data-[state=active]:text-neutral-900 text-neutral-900 dark:text-neutral-300 rounded-[14px] py-1.5 text-xs md:text-sm"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                         >
+                            <Sparkles className="w-4 h-4 mr-2" />
                             Управление AI
                             {newModerationRoundsCount > 0 && (
                                 <span className="ml-1.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -1051,11 +953,25 @@ export default function Admin() {
                                 </span>
                             )}
                         </TabsTrigger>
+                        <TabsTrigger value="feedback" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Feedback
+                        </TabsTrigger>
+                        <TabsTrigger value="system_logs" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <Terminal className="w-4 h-4 mr-2" />
+                            System Logs
+                        </TabsTrigger>
+                        <TabsTrigger value="media" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <ImageIcon className="w-4 h-4 mr-2" />
+                            Media
+                        </TabsTrigger>
                     </TabsList>
 
+                    <TabsContent value="dashboard" className="space-y-4">
+                        <DashboardTab />
+                    </TabsContent>
 
-                    {/* Analytics Tab */}
-                    <TabsContent value="analytics">
+                    <TabsContent value="analytics" className="space-y-4">
                         <AnalyticsTab />
                     </TabsContent>
 
@@ -2520,153 +2436,77 @@ export default function Admin() {
                     </TabsContent>
 
                     {/* Feedback Tab */}
-                    <TabsContent value="feedback">
-                        <Dialog open={showFeedbackDetail} onOpenChange={setShowFeedbackDetail}>
-                            <DialogContent className="max-w-2xl dark:bg-neutral-800 dark:border-neutral-700">
-                                <DialogHeader>
-                                    <DialogTitle className="text-neutral-900 dark:text-neutral-100">Детали обращения</DialogTitle>
-                                </DialogHeader>
-                                <FeedbackDetail
-                                    feedback={selectedFeedback}
-                                    onStatusChange={(id, status) => feedbackMutation.mutate({ id, status })}
-                                    onClose={() => setShowFeedbackDetail(false)}
-                                />
-                            </DialogContent>
-                        </Dialog>
-                        <Card className="shadow-sm border-0 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-                            <CardHeader>
-                                <CardTitle className="text-neutral-900 dark:text-neutral-100">Обратная связь</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Дата</TableHead>
-                                                <TableHead>Пользователь</TableHead>
-                                                <TableHead>Тип</TableHead>
-                                                <TableHead>Сообщение</TableHead>
-                                                <TableHead>Статус</TableHead>
-                                                <TableHead className="text-right">Действия</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {feedback.map(item => (
-                                                <TableRow
-                                                    key={item.id}
-                                                    className="cursor-pointer hover:bg-stone-50 dark:hover:bg-neutral-900 transition-colors"
-                                                    onClick={() => {
-                                                        setSelectedFeedback(item);
-                                                        setShowFeedbackDetail(true);
-                                                    }}
-                                                >
-                                                    <TableCell className="whitespace-nowrap text-xs text-neutral-500 dark:text-neutral-400">
-                                                        {item.created_date && format(new Date(item.created_date), 'dd.MM.yyyy HH:mm')}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{item.user_name}</span>
-                                                            <span className="text-xs text-neutral-500 dark:text-neutral-500">{item.user_email}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className={
-                                                            item.type === 'bug' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                                item.type === 'feature' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                                    item.type === 'partnership' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''
-                                                        }>
-                                                            {item.type === 'bug' ? 'Ошибка' :
-                                                                item.type === 'feature' ? 'Идея' :
-                                                                    item.type === 'partnership' ? 'Партнёрство' : 'Вопрос'}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="max-w-[300px]">
-                                                        <p className="truncate hover:whitespace-normal hover:bg-neutral-50 dark:hover:bg-neutral-900 text-neutral-900 dark:text-neutral-100 p-1 rounded transition-all cursor-default" title={item.message}>
-                                                            {item.message}
-                                                        </p>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge className={
-                                                            item.status === 'new' ? 'bg-amber-500' :
-                                                                item.status === 'in_progress' ? 'bg-blue-500' :
-                                                                    item.status === 'resolved' ? 'bg-green-500' : 'bg-stone-500'
-                                                        }>
-                                                            {item.status === 'new' ? 'Новое' :
-                                                                item.status === 'in_progress' ? 'В работе' :
-                                                                    item.status === 'resolved' ? 'Решено' : 'Архив'}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            {item.status !== 'resolved' && (
-                                                                <Button
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
-                                                                    onClick={() => feedbackMutation.mutate({ id: item.id, status: 'resolved' })}
-                                                                    title="Отметить решенным"
-                                                                >
-                                                                    <CheckCircle2 className="w-4 h-4" />
-                                                                </Button>
-                                                            )}
-                                                            {item.status !== 'archived' && (
-                                                                <Button
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    className="h-8 w-8 hover:bg-stone-100"
-                                                                    onClick={() => feedbackMutation.mutate({ id: item.id, status: 'archived' })}
-                                                                    title="В архив"
-                                                                >
-                                                                    <Archive className="w-4 h-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
+                    <div className="flex justify-end gap-1">
+                        {item.status !== 'resolved' && (
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
+                                onClick={() => feedbackMutation.mutate({ id: item.id, status: 'resolved' })}
+                                title="Отметить решенным"
+                            >
+                                <CheckCircle2 className="w-4 h-4" />
+                            </Button>
+                        )}
+                        {item.status !== 'archived' && (
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 hover:bg-stone-100"
+                                onClick={() => feedbackMutation.mutate({ id: item.id, status: 'archived' })}
+                                title="В архив"
+                            >
+                                <Archive className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
+                </TableCell>
+            </TableRow>
                                             ))}
-                                            {feedback.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
-                                                        Запросов пока нет
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
+            {feedback.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-neutral-500 dark:text-neutral-400">
+                        Запросов пока нет
+                    </TableCell>
+                </TableRow>
+            )}
+        </TableBody>
+                                    </Table >
+                                </div >
+                            </CardContent >
+                        </Card >
+                    </TabsContent >
+                </Tabs >
 
-                {/* Bulk Editor */}
-                <BulkEditor
-                    isOpen={showBulkEditor}
-                    onOpenChange={setShowBulkEditor}
-                    rows={filteredLocations}
-                    onSaved={() => {
-                        setShowBulkEditor(false);
-                        queryClient.invalidateQueries(['admin-locations']);
-                        queryClient.invalidateQueries(['admin-pending-locations']);
-                    }}
+        {/* Bulk Editor */ }
+        < BulkEditor
+    isOpen = { showBulkEditor }
+    onOpenChange = { setShowBulkEditor }
+    rows = { filteredLocations }
+    onSaved = {() => {
+        setShowBulkEditor(false);
+        queryClient.invalidateQueries(['admin-locations']);
+        queryClient.invalidateQueries(['admin-pending-locations']);
+    }
+}
                 />
 
-                {/* Creator Location Edit Form */}
-                <CreatorLocationEditForm
-                    isOpen={showEditForm}
-                    onOpenChange={setShowEditForm}
-                    locationId={editingLocationId}
-                    user={user}
-                    onSuccess={() => {
-                        setShowEditForm(false);
-                        setEditingLocationId(null);
-                        queryClient.invalidateQueries(['admin-locations']);
-                        queryClient.invalidateQueries(['admin-pending-locations']);
-                    }}
-                />
+{/* Creator Location Edit Form */ }
+<CreatorLocationEditForm
+    isOpen={showEditForm}
+    onOpenChange={setShowEditForm}
+    locationId={editingLocationId}
+    user={user}
+    onSuccess={() => {
+        setShowEditForm(false);
+        setEditingLocationId(null);
+        queryClient.invalidateQueries(['admin-locations']);
+        queryClient.invalidateQueries(['admin-pending-locations']);
+    }}
+/>
 
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
 

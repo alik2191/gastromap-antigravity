@@ -243,6 +243,7 @@ export const adapter = {
         LocationView: new SupabaseEntity('location_views'),
         ChatMessage: new SupabaseEntity('chat_messages'),
         AIAgent: new SupabaseEntity('ai_agents'),
+        SystemLog: new SupabaseEntity('system_logs'),
         // Add Query proxy for compatibility with old sdk usage
         Query: {
             // This is a minimal mock for the Query object if used directly
@@ -330,14 +331,29 @@ export const adapter = {
         invoke: async () => ({ success: true })
     },
     storage: {
-        upload: async (path, file) => {
-            const { data, error } = await supabase.storage.from('uploads').upload(path, file);
+        upload: async (path, file, bucket = 'uploads') => {
+            const { data, error } = await supabase.storage.from(bucket).upload(path, file);
             if (error) throw error;
             return data;
         },
-        getPublicUrl: (path) => {
-            const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+        getPublicUrl: (path, bucket = 'uploads') => {
+            const { data } = supabase.storage.from(bucket).getPublicUrl(path);
             return data.publicUrl;
+        },
+        list: async (bucket = 'uploads', path = '', options = {}) => {
+            const { data, error } = await supabase.storage.from(bucket).list(path, {
+                limit: 100,
+                offset: 0,
+                sortBy: { column: 'created_at', order: 'desc' },
+                ...options
+            });
+            if (error) throw error;
+            return data;
+        },
+        remove: async (paths, bucket = 'uploads') => {
+            const { data, error } = await supabase.storage.from(bucket).remove(Array.isArray(paths) ? paths : [paths]);
+            if (error) throw error;
+            return data;
         }
     }
 };
