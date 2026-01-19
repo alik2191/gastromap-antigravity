@@ -16,8 +16,8 @@ export default function LocationsHubCard({
         : 0;
 
     return (
-        <Card className="bg-emerald-500 dark:bg-lime-400 border-0 shadow-lg overflow-hidden relative">
-            <CardContent className="p-6 text-white dark:text-black">
+        <Card className="bg-neutral-100 dark:bg-neutral-800 border shadow-sm dark:border-neutral-700 overflow-hidden relative">
+            <CardContent className="p-6 text-neutral-900 dark:text-neutral-100">
                 {/* Circular Progress Indicator - Top Right */}
                 <div className="absolute top-6 right-6">
                     <svg className="w-16 h-16 transform -rotate-90">
@@ -77,7 +77,7 @@ export default function LocationsHubCard({
                 {/* Add Location Button */}
                 <Button
                     onClick={onAddLocation}
-                    className="w-full bg-white/20 dark:bg-black/20 hover:bg-white/30 dark:hover:bg-black/30 text-white dark:text-black border-0"
+                    className="w-full bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-600 dark:hover:bg-emerald-700 text-white border-0"
                     disabled={isLoading}
                 >
                     <Plus className="w-4 h-4 mr-2" />

@@ -354,7 +354,7 @@ export default function AIManagementTab() {
                 </div>
 
                 <Tabs defaultValue="auto-check" className="w-full">
-                    <TabsList className="grid grid-cols-3 md:w-auto md:inline-grid bg-neutral-100 dark:bg-neutral-800 mb-6">
+                    <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-neutral-100 dark:bg-neutral-800 mb-6">
                         <TabsTrigger value="auto-check" className="text-xs md:text-sm">
                             <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
                             Авто-проверка
