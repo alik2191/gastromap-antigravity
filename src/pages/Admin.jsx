@@ -861,7 +861,7 @@ export default function Admin() {
 
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-neutral-900">
-            <div className="container mx-auto p-4 max-w-[1600px]">
+            <main className="container mx-auto p-4 max-w-[1600px]">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" onClick={() => window.location.href = '/dashboard'}>
