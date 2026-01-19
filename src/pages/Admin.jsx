@@ -97,6 +97,7 @@ import DashboardTab from '@/components/admin/DashboardTab';
 import NewDashboardTab from '@/components/admin/NewDashboardTab';
 import MediaLibraryTab from '@/components/admin/MediaLibraryTab';
 import { useAuth } from '@/lib/AuthContext';
+import AdminLayout from '@/components/admin/AdminLayout';
 import AIAgentStatusCard from '@/components/admin/AIAgentStatusCard';
 import FeedbackDetail from '@/components/admin/FeedbackDetail';
 import LocationForm from '@/components/admin/LocationForm';
