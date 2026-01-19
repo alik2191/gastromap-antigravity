@@ -58,7 +58,7 @@ export default function QuickActionsPanel({
         <Card className="bg-white dark:bg-neutral-800 border shadow-sm dark:border-neutral-700">
             <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <ArrowRight className="w-5 h-5 text-emerald-500 dark:text-lime-400" />
+                    <ArrowRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     Quick Actions
                 </CardTitle>
             </CardHeader>
