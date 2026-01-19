@@ -94,7 +94,7 @@ import CreatorLocationEditForm from '@/components/admin/CreatorLocationEditForm'
 import SystemLogsTab from '@/components/admin/SystemLogsTab';
 import DashboardTab from '@/components/admin/DashboardTab';
 import MediaLibraryTab from '@/components/admin/MediaLibraryTab';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/lib/AuthContext';
 import AIAgentStatusCard from '@/components/admin/AIAgentStatusCard';
 import FeedbackDetail from '@/components/admin/FeedbackDetail';
 import LocationForm from '@/components/admin/LocationForm';
