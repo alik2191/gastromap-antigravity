@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -21,6 +21,9 @@ Deno.serve(async (req) => {
         console.log('[ai-guide-chat] Received request:', JSON.stringify(requestBody, null, 2));
 
         const { message, sessionId, userId, userLocation, systemPrompt: requestSystemPrompt } = requestBody;
+
+        // Store userId for error logging (to avoid scope issues in catch block)
+        const requestUserId = userId;
 
         if (!message) {
             console.error('[ai-guide-chat] Missing message in request');
@@ -228,7 +231,7 @@ User Message: "${message}"
                 metadata: {
                     stack: error.stack,
                     timestamp: new Date().toISOString(),
-                    userId: userId || null
+                    userId: requestUserId || null
                 }
             });
         } catch (logError) {
