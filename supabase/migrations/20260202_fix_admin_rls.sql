@@ -84,5 +84,14 @@ CREATE POLICY "Admins can view all subscriptions"
   TO authenticated
   USING (public.is_admin());
 
+-- 8. Profiles Permissions (Users)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+CREATE POLICY "Admins can view all profiles"
+  ON public.profiles FOR SELECT
+  TO authenticated
+  USING (public.is_admin());
+
 -- Force refresh schema cache in Supabase Dashboard (optional hint)
 NOTIFY pgrst, 'reload schema';
