@@ -158,7 +158,7 @@ button:focus-visible {
   html {
     min-height: 100%;
     /* Default to white to match light theme logic */
-    background-color: #ffffff;
+    background-color: #F2F2F7;
   }
 
   html.dark {
