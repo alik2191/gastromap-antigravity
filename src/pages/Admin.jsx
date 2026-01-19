@@ -479,7 +479,7 @@ export default function Admin() {
     const { data: pendingLocations = [] } = useQuery({
         queryKey: ['admin-pending-locations'],
         queryFn: async () => {
-            const allLocations = await api.entities.Location.list('-created_date');
+            const allLocations = await api.entities.Location.list('-created_at');
             return allLocations.filter(l => l.status === 'pending');
         },
         enabled: !loading
@@ -487,7 +487,7 @@ export default function Admin() {
 
     const { data: subscriptions = [] } = useQuery({
         queryKey: ['admin-subscriptions'],
-        queryFn: () => api.entities.Subscription.list('-created_date'),
+        queryFn: () => api.entities.Subscription.list('-created_at'),
         enabled: !loading,
         refetchInterval: 60000 // Poll every minute
     });
@@ -500,7 +500,7 @@ export default function Admin() {
 
     const { data: feedback = [] } = useQuery({
         queryKey: ['admin-feedback'],
-        queryFn: () => api.entities.Feedback.list('-created_date'),
+        queryFn: () => api.entities.Feedback.list('-created_at'),
         enabled: !loading,
         refetchInterval: 30000 // Poll every 30 seconds
     });
@@ -513,7 +513,7 @@ export default function Admin() {
 
     const { data: reviews = [] } = useQuery({
         queryKey: ['admin-reviews'],
-        queryFn: () => api.entities.Review.list('-created_date'),
+        queryFn: () => api.entities.Review.list('-created_at'),
         enabled: !loading,
         refetchInterval: 30000
     });
