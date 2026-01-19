@@ -866,14 +866,14 @@ export default function Admin() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-stone-50 dark:bg-neutral-900 flex items-center justify-center">
+            <div className="min-h-screen bg-[#F2F2F7] dark:bg-black flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-stone-50 dark:bg-neutral-900">
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
             <main className="container mx-auto p-4 max-w-[1600px]">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
