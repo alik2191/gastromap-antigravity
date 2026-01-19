@@ -1,8 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sparkles, CheckCircle2, AlertCircle, Settings } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function AIHealthCard({
     status = 'healthy',
@@ -15,24 +13,22 @@ export default function AIHealthCard({
 
     return (
         <Card className="bg-white dark:bg-neutral-800 border shadow-sm dark:border-neutral-700">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Sparkles className={`w-4 h-4 ${isHealthy
-                            ? 'text-emerald-500 dark:text-lime-400'
-                            : 'text-red-500 dark:text-red-400'
-                        }`} />
-                    AI System
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-5">
+                {/* Header */}
+                <div className="mb-4">
+                    <h3 className="font-semibold text-sm text-neutral-600 dark:text-neutral-400">
+                        AI System
+                    </h3>
+                </div>
+
                 {/* Status */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-4">
                     {isHealthy ? (
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                     ) : (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                     )}
-                    <span className={`font-semibold ${isHealthy
+                    <span className={`font-semibold text-sm ${isHealthy
                             ? 'text-green-600 dark:text-green-400'
                             : 'text-red-600 dark:text-red-400'
                         }`}>
@@ -41,42 +37,36 @@ export default function AIHealthCard({
                 </div>
 
                 {/* Stats */}
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-sm mb-4">
                     <div className="flex items-center justify-between">
                         <span className="text-neutral-600 dark:text-neutral-400">
                             Scheduled Tasks
                         </span>
-                        <Badge variant="outline" className="dark:border-neutral-600">
+                        <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                             {scheduledTasks}
-                        </Badge>
+                        </span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-neutral-600 dark:text-neutral-400">
                             Errors
                         </span>
-                        <Badge
-                            variant={errorCount > 0 ? "destructive" : "outline"}
-                            className={errorCount > 0
-                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                : "dark:border-neutral-600"
-                            }
-                        >
+                        <span className={`font-semibold ${errorCount > 0
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-neutral-900 dark:text-neutral-100'
+                            }`}>
                             {errorCount}
-                        </Badge>
+                        </span>
                     </div>
                 </div>
 
-                {/* Settings Button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
+                {/* Settings Link */}
+                <button
                     onClick={onSettingsClick}
+                    className="text-xs text-emerald-600 dark:text-lime-400 hover:underline"
                     disabled={isLoading}
                 >
-                    <Settings className="w-3 h-3 mr-2" />
-                    Settings
-                </Button>
+                    → Settings
+                </button>
             </CardContent>
         </Card>
     );
