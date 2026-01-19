@@ -17,9 +17,13 @@ Deno.serve(async (req) => {
         const apiKey = Deno.env.get('GOOGLE_API_KEY');
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        const { message, sessionId, userId, userLocation, systemPrompt: requestSystemPrompt } = await req.json();
+        const requestBody = await req.json();
+        console.log('[ai-guide-chat] Received request:', JSON.stringify(requestBody, null, 2));
+
+        const { message, sessionId, userId, userLocation, systemPrompt: requestSystemPrompt } = requestBody;
 
         if (!message) {
+            console.error('[ai-guide-chat] Missing message in request');
             throw new Error('Message is required');
         }
 
@@ -183,7 +187,7 @@ User Message: "${message}"
 
         // 6. Call LLM
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(finalPrompt);
         const aiResponse = result.response.text();
 
