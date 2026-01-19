@@ -532,7 +532,7 @@ export default function Admin() {
         refetchInterval: 30000
     });
 
-    const { data: aiAgents = [] } = useQuery({
+    const { data: aiAgents = [], isLoading: loadingAgents } = useQuery({
         queryKey: ['admin-ai-agents'],
         queryFn: async () => {
             try {
@@ -884,7 +884,7 @@ export default function Admin() {
                         <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Admin Panel</h1>
                     </div>
                     <div className="flex items-center gap-2">
-                        <AIAgentStatusCard agent={aiAgents[0]} />
+                        <AIAgentStatusCard agent={aiAgents[0]} isLoading={loadingAgents} />
                     </div>
                 </div>
 
