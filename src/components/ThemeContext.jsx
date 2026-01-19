@@ -50,6 +50,20 @@ export function ThemeProvider({ children }) {
             root.style.colorScheme = 'light';
             metaThemeColor.setAttribute('content', '#F2F2F7');
         }
+
+        // Force browser reflow to update Status Bar immediately on iOS
+        // This is a hack but necessary for instant visual feedback
+        void root.offsetHeight;
+
+        // Additional iOS Safari hack: temporarily manipulate viewport to force repaint
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            const originalContent = viewport.getAttribute('content');
+            viewport.setAttribute('content', originalContent + ', minimal-ui');
+            setTimeout(() => {
+                viewport.setAttribute('content', originalContent);
+            }, 10);
+        }
     };
 
     // Listen for system theme changes
