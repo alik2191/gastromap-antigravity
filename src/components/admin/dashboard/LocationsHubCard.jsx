@@ -17,10 +17,10 @@ export default function LocationsHubCard({
 
     return (
         <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 border-0 shadow-lg shadow-blue-500/20 overflow-hidden relative">
-            <CardContent className="p-6 text-white">
+            <CardContent className="p-4 md:p-6 text-white">
                 {/* Circular Progress Indicator - Top Right */}
-                <div className="absolute top-6 right-6">
-                    <svg className="w-16 h-16 transform -rotate-90">
+                <div className="absolute top-4 right-4 md:top-6 md:right-6">
+                    <svg className="w-12 h-12 md:w-16 md:h-16 transform -rotate-90" viewBox="0 0 64 64">
                         <circle
                             cx="32"
                             cy="32"
@@ -43,33 +43,33 @@ export default function LocationsHubCard({
                         />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white">{Math.round(progressPercentage)}%</span>
+                        <span className="text-xs md:text-sm font-bold text-white">{Math.round(progressPercentage)}%</span>
                     </div>
                 </div>
 
-                <div className="mb-8 relative z-10">
-                    <h3 className="text-lg font-medium text-blue-100 mb-1">Locations Hub</h3>
+                <div className="mb-6 md:mb-8 relative z-10">
+                    <h3 className="text-base md:text-lg font-medium text-blue-100 mb-1">Locations Hub</h3>
                     <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold tracking-tight text-white">
+                        <span className="text-4xl md:text-5xl font-bold tracking-tight text-white">
                             {isLoading ? "..." : totalLocations}
                         </span>
                     </div>
-                    <p className="text-blue-100 text-sm mt-2">Total Locations</p>
+                    <p className="text-blue-100 text-xs md:text-sm mt-1 md:mt-2">Total Locations</p>
 
-                    <div className="flex gap-4 mt-4 text-sm text-white/90">
+                    <div className="flex flex-wrap gap-3 md:gap-4 mt-3 md:mt-4 text-xs md:text-sm text-white/90">
                         <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
                             <span>{pendingLocations} Pending</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
                             <span>{activeLocations} Active</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-blue-200/80">
+                    <div className="flex items-center gap-1.5 mt-2 text-[10px] md:text-xs text-blue-200/80">
                         <Clock className="w-3 h-3" />
-                        <span>Next AI Update: {nextAIUpdate || 'Not scheduled'}</span>
+                        <span>Update: {nextAIUpdate || 'N/A'}</span>
                     </div>
                 </div>
 

@@ -187,7 +187,7 @@ export default function AITestPlayground({ aiPrompts }) {
                     <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                         {selectedAgent === 'helper_editor' ? (
                             <div className="flex-1 p-4 flex flex-col gap-4 overflow-hidden">
-                                <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0">
                                     <div className="flex flex-col">
                                         <Label className="dark:text-neutral-300 mb-2">Входящий текст (черновик)</Label>
                                         <Textarea
@@ -224,10 +224,10 @@ export default function AITestPlayground({ aiPrompts }) {
                                     {history.map((msg, i) => (
                                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[85%] rounded-lg p-3 text-sm ${msg.role === 'user'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : msg.role === 'error'
-                                                        ? 'bg-red-100 text-red-800'
-                                                        : 'bg-white dark:bg-neutral-800 border dark:border-neutral-700 dark:text-neutral-100'
+                                                ? 'bg-blue-600 text-white'
+                                                : msg.role === 'error'
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : 'bg-white dark:bg-neutral-800 border dark:border-neutral-700 dark:text-neutral-100'
                                                 }`}>
                                                 <p className="whitespace-pre-wrap">{msg.content}</p>
                                                 {msg.data && (

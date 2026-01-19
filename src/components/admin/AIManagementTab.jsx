@@ -359,28 +359,28 @@ export default function AIManagementTab() {
                 </div>
 
                 <Tabs defaultValue="auto-check" className="w-full">
-                    <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 bg-neutral-100 dark:bg-neutral-800 mb-6">
-                        <TabsTrigger value="auto-check" className="text-xs md:text-sm">
+                    <TabsList className="w-full flex h-auto p-1 overflow-x-auto gap-1 bg-neutral-100 dark:bg-neutral-800 no-scrollbar md:grid md:grid-cols-3 lg:grid-cols-6 mb-6 rounded-xl">
+                        <TabsTrigger value="auto-check" className="flex-shrink-0 text-xs md:text-sm px-3 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-950 data-[state=active]:shadow-sm rounded-lg transition-all">
                             <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
                             Авто-проверка
                         </TabsTrigger>
-                        <TabsTrigger value="ai-guide" className="text-xs md:text-sm">
+                        <TabsTrigger value="ai-guide" className="flex-shrink-0 text-xs md:text-sm px-3 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-950 data-[state=active]:shadow-sm rounded-lg transition-all">
                             <MessageSquare className="w-4 h-4 mr-1.5 hidden md:block" />
                             AI Guide
                         </TabsTrigger>
-                        <TabsTrigger value="ai-assistant" className="text-xs md:text-sm">
+                        <TabsTrigger value="ai-assistant" className="flex-shrink-0 text-xs md:text-sm px-3 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-950 data-[state=active]:shadow-sm rounded-lg transition-all">
                             <Sparkles className="w-4 h-4 mr-1.5 hidden md:block" />
                             AI Помощник
                         </TabsTrigger>
-                        <TabsTrigger value="admin-agent" className="text-xs md:text-sm">
+                        <TabsTrigger value="admin-agent" className="flex-shrink-0 text-xs md:text-sm px-3 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-950 data-[state=active]:shadow-sm rounded-lg transition-all">
                             <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
                             Admin Copilot
                         </TabsTrigger>
-                        <TabsTrigger value="content-agents" className="text-xs md:text-sm">
+                        <TabsTrigger value="content-agents" className="flex-shrink-0 text-xs md:text-sm px-3 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-950 data-[state=active]:shadow-sm rounded-lg transition-all">
                             <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
                             Контент-агенты
                         </TabsTrigger>
-                        <TabsTrigger value="playground" className="text-xs md:text-sm">
+                        <TabsTrigger value="playground" className="flex-shrink-0 text-xs md:text-sm px-3 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-950 data-[state=active]:shadow-sm rounded-lg transition-all">
                             <Play className="w-4 h-4 mr-1.5 hidden md:block" />
                             Test Playground
                         </TabsTrigger>
