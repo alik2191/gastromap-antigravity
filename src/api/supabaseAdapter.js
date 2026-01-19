@@ -242,6 +242,7 @@ export const adapter = {
         LocationBranch: new SupabaseEntity('location_branches'),
         LocationView: new SupabaseEntity('location_views'),
         ChatMessage: new SupabaseEntity('chat_messages'),
+        AIAgent: new SupabaseEntity('ai_agents'),
         // Add Query proxy for compatibility with old sdk usage
         Query: {
             // This is a minimal mock for the Query object if used directly

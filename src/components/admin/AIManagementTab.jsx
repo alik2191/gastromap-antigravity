@@ -51,42 +51,40 @@ export default function AIManagementTab() {
         }
     });
 
-    // Fetch AI prompts
-    const { data: aiPrompts = [], refetch: refetchPrompts } = useQuery({
-        queryKey: ['ai-prompts'],
+    // Fetch AI Agents
+    const { data: aiAgents = [], refetch: refetchAgents } = useQuery({
+        queryKey: ['ai-agents'],
         queryFn: async () => {
-            const prompts = await api.entities.AIPrompt.list();
-            return prompts;
+            return await api.entities.AIAgent.list();
         }
     });
 
     // Initialize prompt edits when data loads
     useEffect(() => {
-        if (aiPrompts.length > 0) {
+        if (aiAgents.length > 0) {
             const edits = {};
-            aiPrompts.forEach(p => {
-                edits[p.prompt_key] = p.prompt_text;
+            aiAgents.forEach(agent => {
+                edits[agent.key] = agent.system_prompt;
             });
             setPromptEdits(edits);
         }
-    }, [aiPrompts]);
+    }, [aiAgents]);
 
     // Save prompt mutation
     const savePromptMutation = useMutation({
-        mutationFn: async ({ promptKey, promptText, description }) => {
-            const existing = aiPrompts.find(p => p.prompt_key === promptKey);
+        mutationFn: async ({ agentKey, systemPrompt, description }) => {
+            const existing = aiAgents.find(a => a.key === agentKey);
             if (existing) {
-                return api.entities.AIPrompt.update(existing.id, { prompt_text: promptText });
+                return api.entities.AIAgent.update(existing.id, { system_prompt: systemPrompt });
             } else {
-                return api.entities.AIPrompt.create({
-                    prompt_key: promptKey,
-                    prompt_text: promptText,
-                    description: description
-                });
+                // If agent doesn't exist, we can't create it easily without name/role
+                // But since we seeded them, this shouldn't happen.
+                // Fallback to error or simple creation if allowed
+                throw new Error(`Agent ${agentKey} not found. Please run migration.`);
             }
         },
         onSuccess: () => {
-            refetchPrompts();
+            refetchAgents();
             toast.success('Промпт сохранён');
             setSavingPrompt(null);
         },
@@ -96,19 +94,19 @@ export default function AIManagementTab() {
         }
     });
 
-    const handleSavePrompt = (promptKey, description) => {
-        setSavingPrompt(promptKey);
+    const handleSavePrompt = (agentKey, description) => {
+        setSavingPrompt(agentKey);
         savePromptMutation.mutate({
-            promptKey,
-            promptText: promptEdits[promptKey] || '',
+            agentKey,
+            systemPrompt: promptEdits[agentKey] || '',
             description
         });
     };
 
     const getPromptValue = (key, defaultValue) => {
         if (promptEdits[key] !== undefined) return promptEdits[key];
-        const existing = aiPrompts.find(p => p.prompt_key === key);
-        return existing?.prompt_text || defaultValue;
+        const existing = aiAgents.find(a => a.key === key);
+        return existing?.system_prompt || defaultValue;
     };
 
     // Fetch AI-generated moderation rounds with location data
@@ -351,6 +349,10 @@ export default function AIManagementTab() {
                             <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
                             Admin Copilot
                         </TabsTrigger>
+                        <TabsTrigger value="content-agents" className="text-xs md:text-sm">
+                            <Bot className="w-4 h-4 mr-1.5 hidden md:block" />
+                            Контент-агенты
+                        </TabsTrigger>
                         <TabsTrigger value="playground" className="text-xs md:text-sm">
                             <Play className="w-4 h-4 mr-1.5 hidden md:block" />
                             Test Playground
@@ -369,18 +371,18 @@ export default function AIManagementTab() {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <Textarea
-                                    value={getPromptValue('location_moderation', 'Вы - AI-помощник для модерации локаций. Анализируйте отзывы и предлагайте релевантные обновления для полей insider_tip, must_try и special_labels. Будьте точными и основывайтесь только на конкретных упоминаниях в отзывах.')}
-                                    onChange={(e) => setPromptEdits({ ...promptEdits, location_moderation: e.target.value })}
+                                    value={getPromptValue('admin_copilot', 'Вы - AI-помощник для модерации локаций. Анализируйте отзывы и предлагайте релевантные обновления для полей insider_tip, must_try и special_labels. Будьте точными и основывайтесь только на конкретных упоминаниях в отзывах.')}
+                                    onChange={(e) => setPromptEdits({ ...promptEdits, admin_copilot: e.target.value })}
                                     rows={4}
                                     className="text-sm dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                                 />
                                 <Button
-                                    onClick={() => handleSavePrompt('location_moderation', 'Промпт для автоматической проверки и модерации локаций')}
-                                    disabled={savingPrompt === 'location_moderation'}
+                                    onClick={() => handleSavePrompt('admin_copilot', 'Промпт для автоматической проверки и модерации локаций')}
+                                    disabled={savingPrompt === 'admin_copilot'}
                                     size="sm"
                                     className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
-                                    {savingPrompt === 'location_moderation' ? (
+                                    {savingPrompt === 'admin_copilot' ? (
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                     ) : (
                                         <Save className="w-4 h-4 mr-2" />
@@ -796,19 +798,20 @@ export default function AIManagementTab() {
                                 <div className="space-y-2">
                                     <Label className="text-sm md:text-base dark:text-neutral-200">Системный промпт</Label>
                                     <Textarea
-                                        value={getPromptValue('ai_guide', 'Вы - дружелюбный AI-помощник, который помогает пользователям найти идеальные места для посещения. Учитывайте предпочтения пользователя и давайте персонализированные рекомендации.')}
-                                        onChange={(e) => setPromptEdits({ ...promptEdits, ai_guide: e.target.value })}
-                                        rows={6}
+                                        value={getPromptValue('user_guide', 'Вы - дружелюбный AI-помощник, который помогает пользователям найти идеальные места для посещения. Учитывайте предпочтения пользователя и давайте персонализированные рекомендации.')}
+                                        onChange={(e) => setPromptEdits({ ...promptEdits, user_guide: e.target.value })}
+                                        rows={4}
                                         className="text-sm dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700"
                                     />
                                 </div>
 
                                 <Button
-                                    onClick={() => handleSavePrompt('ai_guide', 'Промпт для AI Guide - помощника пользователей в поиске локаций')}
-                                    disabled={savingPrompt === 'ai_guide'}
-                                    className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                                    onClick={() => handleSavePrompt('user_guide', 'Системный промпт для AI-гида')}
+                                    disabled={savingPrompt === 'user_guide'}
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
-                                    {savingPrompt === 'ai_guide' ? (
+                                    {savingPrompt === 'user_guide' ? (
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                     ) : (
                                         <Save className="w-4 h-4 mr-2" />
@@ -955,6 +958,101 @@ export default function AIManagementTab() {
                                 </Card>
                             </div>
                         </div>
+                    </TabsContent>
+
+                    {/* Content Agents Tab */}
+                    <TabsContent value="content-agents" className="space-y-4">
+                        <Card className="dark:bg-neutral-800 dark:border-neutral-700">
+                            <CardHeader>
+                                <CardTitle className="text-lg md:text-xl dark:text-neutral-100">Контент-агенты</CardTitle>
+                                <CardDescription className="text-sm dark:text-neutral-400">
+                                    Настройка промптов для генерации и перевода контента
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                {/* Smart Fill Agent */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-semibold dark:text-neutral-200">Smart Fill (Анализ Google Maps)</Label>
+                                        <Badge variant="outline">location_smart_fill</Badge>
+                                    </div>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                        Отвечает за анализ отзывов и данных из Google Places для первичного заполнения локации.
+                                    </p>
+                                    <Textarea
+                                        value={getPromptValue('location_smart_fill', '')}
+                                        onChange={(e) => setPromptEdits({ ...promptEdits, location_smart_fill: e.target.value })}
+                                        rows={6}
+                                        className="text-sm dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 font-mono"
+                                    />
+                                    <Button
+                                        onClick={() => handleSavePrompt('location_smart_fill', 'Smart Fill Agent')}
+                                        disabled={savingPrompt === 'location_smart_fill'}
+                                        size="sm"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        {savingPrompt === 'location_smart_fill' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                                        Сохранить Smart Fill
+                                    </Button>
+                                </div>
+
+                                <div className="h-px bg-neutral-200 dark:bg-neutral-700" />
+
+                                {/* Content Generator Agent */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-semibold dark:text-neutral-200">Content Generator (Копирайтер)</Label>
+                                        <Badge variant="outline">content_generator</Badge>
+                                    </div>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                        Улучшает описания, советы и рекомендации (description, insider_tip, must_try).
+                                    </p>
+                                    <Textarea
+                                        value={getPromptValue('content_generator', '')}
+                                        onChange={(e) => setPromptEdits({ ...promptEdits, content_generator: e.target.value })}
+                                        rows={6}
+                                        className="text-sm dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 font-mono"
+                                    />
+                                    <Button
+                                        onClick={() => handleSavePrompt('content_generator', 'Content Generator Agent')}
+                                        disabled={savingPrompt === 'content_generator'}
+                                        size="sm"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        {savingPrompt === 'content_generator' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                                        Сохранить Content Generator
+                                    </Button>
+                                </div>
+
+                                <div className="h-px bg-neutral-200 dark:bg-neutral-700" />
+
+                                {/* Translator Agent */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-semibold dark:text-neutral-200">Translator (Переводчик)</Label>
+                                        <Badge variant="outline">translator</Badge>
+                                    </div>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                        Переводит контент на английский язык, сохраняя стиль и тональность.
+                                    </p>
+                                    <Textarea
+                                        value={getPromptValue('translator', '')}
+                                        onChange={(e) => setPromptEdits({ ...promptEdits, translator: e.target.value })}
+                                        rows={6}
+                                        className="text-sm dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 font-mono"
+                                    />
+                                    <Button
+                                        onClick={() => handleSavePrompt('translator', 'Translator Agent')}
+                                        disabled={savingPrompt === 'translator'}
+                                        size="sm"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        {savingPrompt === 'translator' ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                                        Сохранить Translator
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
                     {/* Test Playground Tab */}

@@ -110,10 +110,21 @@ Deno.serve(async (req) => {
             // Continue without persistent session
         }
 
-        // 4. System Prompt (Hardcoded for stability)
+        // 4. System Prompt
         let systemPrompt = requestSystemPrompt;
         if (!systemPrompt) {
-            systemPrompt = `Ты — GastroMap Guide, персональный консьерж по ресторанам и барам. 
+            // Try fetch from DB
+            const { data: agent } = await supabase
+                .from('ai_agents')
+                .select('system_prompt')
+                .eq('key', 'user_guide')
+                .single();
+
+            if (agent?.system_prompt) {
+                systemPrompt = agent.system_prompt;
+            } else {
+                // Fallback
+                systemPrompt = `Ты — GastroMap Guide, персональный консьерж по ресторанам и барам. 
 Твоя задача — помогать пользователю находить идеальные места на основе его запросов и предпочтений.
 
 У тебя есть доступ к:
@@ -126,6 +137,7 @@ Deno.serve(async (req) => {
 - Если пользователь спрашивает "куда сходить?", сначала проверь его Wishlist.
 - Предлагай конкретные варианты с объяснением, почему это подойдет.
 - Не придумывай несуществующие места.`;
+            }
         }
 
         // 4b. Fetch Relevant Locations (Context)

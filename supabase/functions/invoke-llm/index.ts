@@ -13,7 +13,7 @@ serve(async (req) => {
     }
 
     try {
-        const { prompt, response_json_schema } = await req.json();
+        const { prompt, system_instruction, response_json_schema } = await req.json();
         const apiKey = Deno.env.get('GEMINI_API_KEY');
 
         if (!apiKey) {
@@ -34,12 +34,18 @@ serve(async (req) => {
             };
         }
 
-        const payload = {
+        const payload: any = {
             contents: [{
                 parts: [{ text: prompt }]
             }],
             generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
         };
+
+        if (system_instruction) {
+            payload.system_instruction = {
+                parts: [{ text: system_instruction }]
+            };
+        }
 
         console.log(`Calling Gemini (${model})...`);
 

@@ -2842,6 +2842,19 @@ function LocationForm({ location, onSubmit, isLoading }) {
     const [socialLinkInput, setSocialLinkInput] = useState('');
     const [tagsInput, setTagsInput] = useState(location?.tags?.join(', ') || '');
 
+    // Fetch smart agents for dynamic prompts
+    const { data: smartAgents = [] } = useQuery({
+        queryKey: ['smart-agents'],
+        queryFn: async () => {
+            return await api.entities.AIAgent.list();
+        }
+    });
+
+    const getAgentSystemPrompt = (key, fallback) => {
+        const agent = smartAgents.find(a => a.key === key);
+        return agent ? agent.system_prompt : fallback;
+    };
+
     // Sync tags input when location changes
     useEffect(() => {
         setTagsInput(location?.tags?.join(', ') || '');
@@ -2916,22 +2929,17 @@ function LocationForm({ location, onSubmit, isLoading }) {
                 ? p.reviews.map(r => `"${r.text}" (Rating: ${r.rating})`).join('\n\n')
                 : "No reviews available.";
 
-            const prompt = `You are a gastronomic expert. Analyze the following Google Reviews for the venue "${p.name}" (${p.address}).
-            
+            const systemInstruction = getAgentSystemPrompt('location_smart_fill', 'You are a gastronomic expert. Analyze the reviews...');
+
+            const prompt = `Venue: "${p.name}" (${p.address})
 Reviews:
 ${reviewsText}
 
-Based ONLY on these reviews and the venue details, generate:
-1. "description": A lively, casual description (2-3 sentences).
-2. "insider_tip": A specific practical tip mentioned in reviews (e.g. "Come early," "Try the patio").
-3. "must_try": The specific dish/drink mentioned most positively.
-4. "best_time_to_visit": Best time (Morning, Afternoon, Evening, Late Night) inferred from context/hours.
-5. "type": The most likely category from [cafe, bar, restaurant, market, shop, bakery, winery].
-
-Return JSON only.`;
+Analyze these reviews and generate the requested JSON fields based on the system instructions.`;
 
             const aiResponse = await api.integrations.Core.InvokeLLM({
                 prompt,
+                system_instruction: systemInstruction,
                 response_json_schema: {
                     type: "object",
                     properties: {
@@ -2993,28 +3001,16 @@ Return JSON only.`;
 
         setGeneratingContent(prev => ({ ...prev, [field]: true }));
         try {
-            let prompt = '';
-            let jsonSchema = {};
-            const existingText = formData[field];
+            const systemInstruction = getAgentSystemPrompt('content_generator', 'You are an expert copywriter...');
 
-            // Detect language from existing text
-            const detectedLang = detectLanguage(existingText);
-            const languageInstruction = detectedLang === 'russian' ? 'Пиши на русском языке.' :
-                detectedLang === 'ukrainian' ? 'Пиши українською мовою.' :
-                    detectedLang === 'spanish' ? 'Escribe en español.' :
-                        'Write in English language.';
+            prompt = `Task: Generate/Improve content for field "${field}".
+Venue: "${formData.name}" (${formData.type} in ${formData.city}, ${formData.country}).
+Current Text: "${existingText || ''}"
+Language Instruction: ${languageInstruction}
+
+Please generate the content for "${field}" following the system instructions.`;
 
             if (field === 'description') {
-                if (existingText && existingText.trim()) {
-                    prompt = `Ты опытный копирайтер, пишущий дружелюбным и casual тоном. Улучши описание для "${formData.name}" - ${formData.type} в ${formData.city}, ${formData.country}.
-
-Текущее описание: "${existingText}"
-
-Перепиши его более живо и увлекательно (2-3 предложения). Пиши как друг, который делится находкой - естественно, с энтузиазмом, но без лишней формальности. Передай атмосферу места и что делает его особенным. ${languageInstruction}`;
-                } else {
-                    prompt = `Напиши дружелюбное и увлекательное описание (2-3 предложения) для "${formData.name}" - ${formData.type} в ${formData.city}, ${formData.country}. 
-Пиши как друг, который делится крутой находкой - естественно, с энтузиазмом, передавая атмосферу места. Русский язык.`;
-                }
                 jsonSchema = {
                     type: "object",
                     properties: {
@@ -3022,16 +3018,6 @@ Return JSON only.`;
                     }
                 };
             } else if (field === 'insider_tip') {
-                if (existingText && existingText.trim()) {
-                    prompt = `Улучши инсайдерский совет для "${formData.name}" в ${formData.city}, ${formData.country}.
-                    
-Текущий совет: "${existingText}"
-
-Перепиши его как совет от друга-местного, который знает все фишки (1-2 предложения). Пиши дружелюбно и casual - как в переписке, не формально. ${languageInstruction}`;
-                } else {
-                    prompt = `Напиши инсайдерский совет (1-2 предложения) для "${formData.name}" в ${formData.city}, ${formData.country}. 
-Расскажи про секреты, лучшее время визита или скрытые пункты меню. Пиши как друг-местный - естественно, дружелюбно. Русский язык.`;
-                }
                 jsonSchema = {
                     type: "object",
                     properties: {
@@ -3039,16 +3025,6 @@ Return JSON only.`;
                     }
                 };
             } else if (field === 'must_try') {
-                if (existingText && existingText.trim()) {
-                    prompt = `Улучши рекомендацию для "${formData.name}" (${formData.type} в ${formData.city}).
-                    
-Текущая рекомендация: "${existingText}"
-
-Перепиши более заманчиво и конкретно. Коротко, но аппетитно - как друг советует что обязательно попробовать. ${languageInstruction}`;
-                } else {
-                    prompt = `Что обязательно стоит попробовать в "${formData.name}" (${formData.type} в ${formData.city})? 
-Дай короткую конкретную рекомендацию (название блюда и краткое описание). Пиши как друг - casual и дружелюбно. Русский язык.`;
-                }
                 jsonSchema = {
                     type: "object",
                     properties: {
@@ -3059,6 +3035,7 @@ Return JSON only.`;
 
             const result = await api.integrations.Core.InvokeLLM({
                 prompt,
+                system_instruction: systemInstruction,
                 add_context_from_internet: !existingText || !existingText.trim(),
                 response_json_schema: jsonSchema
             });
@@ -3117,32 +3094,16 @@ Return JSON only.`;
             if (formData.opening_hours?.trim()) fieldsToTranslate.push({ field: 'opening_hours', text: formData.opening_hours });
 
             if (fieldsToTranslate.length > 0) {
-                const translationPrompt = `Translate the following location data from Russian to English with a FRIENDLY, CASUAL tone.
+                const systemInstruction = getAgentSystemPrompt('translator', 'Translate the location data to English with a FRIENDLY, CASUAL tone...');
 
-TONE REQUIREMENTS:
-- Write like a friend sharing a cool spot - warm, enthusiastic, but natural
-- Be conversational and relaxed (like chatting over coffee)
-- Use simple, genuine language - no over-the-top hype
-- Keep it inviting and authentic
-- Sound helpful and approachable, not salesy
-
-EXAMPLES OF THE DESIRED TONE:
-"Craving solitude? Hit the hidden courtyard for sunny-day zen (warm weather glow-up). Basement's got a no-laptop zone during peak hours—pure unplug magic."
-"Birthday bonus at this spot? Free dessert—score! Pro tip: Go wild on the animal desserts; skip the croissants."
-
-Translate these fields:
+                const translationPrompt = `Translate these fields to English:
 ${fieldsToTranslate.map(f => `${f.field}: "${f.text}"`).join('\n')}
 
-Return format (keep the style fun and lively):
-{
-  "description": "translated description with humor and personality",
-  "insider_tip": "translated tip in casual, fun style", 
-  "must_try": "translated recommendation with excitement",
-  "opening_hours": "translated opening hours (if provided)"
-}`;
+Follow the tone guidelines in the system instructions. Return valid JSON.`;
 
                 const translation = await api.integrations.Core.InvokeLLM({
                     prompt: translationPrompt,
+                    system_instruction: systemInstruction,
                     response_json_schema: {
                         type: "object",
                         properties: {
