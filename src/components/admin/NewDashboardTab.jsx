@@ -175,8 +175,8 @@ export default function NewDashboardTab({
                 />
             </div>
 
-            {/* Three Small Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Three Small Cards - Compact Grid on Mobile */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 <AIHealthCard
                     status={metrics.aiStatus}
                     scheduledTasks={metrics.scheduledTasks}
