@@ -43,8 +43,8 @@ export default function UsersRevenueCard({
                             +{newUsers30d}
                         </span>
                         <span className={`text-xs px-2 py-0.5 rounded ${isGrowthPositive
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
                             {isGrowthPositive ? '+' : ''}{newUsersGrowth}%
                         </span>
@@ -55,7 +55,7 @@ export default function UsersRevenueCard({
                 <div className="mb-4">
                     <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-emerald-500 dark:bg-lime-400 transition-all duration-500"
+                            className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-500"
                             style={{ width: `${progressPercentage}%` }}
                         />
                     </div>
@@ -73,8 +73,8 @@ export default function UsersRevenueCard({
                         ${isLoading ? '...' : monthlyRevenue.toLocaleString()}
                     </div>
                     <div className={`text-xs mt-1 ${revenueChange >= 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
                         }`}>
                         {revenueChange >= 0 ? '+' : ''}${Math.abs(revenueChange)} vs last month
                     </div>

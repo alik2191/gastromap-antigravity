@@ -29,8 +29,8 @@ export default function AIHealthCard({
                         <AlertCircle className="w-5 h-5 text-red-500" />
                     )}
                     <span className={`font-semibold text-sm ${isHealthy
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
                         }`}>
                         {isLoading ? 'Loading...' : isHealthy ? 'Healthy' : 'Issues Detected'}
                     </span>
@@ -51,8 +51,8 @@ export default function AIHealthCard({
                             Errors
                         </span>
                         <span className={`font-semibold ${errorCount > 0
-                                ? 'text-red-600 dark:text-red-400'
-                                : 'text-neutral-900 dark:text-neutral-100'
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-neutral-900 dark:text-neutral-100'
                             }`}>
                             {errorCount}
                         </span>
@@ -62,7 +62,7 @@ export default function AIHealthCard({
                 {/* Settings Link */}
                 <button
                     onClick={onSettingsClick}
-                    className="text-xs text-emerald-600 dark:text-lime-400 hover:underline"
+                    className="text-xs text-blue-600 dark:text-cyan-400 hover:underline"
                     disabled={isLoading}
                 >
                     → Settings
