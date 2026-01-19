@@ -10,6 +10,34 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="manifest" href="/manifest.json" />
   <title>GastroMap</title>
+
+  <!-- Synchronous theme initialization to prevent flash on pull-to-refresh -->
+  <script>
+    (function () {
+      // Get saved theme from localStorage
+      const savedTheme = localStorage.getItem('theme') || 'system';
+
+      // Resolve actual theme
+      let actualTheme = savedTheme;
+      if (savedTheme === 'system') {
+        actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      // Apply theme immediately
+      const root = document.documentElement;
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+
+      if (actualTheme === 'dark') {
+        root.classList.add('dark');
+        root.style.colorScheme = 'dark';
+        if (metaThemeColor) metaThemeColor.setAttribute('content', '#000000');
+      } else {
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+        if (metaThemeColor) metaThemeColor.setAttribute('content', '#F2F2F7');
+      }
+    })();
+  </script>
 </head>
 
 <body>
