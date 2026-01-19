@@ -70,6 +70,11 @@ export default function AIManagementTab() {
     });
 
     // Initialize prompt edits when data loads
+    const aiPrompts = aiAgents.map(agent => ({
+        prompt_key: agent.key,
+        prompt_text: agent.system_prompt
+    }));
+
     useEffect(() => {
         if (aiAgents.length > 0) {
             const edits = {};
