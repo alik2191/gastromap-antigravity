@@ -49,7 +49,7 @@ import {
     Loader2, ArrowLeft, Search, Star, Globe, TrendingUp, AlertCircle,
     Sparkles, Wand2, MessageSquare, CheckCircle2, Archive, Copy,
     FileSpreadsheet, Download, Upload, MoreVertical,
-    ChevronLeft, ChevronRight, X, BarChart3, Eye, EyeOff, LayoutDashboard
+    ChevronLeft, ChevronRight, X, BarChart3, Eye, EyeOff, LayoutDashboard, Terminal
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import {
