@@ -49,7 +49,7 @@ import {
     Loader2, ArrowLeft, Search, Star, Globe, TrendingUp, AlertCircle,
     Sparkles, Wand2, MessageSquare, CheckCircle2, Archive, Copy,
     FileSpreadsheet, Download, Upload, MoreVertical,
-    ChevronLeft, ChevronRight, X, BarChart3, Eye, EyeOff, LayoutDashboard, Terminal, ImageIcon
+    ChevronLeft, ChevronRight, X, BarChart3, Eye, EyeOff, LayoutDashboard, Terminal, ImageIcon, Bell, Settings
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import {
@@ -93,6 +93,7 @@ import AIManagementTab from '../components/admin/AIManagementTab';
 import CreatorLocationEditForm from '@/components/admin/CreatorLocationEditForm';
 import SystemLogsTab from '@/components/admin/SystemLogsTab';
 import DashboardTab from '@/components/admin/DashboardTab';
+import NewDashboardTab from '@/components/admin/NewDashboardTab';
 import MediaLibraryTab from '@/components/admin/MediaLibraryTab';
 import { useAuth } from '@/lib/AuthContext';
 import AIAgentStatusCard from '@/components/admin/AIAgentStatusCard';
@@ -875,95 +876,83 @@ export default function Admin() {
     return (
         <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
             <main className="container mx-auto p-4 max-w-[1600px]">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" onClick={() => window.location.href = '/dashboard'}>
-                            <LayoutDashboard className="w-5 h-5 mr-2" />
-                            Back to App
+                {/* Compact Header */}
+                <div className="flex items-center justify-between mb-6 px-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.location.href = '/dashboard'}
+                        className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Admin
+                    </Button>
+
+                    <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                        Admin Panel
+                    </h1>
+
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="relative text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
+                        >
+                            <Bell className="w-5 h-5" />
+                            {(newReviewsCount + newModerationRoundsCount) > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                    {newReviewsCount + newModerationRoundsCount}
+                                </span>
+                            )}
                         </Button>
-                        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Admin Panel</h1>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <AIAgentStatusCard agent={aiAgents[0]} isLoading={loadingAgents} />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setActiveTab('settings')}
+                            className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
+                        >
+                            <Settings className="w-5 h-5" />
+                        </Button>
                     </div>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl w-full justify-start overflow-x-auto">
+                    {/* Two-Row Tabs Navigation */}
+                    <TabsList className="bg-neutral-100 dark:bg-neutral-800 p-2 rounded-xl w-full h-auto grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                        {/* Row 1 - Main Tabs */}
                         <TabsTrigger value="dashboard" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
                             <LayoutDashboard className="w-4 h-4 mr-2" />
                             Dashboard
                         </TabsTrigger>
+                        <TabsTrigger value="locations" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            Locations
+                        </TabsTrigger>
+                        <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <Users className="w-4 h-4 mr-2" />
+                            Users
+                        </TabsTrigger>
+                        <TabsTrigger value="ai-management" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            AI
+                            {newModerationRoundsCount > 0 && (
+                                <span className="ml-1.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                    {newModerationRoundsCount}
+                                </span>
+                            )}
+                        </TabsTrigger>
+
+                        {/* Row 2 - Secondary Tabs */}
                         <TabsTrigger value="analytics" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
                             <BarChart3 className="w-4 h-4 mr-2" />
                             Analytics
                         </TabsTrigger>
-                        <TabsTrigger
-                            value="locations"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
-                            <MapPin className="w-4 h-4 mr-2" />
-                            Локации
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="moderation"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
+                        <TabsTrigger value="moderation" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
                             <Plus className="w-4 h-4 mr-2" />
-                            Новые локации
+                            Pending
                             {pendingLocations.length > 0 && (
                                 <span className="ml-1.5 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                                     {pendingLocations.length}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="creator-moderation"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Модерация
-                            {newModerationRoundsCount > 0 && (
-                                <span className="ml-1.5 bg-purple-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {newModerationRoundsCount}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="reviews"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
-                            <Star className="w-4 h-4 mr-2" />
-                            Отзывы
-                            {newReviewsCount > 0 && (
-                                <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {newReviewsCount}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="subscriptions"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
-                            <CreditCard className="w-4 h-4 mr-2" />
-                            Подписки
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="users"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
-                            <Users className="w-4 h-4 mr-2" />
-                            Пользователи
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="ai-management"
-                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                        >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Управление AI
-                            {newModerationRoundsCount > 0 && (
-                                <span className="ml-1.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {newModerationRoundsCount}
                                 </span>
                             )}
                         </TabsTrigger>
@@ -973,16 +962,23 @@ export default function Admin() {
                         </TabsTrigger>
                         <TabsTrigger value="system_logs" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
                             <Terminal className="w-4 h-4 mr-2" />
-                            System Logs
-                        </TabsTrigger>
-                        <TabsTrigger value="media" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700">
-                            <ImageIcon className="w-4 h-4 mr-2" />
-                            Media
+                            Logs
                         </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="dashboard" className="space-y-4">
-                        <DashboardTab />
+                        <NewDashboardTab
+                            onAddLocation={() => {
+                                setEditingLocation(null);
+                                setShowLocationForm(true);
+                            }}
+                            onInviteUser={() => {
+                                // TODO: Implement invite user dialog
+                                toast.info('Invite user feature coming soon!');
+                            }}
+                            onSwitchTab={(tab) => setActiveTab(tab)}
+                            onOpenSettings={() => setActiveTab('settings')}
+                        />
                     </TabsContent>
 
                     <TabsContent value="analytics" className="space-y-4">
