@@ -22,7 +22,7 @@ export default function FeedbackDetail({ feedback, onStatusChange, onClose }) {
                     </Badge>
                     <h3 className="text-xl font-bold mt-2 text-neutral-900 dark:text-neutral-100">{feedback.subject || 'Без темы'}</h3>
                     <p className="text-sm text-neutral-500">
-                        {feedback.created_date ? format(new Date(feedback.created_date), 'dd MMMM yyyy HH:mm') : 'N/A'}
+                        {feedback.created_at ? format(new Date(feedback.created_at), 'dd MMMM yyyy HH:mm') : 'N/A'}
                     </p>
                 </div>
                 <Badge className={

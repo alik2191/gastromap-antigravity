@@ -278,7 +278,7 @@ export default function ReviewSection({ locationId, user }) {
                                                     </div>
                                                     <span className="text-xs text-neutral-400 dark:text-neutral-600">•</span>
                                                     <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                                                        {new Date(review.created_date).toLocaleDateString(
+                                                        {new Date(review.created_at).toLocaleDateString(
                                                             language === 'ru' ? 'ru-RU' :
                                                                 language === 'uk' ? 'uk-UA' :
                                                                     language === 'es' ? 'es-ES' : 'en-US',

@@ -132,11 +132,11 @@ export default function LocationDetail() {
         }
     }, [savedLocation]);
 
-    const hasUpdates = savedLocation && location?.updated_date &&
-        new Date(location.updated_date) > new Date(savedLocation.created_date);
+    const hasUpdates = savedLocation && location?.updated_at &&
+        new Date(location.updated_at) > new Date(savedLocation.created_at);
 
-    const wasRecentlyUpdated = location?.updated_date &&
-        (Date.now() - new Date(location.updated_date).getTime()) < 7 * 24 * 60 * 60 * 1000;
+    const wasRecentlyUpdated = location?.updated_at &&
+        (Date.now() - new Date(location.updated_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
 
     const getLocalizedField = (field) => {
         if (!location) return '';
@@ -421,9 +421,9 @@ export default function LocationDetail() {
                                 <p className="text-purple-900 dark:text-purple-200 italic leading-relaxed text-base">
                                     "{localizedInsiderTip}"
                                 </p>
-                                {location.updated_date && hasUpdates && (
+                                {location.updated_at && hasUpdates && (
                                     <p className="text-xs text-purple-600 mt-2">
-                                        {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                        {t('updated')}: {new Date(location.updated_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
                                             day: 'numeric',
                                             month: 'long',
                                             year: 'numeric'
@@ -445,9 +445,9 @@ export default function LocationDetail() {
                                     )}
                                 </div>
                                 <p className="text-amber-900 dark:text-amber-200 leading-relaxed text-base">{localizedMustTry}</p>
-                                {location.updated_date && hasUpdates && (
+                                {location.updated_at && hasUpdates && (
                                     <p className="text-xs text-amber-700 mt-2">
-                                        {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                        {t('updated')}: {new Date(location.updated_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
                                             day: 'numeric',
                                             month: 'long',
                                             year: 'numeric'

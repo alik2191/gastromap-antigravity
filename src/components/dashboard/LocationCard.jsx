@@ -82,15 +82,15 @@ const LocationCard = memo(function LocationCard({
         : 0;
 
     // Check if location was updated after user saved it
-    const hasUpdates = savedLocation && location.updated_date &&
-        new Date(location.updated_date) > new Date(savedLocation.created_date);
+    const hasUpdates = savedLocation && location.updated_at &&
+        new Date(location.updated_at) > new Date(savedLocation.created_at);
 
-    const wasRecentlyUpdated = location.updated_date &&
-        (Date.now() - new Date(location.updated_date).getTime()) < 7 * 24 * 60 * 60 * 1000; // 7 days
+    const wasRecentlyUpdated = location.updated_at &&
+        (Date.now() - new Date(location.updated_at).getTime()) < 7 * 24 * 60 * 60 * 1000; // 7 days
 
     // Check if location is new (created within last 14 days)
-    const isNew = location.created_date &&
-        new Date(location.created_date) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+    const isNew = location.created_at &&
+        new Date(location.created_at) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
     // Get localized content (NOT name or address - those are unique/proper nouns)
     const getLocalizedField = (field) => {
@@ -410,9 +410,9 @@ const LocationCard = memo(function LocationCard({
                                             <p className="text-neutral-900 dark:text-neutral-300 italic leading-relaxed text-sm">
                                                 "{localizedInsiderTip}"
                                             </p>
-                                            {location.updated_date && hasUpdates && (
+                                            {location.updated_at && hasUpdates && (
                                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                                                    {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                                    {t('updated')}: {new Date(location.updated_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
                                                         day: 'numeric',
                                                         month: 'long',
                                                         year: 'numeric'
@@ -434,9 +434,9 @@ const LocationCard = memo(function LocationCard({
                                                 )}
                                             </div>
                                             <p className="text-neutral-900 dark:text-neutral-300 leading-relaxed text-sm">{localizedMustTry}</p>
-                                            {location.updated_date && hasUpdates && (
+                                            {location.updated_at && hasUpdates && (
                                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                                                    {t('updated')}: {new Date(location.updated_date).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
+                                                    {t('updated')}: {new Date(location.updated_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uk' ? 'uk-UA' : language === 'es' ? 'es-ES' : 'en-US', {
                                                         day: 'numeric',
                                                         month: 'long',
                                                         year: 'numeric'

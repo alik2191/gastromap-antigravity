@@ -284,8 +284,8 @@ export default function Dashboard() {
 
     // Helper to check if location is new (created within last 14 days)
     const isLocationNew = (location) => {
-        if (!location.created_date) return false;
-        const created = new Date(location.created_date);
+        if (!location.created_at) return false;
+        const created = new Date(location.created_at);
         const fourteenDaysAgo = new Date();
         fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
         return created > fourteenDaysAgo;
@@ -302,8 +302,8 @@ export default function Dashboard() {
             // Find the most recent location in this country to determine which city image to use
             const mostRecentLocation = locs.reduce((latest, loc) => {
                 if (!latest) return loc;
-                const latestDate = new Date(latest.created_date || 0);
-                const locDate = new Date(loc.created_date || 0);
+                const latestDate = new Date(latest.created_at || 0);
+                const locDate = new Date(loc.created_at || 0);
                 return locDate > latestDate ? loc : latest;
             }, null);
 
@@ -657,11 +657,11 @@ export default function Dashboard() {
             .filter(l =>
                 !savedIds.has(l.id) &&
                 favoriteCities.includes(l.city) &&
-                l.created_date &&
-                new Date(l.created_date) > twoWeeksAgo &&
+                l.created_at &&
+                new Date(l.created_at) > twoWeeksAgo &&
                 l.status === 'published'
             )
-            .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .slice(0, 6);
     }, [locations, savedLocations]);
 

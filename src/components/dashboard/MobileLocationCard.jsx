@@ -34,15 +34,15 @@ const MobileLocationCard = memo(function MobileLocationCard({ location, savedLoc
         : 0;
 
     // Check if location was updated after user saved it
-    const hasUpdates = savedLocation && location.updated_date &&
-        new Date(location.updated_date) > new Date(savedLocation.created_date);
+    const hasUpdates = savedLocation && location.updated_at &&
+        new Date(location.updated_at) > new Date(savedLocation.created_at);
 
     // Check if location is pending moderation
     const isPending = location.status === 'pending';
 
     // Check if location is new (created within last 14 days)
-    const isNew = location.created_date &&
-        new Date(location.created_date) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+    const isNew = location.created_at &&
+        new Date(location.created_at) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
     const localizedDescription = getLocalizedField('description');
 

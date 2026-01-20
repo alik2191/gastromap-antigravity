@@ -47,9 +47,9 @@ export default function AdminNotesList({ locationId }) {
                       {n.list_type && (
                         <Badge variant="secondary" className="text-[10px] h-5 px-2 capitalize">{n.list_type}</Badge>
                       )}
-                      {n.updated_date && (
+                      {n.updated_at && (
                         <span className="text-[10px] text-neutral-400">
-                          {new Date(n.updated_date).toLocaleDateString()}
+                          {new Date(n.updated_at).toLocaleDateString()}
                         </span>
                       )}
                     </div>

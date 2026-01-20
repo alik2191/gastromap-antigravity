@@ -197,7 +197,7 @@ export default function CreatorModerationTab() {
                                                     <div className="flex items-center gap-4 text-sm text-neutral-700 dark:text-neutral-400">
                                                         <div className="flex items-center gap-1">
                                                             <Clock className="w-4 h-4" />
-                                                            {format(new Date(round.created_date), 'MMM d, HH:mm')}
+                                                            {format(new Date(round.created_at), 'MMM d, HH:mm')}
                                                         </div>
                                                         <div className="flex items-center gap-1">
                                                             <Users className="w-4 h-4" />

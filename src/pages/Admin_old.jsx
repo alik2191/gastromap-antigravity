@@ -117,7 +117,7 @@ export default function Admin() {
     const [filterCountry, setFilterCountry] = useState('all');
     const [filterCity, setFilterCity] = useState('all');
     const [filterPrice, setFilterPrice] = useState('all');
-    const [sortBy, setSortBy] = useState('updated_date'); // updated_date or created_date
+    const [sortBy, setSortBy] = useState('updated_at'); // updated_date or created_date
     const [selectedFeedback, setSelectedFeedback] = useState(null);
     const [showFeedbackDetail, setShowFeedbackDetail] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -1058,7 +1058,7 @@ export default function Admin() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-xs text-neutral-500 dark:text-neutral-500">
-                                                {location.created_date && format(new Date(location.created_date), 'dd.MM.yyyy HH:mm')}
+                                                {location.created_at && format(new Date(location.created_at), 'dd.MM.yyyy HH:mm')}
                                             </TableCell>
                                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex items-center justify-end gap-1">
@@ -1185,7 +1185,7 @@ export default function Admin() {
                                             }}
                                         >
                                             <TableCell className="whitespace-nowrap text-xs text-neutral-500 dark:text-neutral-400">
-                                                {review.created_date && format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}
+                                                {review.created_at && format(new Date(review.created_at), 'dd.MM.yyyy HH:mm')}
                                             </TableCell>
                                             <TableCell className="font-mono text-xs max-w-[100px] truncate text-neutral-900 dark:text-neutral-300" title={review.location_id}>
                                                 {review.location_id}
@@ -1309,7 +1309,7 @@ export default function Admin() {
                                     )}
 
                                     <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-500">
-                                        <span>{review.created_date && format(new Date(review.created_date), 'dd.MM HH:mm')}</span>
+                                        <span>{review.created_at && format(new Date(review.created_at), 'dd.MM HH:mm')}</span>
                                         <span className="font-mono truncate max-w-[120px]" title={review.location_id}>
                                             {review.location_id}
                                         </span>
@@ -1524,7 +1524,7 @@ export default function Admin() {
                                         </div>
                                         <div className="flex justify-between items-center text-xs">
                                             <div className="text-neutral-500">
-                                                Since: {u.created_date ? format(new Date(u.created_date), 'dd.MM.yyyy') : '-'}
+                                                Since: {u.created_at ? format(new Date(u.created_at), 'dd.MM.yyyy') : '-'}
                                             </div>
                                             {userSub ? (
                                                 <Badge className="bg-green-500 h-5 px-1.5">{userSub.plan}</Badge>
@@ -1586,7 +1586,7 @@ export default function Admin() {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            {u.created_date && format(new Date(u.created_date), 'dd.MM.yyyy')}
+                                            {u.created_at && format(new Date(u.created_at), 'dd.MM.yyyy')}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Select
@@ -1647,7 +1647,7 @@ export default function Admin() {
                                 <span className="text-sm text-neutral-500">{item.user_email}</span>
                             </div>
                             <p className="text-neutral-600 dark:text-neutral-300 line-clamp-2">{item.message}</p>
-                            <span className="text-xs text-neutral-400 mt-2 block">{item.created_date ? format(new Date(item.created_date), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
+                            <span className="text-xs text-neutral-400 mt-2 block">{item.created_at ? format(new Date(item.created_at), 'dd.MM.yyyy HH:mm') : 'N/A'}</span>
                         </div>
                         <Badge className={
                             item.status === 'new' ? 'bg-amber-500' :

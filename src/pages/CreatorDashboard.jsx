@@ -49,7 +49,7 @@ export default function CreatorDashboard() {
         queryKey: ['creatorLocations', user?.email],
         queryFn: async () => {
             const locs = await api.entities.Location.filter({ created_by: user.email });
-            return locs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+            return locs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         },
         enabled: !!user
     });
@@ -297,7 +297,7 @@ export default function CreatorDashboard() {
                                                                         </span>
                                                                         <span className="flex items-center gap-1">
                                                                             <Clock className="w-3 h-3 md:w-4 md:h-4" />
-                                                                            {new Date(location.created_date).toLocaleDateString()}
+                                                                            {new Date(location.created_at).toLocaleDateString()}
                                                                         </span>
                                                                     </div>
 

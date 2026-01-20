@@ -254,13 +254,13 @@ export default function CreatorTools() {
 
             const recentlyApproved = locs.filter(l => {
                 if (l.status !== 'published') return false;
-                const updatedDate = new Date(l.updated_date || l.created_date);
+                const updatedDate = new Date(l.updated_at || l.created_at);
                 return updatedDate > sevenDaysAgo;
             });
 
             setApprovedLocationsCount(recentlyApproved.length);
 
-            return locs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+            return locs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         },
         enabled: !!user
     });
@@ -521,7 +521,7 @@ export default function CreatorTools() {
                                                                                     </span>
                                                                                     <span className="flex items-center gap-1">
                                                                                         <Clock className="w-3 h-3 md:w-4 md:h-4" />
-                                                                                        {new Date(location.created_date).toLocaleDateString()}
+                                                                                        {new Date(location.created_at).toLocaleDateString()}
                                                                                     </span>
                                                                                 </div>
 
@@ -556,7 +556,7 @@ export default function CreatorTools() {
                                                                                 {location.status === 'published' && (() => {
                                                                                     const sevenDaysAgo = new Date();
                                                                                     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                                                                                    const updatedDate = new Date(location.updated_date || location.created_date);
+                                                                                    const updatedDate = new Date(location.updated_at || location.created_at);
                                                                                     const isRecentlyApproved = updatedDate > sevenDaysAgo;
 
                                                                                     if (isRecentlyApproved) {

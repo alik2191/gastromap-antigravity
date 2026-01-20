@@ -34,7 +34,7 @@ export default function ReviewDetail({ review, onStatusChange, onClose }) {
                             Отзыв
                         </Badge>
                         <span className="text-xs text-neutral-500 dark:text-neutral-500">
-                            {review.created_date && format(new Date(review.created_date), 'dd.MM.yyyy HH:mm')}
+                            {review.created_at && format(new Date(review.created_at), 'dd.MM.yyyy HH:mm')}
                         </span>
                     </div>
                 </div>
