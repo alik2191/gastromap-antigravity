@@ -380,13 +380,17 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
 
             // Check if we should update or create
             if (dbData.id && isValidUUID(dbData.id)) {
-              // Update existing location
+              // Update existing location - don't change status
               const res = await api.entities.Location.update(dbData.id, dbData);
               batchUpdated++;
               if (res && res.id) allUpdatedChanges.push(res);
             } else {
               // Create new location (remove id field to let DB generate it)
               const { id, ...createData } = dbData;
+              // Set status to pending for new locations (moderation required)
+              if (!createData.status) {
+                createData.status = 'pending';
+              }
               const res = await api.entities.Location.create(createData);
               batchCreated++;
               if (res && res.id) allCreatedIds.push(res.id);
