@@ -1073,8 +1073,30 @@ export default function Admin() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Dialog for creating new locations */}
+                    <Dialog open={showLocationForm && !editingLocation} onOpenChange={(open) => {
+                        if (!open) {
+                            setShowLocationForm(false);
+                            setEditingLocation(null);
+                        }
+                    }}>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-neutral-800 dark:border-neutral-700">
+                            <DialogHeader>
+                                <DialogTitle className="text-neutral-900 dark:text-neutral-100">
+                                    Добавить новую локацию
+                                </DialogTitle>
+                            </DialogHeader>
+                            <LocationForm
+                                location={null}
+                                onSubmit={(data) => locationMutation.mutate(data)}
+                                isLoading={locationMutation.isPending}
+                            />
+                        </DialogContent>
+                    </Dialog>
                 </>
             )}
+
             {/* Creator Moderation Tab */}
             {
                 activeTab === 'creator-moderation' && (
