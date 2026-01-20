@@ -18,6 +18,7 @@ import { Loader2, AlertCircle, Sparkles, CheckCircle, XCircle } from "lucide-rea
 import * as XLSX from 'xlsx';
 import { enrichLocationsBatch, isGoogleMapsConfigured } from '@/utils/googleMapsEnrichment';
 import { toast } from 'sonner';
+import ImportReport from './ImportReport';
 
 const EXPECTED_FIELDS = [
   { key: 'id', label: 'id (опционально)' },
@@ -63,6 +64,10 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
   const [enrichmentProgress, setEnrichmentProgress] = useState(0);
   const [enrichmentResults, setEnrichmentResults] = useState({}); // {rowIdx: enrichmentResult}
   const [enrichmentStats, setEnrichmentStats] = useState({ total: 0, success: 0, failed: 0 });
+
+  // Import report states
+  const [importResults, setImportResults] = useState(null);
+  const [showReport, setShowReport] = useState(false);
 
   // read file when opened / encoding changes
   useEffect(() => {
@@ -352,6 +357,7 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
       let created = 0, updated = 0, errors = 0;
       const allCreatedIds = [];
       const allUpdatedChanges = [];
+      const detailedResults = []; // Detailed results for each row
 
       for (let i = 0; i < payload.length; i += batchSize) {
         const batch = payload.slice(i, i + batchSize);
@@ -362,6 +368,15 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
 
         // Process batch client-side since 'importLocations' function might not exist
         await Promise.all(batch.map(async (loc) => {
+          const rowResult = {
+            rowNumber: loc.sourceRow,
+            name: loc.name,
+            city: loc.city,
+            address: loc.address,
+            status: 'error',
+            error: null
+          };
+
           try {
             // Remove only internal fields, keep Google Maps enrichment data
             // eslint-disable-next-line no-unused-vars
@@ -384,6 +399,8 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
               const res = await api.entities.Location.update(dbData.id, dbData);
               batchUpdated++;
               if (res && res.id) allUpdatedChanges.push(res);
+              rowResult.status = 'success';
+              rowResult.error = null;
             } else {
               // Create new location (remove id field to let DB generate it)
               const { id, ...createData } = dbData;
@@ -403,7 +420,10 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
                     existingId: duplicate.id
                   });
                   batchErrors++;
-                  continue; // Skip this location
+                  rowResult.status = 'duplicate';
+                  rowResult.error = `Дубликат существующей локации (ID: ${duplicate.id})`;
+                  detailedResults.push(rowResult);
+                  return; // Skip this location
                 }
               } catch (dupCheckError) {
                 console.error(`Duplicate check failed for row ${loc.sourceRow}:`, dupCheckError);
@@ -417,11 +437,17 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
               const res = await api.entities.Location.create(createData);
               batchCreated++;
               if (res && res.id) allCreatedIds.push(res.id);
+              rowResult.status = 'success';
+              rowResult.error = null;
             }
           } catch (err) {
             console.error(`Import row ${loc.sourceRow} failed:`, err);
             batchErrors++;
+            rowResult.status = 'error';
+            rowResult.error = err.message || 'Неизвестная ошибка';
           }
+
+          detailedResults.push(rowResult);
         }));
 
         created += batchCreated;
@@ -445,6 +471,13 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
       } else {
         toast.error(`❌ Импорт не удался. Все ${errors} строк содержат ошибки. Проверьте консоль для деталей.`);
       }
+
+      // Save detailed results and show report
+      setImportResults({
+        summary: { created, updated, errors, total: payload.length },
+        details: detailedResults
+      });
+      setShowReport(true);
 
       onImported?.({ created, updated, errors, createdIds: allCreatedIds, updatedChanges: allUpdatedChanges });
 
@@ -749,5 +782,17 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Import Report Dialog */ }
+  <ImportReport
+    open={showReport}
+    onClose={() => {
+      setShowReport(false);
+      if (importResults?.summary?.errors === 0) {
+        onClose?.(); // Close main dialog only if no errors
+      }
+    }}
+    results={importResults}
+  />
   );
 }
