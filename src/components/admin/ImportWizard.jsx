@@ -295,6 +295,14 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
     }
   };
 
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid) => {
+    if (!uuid || typeof uuid !== 'string') return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
+
   const startImport = async () => {
     if (!canImport) return;
 
@@ -359,22 +367,32 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
             // eslint-disable-next-line no-unused-vars
             const { sourceRow, _rowIndex, ...dbData } = loc;
 
+            // Validate and clean ID field - remove if not a valid UUID
+            if (dbData.id && !isValidUUID(dbData.id)) {
+              console.warn(`Invalid UUID in row ${sourceRow}, removing ID field:`, dbData.id);
+              delete dbData.id; // Remove invalid ID, will create new location
+            }
+
             // Add last_enriched_at timestamp if data was enriched
             if (dbData.google_place_id) {
               dbData.last_enriched_at = new Date().toISOString();
             }
 
-            if (dbData.id) {
+            // Check if we should update or create
+            if (dbData.id && isValidUUID(dbData.id)) {
+              // Update existing location
               const res = await api.entities.Location.update(dbData.id, dbData);
               batchUpdated++;
               if (res && res.id) allUpdatedChanges.push(res);
             } else {
-              const res = await api.entities.Location.create(dbData);
+              // Create new location (remove id field to let DB generate it)
+              const { id, ...createData } = dbData;
+              const res = await api.entities.Location.create(createData);
               batchCreated++;
               if (res && res.id) allCreatedIds.push(res.id);
             }
           } catch (err) {
-            console.error("Import row failed", err);
+            console.error(`Import row ${loc.sourceRow} failed:`, err);
             batchErrors++;
           }
         }));
@@ -392,11 +410,21 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
         await new Promise((r) => setTimeout(r, 200));
       }
 
-      // Show success message
-      toast.success(`Импорт завершен! Создано: ${created}, Обновлено: ${updated}${errors > 0 ? `, Ошибок: ${errors}` : ''}`);
+      // Show detailed success/error message
+      if (errors === 0) {
+        toast.success(`✅ Импорт завершен успешно! Создано: ${created}, Обновлено: ${updated}`);
+      } else if (created > 0 || updated > 0) {
+        toast.warning(`⚠️ Импорт завершен с ошибками. Создано: ${created}, Обновлено: ${updated}, Ошибок: ${errors}`);
+      } else {
+        toast.error(`❌ Импорт не удался. Все ${errors} строк содержат ошибки. Проверьте консоль для деталей.`);
+      }
 
       onImported?.({ created, updated, errors, createdIds: allCreatedIds, updatedChanges: allUpdatedChanges });
-      onClose?.();
+
+      // Only close if no errors
+      if (errors === 0) {
+        onClose?.();
+      }
     } catch (e) {
       console.error('Import failed', e);
       toast.error('Ошибка импорта: ' + e.message);

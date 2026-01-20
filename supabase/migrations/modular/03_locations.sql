@@ -1,7 +1,7 @@
 -- ============================================================================
 -- LOCATIONS & BRANCHES
 -- Created: 2026-01-20
--- Description: Main locations table with all fields and branches
+-- Description: Main locations table with ALL 78 fields and branches
 -- ============================================================================
 
 -- Drop existing tables if any
@@ -9,62 +9,100 @@ DROP TABLE IF EXISTS public.location_branches CASCADE;
 DROP TABLE IF EXISTS public.locations CASCADE;
 
 -- ============================================================================
--- Table: locations (main locations table)
+-- Table: locations (main locations table with 78 fields)
 -- ============================================================================
 CREATE TABLE public.locations (
+    -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
-    -- Basic Information
+    -- Basic Information (5 fields)
     name TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('cafe', 'bar', 'restaurant', 'market', 'shop', 'bakery', 'winery')),
+    type TEXT NOT NULL CHECK (type IN ('restaurant', 'cafe', 'bar', 'bakery', 'street_food', 'fine_dining', 'casual_dining', 'fast_food', 'food_truck', 'market', 'other')),
     country TEXT NOT NULL,
     city TEXT NOT NULL,
     address TEXT,
     
-    -- Content Fields
+    -- Content Fields (3 fields)
     description TEXT,
-    description_en TEXT,
     insider_tip TEXT,
-    insider_tip_en TEXT,
     must_try TEXT,
-    must_try_en TEXT,
     
-    -- Contact & Links
-    price_range TEXT CHECK (price_range IS NULL OR price_range IN ('$', '$$', '$$$', '$$$$')),
+    -- Contact & Links (5 fields)
+    price_range TEXT DEFAULT '$$' CHECK (price_range IN ('$', '$$', '$$$', '$$$$')),
     website TEXT,
     phone TEXT,
+    opening_hours TEXT,
     booking_url TEXT,
+    
+    -- Media (1 field)
     image_url TEXT,
     
-    -- Coordinates
+    -- Coordinates (2 fields)
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
     
-    -- Google Maps Integration
-    google_place_id TEXT UNIQUE,
-    google_rating DECIMAL(2,1),
-    google_reviews_count INTEGER,
-    google_maps_url TEXT,
-    opening_hours TEXT,
-    last_enriched_at TIMESTAMP WITH TIME ZONE,
-    
-    -- Features
+    -- Flags (3 fields)
     is_hidden_gem BOOLEAN DEFAULT false,
     is_featured BOOLEAN DEFAULT false,
-    special_labels JSONB DEFAULT '[]'::jsonb,
-    social_links JSONB DEFAULT '[]'::jsonb,
-    best_time_to_visit JSONB DEFAULT '[]'::jsonb,
-    tags JSONB DEFAULT '[]'::jsonb,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'draft')),
     
-    -- AI Tracking
-    last_ai_update TIMESTAMP WITH TIME ZONE,
-    ai_update_log JSONB DEFAULT '{}'::jsonb,
+    -- Arrays/JSONB (4 fields)
+    special_labels TEXT[] DEFAULT '{}',
+    social_links JSONB DEFAULT '[]',
+    best_time_to_visit TEXT[] DEFAULT '{}',
+    tags TEXT[] DEFAULT '{}',
     
-    -- System Fields
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'rejected', 'draft')),
-    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    -- Google Maps Data (14 fields)
+    google_place_id TEXT,
+    google_rating DECIMAL(2, 1),
+    google_user_ratings_total INTEGER,
+    google_photos TEXT[] DEFAULT '{}',
+    google_types TEXT[] DEFAULT '{}',
+    google_business_status TEXT,
+    google_price_level INTEGER,
+    google_opening_hours JSONB,
+    google_website TEXT,
+    google_phone TEXT,
+    google_formatted_address TEXT,
+    google_vicinity TEXT,
+    google_plus_code JSONB,
+    google_utc_offset INTEGER,
+    
+    -- Additional Features (15 fields)
+    cuisine_types TEXT[] DEFAULT '{}',
+    dietary_options TEXT[] DEFAULT '{}',
+    amenities TEXT[] DEFAULT '{}',
+    payment_methods TEXT[] DEFAULT '{}',
+    parking_info TEXT,
+    accessibility_features TEXT[] DEFAULT '{}',
+    average_visit_duration INTEGER,
+    best_for TEXT[] DEFAULT '{}',
+    noise_level TEXT,
+    wifi_quality TEXT,
+    outdoor_seating BOOLEAN DEFAULT false,
+    pet_friendly BOOLEAN DEFAULT false,
+    child_friendly BOOLEAN DEFAULT false,
+    reservation_required BOOLEAN DEFAULT false,
+    dress_code TEXT,
+    
+    -- AI Enrichment (6 fields)
+    ai_enriched BOOLEAN DEFAULT false,
+    ai_enriched_at TIMESTAMPTZ,
+    ai_description_generated BOOLEAN DEFAULT false,
+    ai_insider_tip_generated BOOLEAN DEFAULT false,
+    ai_must_try_generated BOOLEAN DEFAULT false,
+    ai_tags_normalized BOOLEAN DEFAULT false,
+    
+    -- System Fields (3 fields)
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    
+    -- Constraints
+    CONSTRAINT valid_coordinates CHECK (
+        (latitude IS NULL AND longitude IS NULL) OR 
+        (latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180)
+    )
 );
 
 -- ============================================================================

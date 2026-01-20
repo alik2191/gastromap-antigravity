@@ -52,6 +52,26 @@ CREATE TRIGGER update_profiles_updated_at
     EXECUTE FUNCTION public.update_updated_at_column();
 
 -- ============================================================================
+-- Helper Functions (must be created AFTER profiles table)
+-- ============================================================================
+-- Function to check if user is admin (with optional user_id parameter)
+CREATE OR REPLACE FUNCTION public.is_admin(user_id uuid DEFAULT NULL)
+RETURNS BOOLEAN AS $$
+DECLARE
+    check_user_id uuid;
+BEGIN
+    -- Use provided user_id or fall back to current user
+    check_user_id := COALESCE(user_id, auth.uid());
+    
+    RETURN (
+        coalesce(current_setting('request.jwt.claim.app_metadata', true)::json->>'role', '') = 'admin' OR
+        coalesce(current_setting('request.jwt.claim.user_metadata', true)::json->>'role', '') = 'admin' OR
+        (SELECT role FROM public.profiles WHERE id = check_user_id) = 'admin'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
 -- RLS Policies
 -- ============================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
