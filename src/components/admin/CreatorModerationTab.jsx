@@ -19,7 +19,7 @@ export default function CreatorModerationTab() {
     const queryClient = useQueryClient();
 
     const { data: moderationRounds = [], isLoading, refetch } = useQuery({
-        queryKey: ['moderationRounds'],
+        queryKey: ['admin-moderation-rounds'],
         queryFn: async () => {
             const pendingReview = await api.entities.ModerationRound.filter({
                 status: 'pending_admin_review'
@@ -60,7 +60,9 @@ export default function CreatorModerationTab() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['moderationRounds']);
+            queryClient.invalidateQueries(['admin-moderation-rounds']);
+            queryClient.invalidateQueries(['admin-locations']);
+            queryClient.invalidateQueries(['admin-pending-locations']);
             queryClient.invalidateQueries(['locations']);
             toast.success('Changes applied successfully');
         },
@@ -80,7 +82,7 @@ export default function CreatorModerationTab() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['moderationRounds']);
+            queryClient.invalidateQueries(['admin-moderation-rounds']);
             toast.success('Moderation round rejected');
         },
         onError: (error) => {

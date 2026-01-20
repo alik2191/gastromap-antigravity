@@ -953,7 +953,10 @@ export default function Admin() {
                         file={importFile}
                         type={importType}
                         onImported={() => {
+                            // Invalidate all location-related queries to refresh data
                             queryClient.invalidateQueries(['admin-locations']);
+                            queryClient.invalidateQueries(['admin-pending-locations']);
+                            queryClient.invalidateQueries(['locations']); // For public queries
                             toast.success('Локации успешно импортированы!');
                         }}
                     />
