@@ -304,8 +304,29 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
 
     setImporting(true);
     try {
+      // Filter only selected rows
       const selected = rows.map((r, idx) => ({ r, idx })).filter(({ idx }) => selectedRows.has(idx));
-      const payload = selected.map(({ r, idx }) => {
+
+      // Filter out rows with validation errors
+      const validSelected = selected.filter(({ idx }) => {
+        const validation = validations[idx];
+        return !validation || validation.errors.length === 0;
+      });
+
+      const invalidCount = selected.length - validSelected.length;
+
+      if (invalidCount > 0) {
+        console.warn(`Пропущено ${invalidCount} строк с ошибками валидации`);
+        toast.warning(`Пропущено ${invalidCount} строк с ошибками. Импортируются только валидные строки.`);
+      }
+
+      if (validSelected.length === 0) {
+        toast.error('Нет валидных строк для импорта. Исправьте ошибки или снимите выбор с невалидных строк.');
+        setImporting(false);
+        return;
+      }
+
+      const payload = validSelected.map(({ r, idx }) => {
         const mapped = applyMapping(r, mapping);
         const edited = editedData[idx] || {};
         const final = { ...mapped, ...edited };
@@ -374,6 +395,7 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
       onClose?.();
     } catch (e) {
       console.error('Import failed', e);
+      toast.error('Ошибка импорта: ' + e.message);
     } finally {
       setImporting(false);
     }
