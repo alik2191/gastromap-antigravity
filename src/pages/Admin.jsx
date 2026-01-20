@@ -85,6 +85,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import AnalyticsTab from '../components/admin/AnalyticsTab';
 import ImportWizard from '../components/admin/ImportWizard';
+import SmartFillDialog from '../components/admin/SmartFillDialog';
+
 import BulkEditor from '../components/admin/BulkEditor';
 import InviteUserDialog from '../components/admin/InviteUserDialog';
 import ReviewDetail from '../components/admin/ReviewDetail';
@@ -1153,7 +1155,7 @@ export default function Admin() {
                                                 <TableHead>Создатель</TableHead>
                                                 <TableHead>Локация</TableHead>
                                                 <TableHead>Дата подачи</TableHead>
-                                                <TableHead className="text-right">Действия</TableHead>
+                                                <TableHead className="text-right w-[200px]">Действия</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>

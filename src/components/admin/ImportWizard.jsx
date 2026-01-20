@@ -14,8 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Sparkles, CheckCircle, XCircle } from "lucide-react";
 import * as XLSX from 'xlsx';
+import { enrichLocationsBatch, isGoogleMapsConfigured } from '@/utils/googleMapsEnrichment';
 
 const EXPECTED_FIELDS = [
   { key: 'id', label: 'id (опционально)' },
@@ -54,6 +55,13 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
   const [totalCount, setTotalCount] = useState(0);
   const [summary, setSummary] = useState({ created: 0, updated: 0, errors: 0 });
   const [editedData, setEditedData] = useState({}); // {rowIdx: {fieldKey: value}}
+
+  // Enrichment states
+  const [enableEnrichment, setEnableEnrichment] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichmentProgress, setEnrichmentProgress] = useState(0);
+  const [enrichmentResults, setEnrichmentResults] = useState({}); // {rowIdx: enrichmentResult}
+  const [enrichmentStats, setEnrichmentStats] = useState({ total: 0, success: 0, failed: 0 });
 
   // read file when opened / encoding changes
   useEffect(() => {
@@ -211,8 +219,89 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
     return showOnlyErrors ? data.filter((_, idx) => validations[idx]?.errors?.length) : data;
   }, [rows, mapping, validations, showOnlyErrors, editedData]);
 
+  // Function to enrich data using Google Maps API
+  const handleEnrichment = async () => {
+    if (!enableEnrichment || !isGoogleMapsConfigured()) {
+      return;
+    }
+
+    setIsEnriching(true);
+    setEnrichmentProgress(0);
+    setEnrichmentStats({ total: 0, success: 0, failed: 0 });
+
+    try {
+      const selectedLocations = rows
+        .map((r, idx) => ({ r, idx }))
+        .filter(({ idx }) => selectedRows.has(idx))
+        .map(({ r, idx }) => {
+          const mapped = applyMapping(r, mapping);
+          const edited = editedData[idx] || {};
+          return { ...mapped, ...edited, _rowIndex: idx };
+        });
+
+      setEnrichmentStats({ total: selectedLocations.length, success: 0, failed: 0 });
+
+      const results = await enrichLocationsBatch(
+        selectedLocations,
+        {
+          enrichCoordinates: true,
+          enrichRating: true,
+          enrichOpeningHours: false, // Skip for now as it's not in our schema
+          enrichPhotos: true,
+          enrichWebsite: true,
+          enrichPriceRange: true,
+          delayMs: 300 // Delay between API calls
+        },
+        (current, total, location, result) => {
+          // Progress callback
+          setEnrichmentProgress(Math.round((current / total) * 100));
+
+          // Update stats
+          setEnrichmentStats(prev => ({
+            total: total,
+            success: prev.success + (result.metadata.success ? 1 : 0),
+            failed: prev.failed + (result.metadata.success ? 0 : 1)
+          }));
+        }
+      );
+
+      // Apply enrichment results to editedData
+      const newEditedData = { ...editedData };
+      results.forEach((result, i) => {
+        const rowIdx = selectedLocations[i]._rowIndex;
+        if (result.metadata.success && Object.keys(result.enriched).length > 0) {
+          newEditedData[rowIdx] = {
+            ...(newEditedData[rowIdx] || {}),
+            ...result.enriched
+          };
+        }
+      });
+
+      setEditedData(newEditedData);
+
+      // Store enrichment results for display
+      const enrichmentResultsMap = {};
+      results.forEach((result, i) => {
+        const rowIdx = selectedLocations[i]._rowIndex;
+        enrichmentResultsMap[rowIdx] = result;
+      });
+      setEnrichmentResults(enrichmentResultsMap);
+
+    } catch (error) {
+      console.error('Enrichment error:', error);
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
   const startImport = async () => {
     if (!canImport) return;
+
+    // Run enrichment first if enabled
+    if (enableEnrichment && isGoogleMapsConfigured() && !isEnriching) {
+      await handleEnrichment();
+    }
+
     setImporting(true);
     try {
       const selected = rows.map((r, idx) => ({ r, idx })).filter(({ idx }) => selectedRows.has(idx));
@@ -244,9 +333,14 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
         // Process batch client-side since 'importLocations' function might not exist
         await Promise.all(batch.map(async (loc) => {
           try {
-            // Remove sourceRow before sending to DB
+            // Remove only internal fields, keep Google Maps enrichment data
             // eslint-disable-next-line no-unused-vars
-            const { sourceRow, ...dbData } = loc;
+            const { sourceRow, _rowIndex, ...dbData } = loc;
+
+            // Add last_enriched_at timestamp if data was enriched
+            if (dbData.google_place_id) {
+              dbData.last_enriched_at = new Date().toISOString();
+            }
 
             if (dbData.id) {
               const res = await api.entities.Location.update(dbData.id, dbData);
@@ -318,6 +412,89 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
               Показывать только строки с ошибками
             </label>
           </div>
+
+          {/* Google Maps Enrichment Section */}
+          {isGoogleMapsConfigured() && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-900 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                        Автоматическое обогащение данных
+                        <Badge variant="secondary" className="text-xs">Google Maps</Badge>
+                      </h4>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                        Автоматически получить координаты, рейтинги, фото и другую информацию из Google Maps
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEnrichment}
+                        disabled={isEnriching || selectedRows.size === 0 || !enableEnrichment}
+                        className="bg-white dark:bg-neutral-900"
+                      >
+                        {isEnriching ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                            Обогащение...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 mr-2" />
+                            Обогатить данные
+                          </>
+                        )}
+                      </Button>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enableEnrichment}
+                          onChange={(e) => setEnableEnrichment(e.target.checked)}
+                          disabled={isEnriching}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Включить</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Enrichment Progress */}
+                  {isEnriching && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+                        <span>Прогресс обогащения</span>
+                        <span>{enrichmentProgress}%</span>
+                      </div>
+                      <Progress value={enrichmentProgress} className="h-2" />
+                    </div>
+                  )}
+
+                  {/* Enrichment Stats */}
+                  {enrichmentStats.total > 0 && !isEnriching && (
+                    <div className="mt-3 flex items-center gap-4 text-xs">
+                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Успешно: {enrichmentStats.success}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Ошибки: {enrichmentStats.failed}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                        <span>Всего: {enrichmentStats.total}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {showOnlyErrors && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border-0 shadow-sm dark:border dark:border-amber-900 text-neutral-900 dark:text-amber-200 text-sm rounded-xl p-3 flex items-start gap-2">

@@ -67,16 +67,23 @@ class SupabaseEntity {
     }
 
     async create(data) {
+        console.log(`[SupabaseEntity] Creating ${this.tableName}:`, data);
         let actualData = { ...data };
         if (this.tableName === 'profiles' && actualData.custom_role) {
             actualData.role = actualData.custom_role;
             delete actualData.custom_role;
         }
-        const result = await handleResponse(supabase.from(this.tableName).insert(actualData).select().single());
-        if (this.tableName === 'profiles') {
-            return { ...result, custom_role: result.role };
+        try {
+            const result = await handleResponse(supabase.from(this.tableName).insert(actualData).select().single());
+            console.log(`[SupabaseEntity] Created ${this.tableName} successfully:`, result);
+            if (this.tableName === 'profiles') {
+                return { ...result, custom_role: result.role };
+            }
+            return result;
+        } catch (error) {
+            console.error(`[SupabaseEntity] Error creating ${this.tableName}:`, error);
+            throw error;
         }
-        return result;
     }
 
     async update(id, data) {
