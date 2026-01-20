@@ -132,9 +132,9 @@ export default function AdminLayout({
                 </div>
             </main>
 
-            {/* MOBILE FLOATING ACTION BUTTON (FAB) */}
+            {/* FLOATING ACTION BUTTON (FAB) - Visible on all devices */}
             {fabAction && (
-                <div className="md:hidden fixed bottom-20 right-4 z-30">
+                <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-30">
                     <Button
                         size="icon"
                         className="w-14 h-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
