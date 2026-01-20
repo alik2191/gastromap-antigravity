@@ -91,7 +91,7 @@ import BulkEditor from '../components/admin/BulkEditor';
 import InviteUserDialog from '../components/admin/InviteUserDialog';
 import ReviewDetail from '../components/admin/ReviewDetail';
 import CreatorModerationTab from '../components/admin/CreatorModerationTab';
-import ModerationLocationsTab from '../components/admin/ModerationLocationsTab';
+import HierarchicalLocationsView from '../components/admin/HierarchicalLocationsView';
 import AIManagementTab from '../components/admin/AIManagementTab';
 import CreatorLocationEditForm from '@/components/admin/CreatorLocationEditForm';
 import SystemLogsTab from '@/components/admin/SystemLogsTab';
@@ -1127,7 +1127,24 @@ export default function Admin() {
                         </TabsList>
 
                         <TabsContent value="locations">
-                            <ModerationLocationsTab locations={locations} />
+                            <HierarchicalLocationsView
+                                locations={locations}
+                                onEdit={(location) => {
+                                    setEditingLocation(location);
+                                    setShowLocationForm(true);
+                                }}
+                                onDelete={async (location) => {
+                                    if (window.confirm(`Удалить локацию "${location.name}"?`)) {
+                                        try {
+                                            await api.entities.Location.delete(location.id);
+                                            queryClient.invalidateQueries(['admin-locations']);
+                                            toast.success('Локация удалена');
+                                        } catch (error) {
+                                            toast.error('Ошибка удаления: ' + error.message);
+                                        }
+                                    }
+                                }}
+                            />
                         </TabsContent>
 
                         <TabsContent value="moderation">
