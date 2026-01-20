@@ -118,6 +118,47 @@ class SupabaseEntity {
         }
         return data;
     }
+
+    /**
+     * Check for duplicate locations based on name, address, and city
+     * @param {string} name - Location name
+     * @param {string} address - Location address (optional)
+     * @param {string} city - Location city
+     * @param {string} excludeId - ID to exclude from search (for updates)
+     * @returns {Promise<Object|null>} - Duplicate location or null
+     */
+    async checkDuplicate(name, address, city, excludeId = null) {
+        if (this.tableName !== 'locations') {
+            throw new Error('checkDuplicate is only available for locations table');
+        }
+
+        let query = supabase
+            .from(this.tableName)
+            .select('id, name, address, city, status')
+            .ilike('name', name)
+            .eq('city', city);
+
+        // If address is provided, check it too
+        if (address && address.trim()) {
+            query = query.ilike('address', address);
+        }
+
+        // Exclude current location when updating
+        if (excludeId) {
+            query = query.neq('id', excludeId);
+        }
+
+        query = query.limit(1);
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('[checkDuplicate] Error:', error);
+            return null;
+        }
+
+        return data && data.length > 0 ? data[0] : null;
+    }
 }
 
 // Export as generic adapter

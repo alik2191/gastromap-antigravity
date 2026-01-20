@@ -322,6 +322,37 @@ Please generate the content for "${field}" following the system instructions.`;
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Check for duplicates before proceeding
+        if (formData.name && formData.city) {
+            try {
+                const duplicate = await api.entities.Location.checkDuplicate(
+                    formData.name,
+                    formData.address,
+                    formData.city,
+                    location?.id // Exclude current location when updating
+                );
+
+                if (duplicate) {
+                    const confirmed = window.confirm(
+                        `⚠️ Найдена похожая локация:\n\n` +
+                        `Название: ${duplicate.name}\n` +
+                        `Адрес: ${duplicate.address || 'Не указан'}\n` +
+                        `Город: ${duplicate.city}\n` +
+                        `Статус: ${duplicate.status}\n\n` +
+                        `Вы уверены, что хотите создать дубликат?`
+                    );
+
+                    if (!confirmed) {
+                        toast.info('Создание отменено');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Duplicate check error:', error);
+                // Continue anyway if check fails
+            }
+        }
+
         // Parse and normalize tags through AI
         let normalizedTags = [];
         const rawTags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);

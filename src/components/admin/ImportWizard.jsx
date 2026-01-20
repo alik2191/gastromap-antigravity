@@ -387,6 +387,29 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
             } else {
               // Create new location (remove id field to let DB generate it)
               const { id, ...createData } = dbData;
+
+              // Check for duplicates before creating
+              try {
+                const duplicate = await api.entities.Location.checkDuplicate(
+                  createData.name,
+                  createData.address,
+                  createData.city
+                );
+
+                if (duplicate) {
+                  console.warn(`Duplicate found for row ${loc.sourceRow}:`, {
+                    name: createData.name,
+                    city: createData.city,
+                    existingId: duplicate.id
+                  });
+                  batchErrors++;
+                  continue; // Skip this location
+                }
+              } catch (dupCheckError) {
+                console.error(`Duplicate check failed for row ${loc.sourceRow}:`, dupCheckError);
+                // Continue with creation if check fails
+              }
+
               // Set status to pending for new locations (moderation required)
               if (!createData.status) {
                 createData.status = 'pending';
