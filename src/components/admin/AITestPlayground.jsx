@@ -48,8 +48,8 @@ export default function AITestPlayground({ aiPrompts }) {
                     systemPrompt: testPrompt
                 });
 
-                if (response.data?.generatedContent) {
-                    setTestOutput(response.data.generatedContent);
+                if (response.data?.result) {
+                    setTestOutput(response.data.result);
                 } else {
                     throw new Error(response.data?.error || 'No content generated');
                 }
