@@ -392,6 +392,9 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
         await new Promise((r) => setTimeout(r, 200));
       }
 
+      // Show success message
+      toast.success(`Импорт завершен! Создано: ${created}, Обновлено: ${updated}${errors > 0 ? `, Ошибок: ${errors}` : ''}`);
+
       onImported?.({ created, updated, errors, createdIds: allCreatedIds, updatedChanges: allUpdatedChanges });
       onClose?.();
     } catch (e) {
