@@ -988,6 +988,7 @@ export default function Admin() {
                                         <Upload className="w-4 h-4 mr-2" />
                                         Импорт
                                     </Button>
+
                                     <Button
                                         onClick={handleExport}
                                         variant="outline"
@@ -1011,7 +1012,7 @@ export default function Admin() {
                             <div className="space-y-6">
                                 {/* Info Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-4 text-neutral-900 dark:text-neutral-100">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
                                                 <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
