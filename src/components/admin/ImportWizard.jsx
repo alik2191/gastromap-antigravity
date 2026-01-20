@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, AlertCircle, Sparkles, CheckCircle, XCircle } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { enrichLocationsBatch, isGoogleMapsConfigured } from '@/utils/googleMapsEnrichment';
+import { toast } from 'sonner';
 
 const EXPECTED_FIELDS = [
   { key: 'id', label: 'id (опционально)' },
