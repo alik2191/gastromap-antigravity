@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { api } from '@/api/client'; // MOCK DATA
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import useAdminData from '@/hooks/useAdminData';
+import useAdminMutations from '@/hooks/useAdminMutations';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -469,68 +471,43 @@ export default function Admin() {
         checkAdmin();
     }, []);
 
-    const { data: locations = [] } = useQuery({
-        queryKey: ['admin-locations'],
-        queryFn: async () => {
-            const allLocations = await api.entities.Location.list();
-            return allLocations.filter(l => l.status === 'published' || !l.status);
-        },
-        enabled: !loading
-    });
+    // Use centralized admin data hook
+    const {
+        locations: allLocations = [],
+        users = [],
+        subscriptions = [],
+        feedback = [],
+        reviews = [],
+        aiAgents = [],
+        systemLogs = [],
+        chatMessages = [],
+        isLoading: isLoadingData,
+        refetchAll,
+    } = useAdminData();
 
-    const { data: pendingLocations = [] } = useQuery({
-        queryKey: ['admin-pending-locations'],
-        queryFn: async () => {
-            const allLocations = await api.entities.Location.list('-created_at');
-            return allLocations.filter(l => l.status === 'pending');
-        },
-        enabled: !loading
-    });
+    // Filter locations by status
+    const locations = allLocations.filter(l => l.status === 'published' || !l.status);
+    const pendingLocations = allLocations.filter(l => l.status === 'pending');
 
-    const { data: subscriptions = [] } = useQuery({
-        queryKey: ['admin-subscriptions'],
-        queryFn: () => api.entities.Subscription.list('-created_at'),
-        enabled: !loading,
-        refetchInterval: 60000 // Poll every minute
-    });
-
-    const { data: users = [] } = useQuery({
-        queryKey: ['admin-users'],
-        queryFn: () => api.entities.User.list(),
-        enabled: !loading
-    });
-
-    const { data: feedback = [] } = useQuery({
-        queryKey: ['admin-feedback'],
-        queryFn: () => api.entities.Feedback.list('-created_at'),
-        enabled: !loading,
-        refetchInterval: 30000 // Poll every 30 seconds
-    });
-
+    // Keep region statuses query (not in useAdminData)
     const { data: regionStatuses = [] } = useQuery({
         queryKey: ['admin-region-statuses'],
         queryFn: () => api.entities.RegionStatus.list(),
         enabled: !loading
     });
 
-    const { data: reviews = [] } = useQuery({
-        queryKey: ['admin-reviews'],
-        queryFn: () => api.entities.Review.list('-created_at'),
-        enabled: !loading,
-        refetchInterval: 30000
-    });
-
+    // Keep agent conversations query (not in useAdminData)
     const { data: agentConversations = [] } = useQuery({
         queryKey: ['agent-conversations'],
         queryFn: () => api.agents.listConversations({ agent_name: 'location_manager' }),
         enabled: !loading
     });
 
+    // Keep moderation rounds query (not in useAdminData)
     const { data: moderationRounds = [] } = useQuery({
         queryKey: ['admin-moderation-rounds'],
         queryFn: async () => {
             const allRounds = await api.entities.ModerationRound.filter({ status: 'pending_admin_review' });
-            // Only AI-generated rounds (not creator voting rounds)
             return allRounds.filter(round =>
                 (round.yes_count === 0 || !round.yes_count) &&
                 (round.no_count === 0 || !round.no_count)
@@ -540,24 +517,22 @@ export default function Admin() {
         refetchInterval: 30000
     });
 
-    const { data: aiAgents = [], isLoading: loadingAgents } = useQuery({
-        queryKey: ['admin-ai-agents'],
-        queryFn: async () => {
-            try {
-                return await api.entities.AIAgent.list();
-            } catch (error) {
-                console.error('Error loading AI agents:', error);
-                return [];
-            }
-        },
-        enabled: !loading
-    });
-
     const isAgentConnected = agentConversations.length > 0;
 
     const newFeedbackCount = feedback.filter(item => item.status === 'new').length;
     const newReviewsCount = reviews.filter(item => item.status === 'pending').length;
     const newModerationRoundsCount = moderationRounds.length;
+
+    // Use centralized mutations hook
+    const {
+        createLocation,
+        updateLocation,
+        deleteLocation,
+        updateUser,
+        updateSubscription,
+        updateFeedbackStatus,
+        updateReviewStatus,
+    } = useAdminMutations();
 
     // Notification Logic
     const prevFeedbackCountRef = useRef(null);
@@ -643,87 +618,52 @@ export default function Admin() {
         }
     }, [subscriptions, loading, queryClient]);
 
-    const locationMutation = useMutation({
-        mutationFn: async (data) => {
+    // Helper functions for location operations using centralized mutations
+    const handleSaveLocation = async (data) => {
+        try {
             if (data.id) {
-                return api.entities.Location.update(data.id, data);
+                await updateLocation.mutateAsync({ id: data.id, data });
+            } else {
+                await createLocation.mutateAsync(data);
             }
-            return api.entities.Location.create(data);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-locations']);
-            queryClient.invalidateQueries(['admin-pending-locations']);
             setShowLocationForm(false);
             setEditingLocation(null);
-            toast.success('Локация сохранена');
+            refetchAll();
+        } catch (error) {
+            console.error('Error saving location:', error);
         }
-    });
+    };
 
-    const publishLocationMutation = useMutation({
-        mutationFn: async (id) => {
-            return api.entities.Location.update(id, { status: 'published' });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-locations']);
-            queryClient.invalidateQueries(['admin-pending-locations']);
+    const handlePublishLocation = async (id) => {
+        try {
+            await updateLocation.mutateAsync({ id, data: { status: 'published' } });
             setShowLocationForm(false);
             setEditingLocation(null);
-            toast.success('Локация опубликована!');
+            refetchAll();
+        } catch (error) {
+            console.error('Error publishing location:', error);
         }
-    });
+    };
 
-    const rejectLocationMutation = useMutation({
-        mutationFn: async (id) => {
-            return api.entities.Location.update(id, { status: 'rejected' });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-locations']);
-            queryClient.invalidateQueries(['admin-pending-locations']);
-            toast.success('Локация отклонена');
+    const handleRejectLocation = async (id) => {
+        try {
+            await updateLocation.mutateAsync({ id, data: { status: 'rejected' } });
+            refetchAll();
+        } catch (error) {
+            console.error('Error rejecting location:', error);
         }
-    });
+    };
 
-    const deleteMutation = useMutation({
-        mutationFn: (id) => api.entities.Location.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-locations']);
-            toast.success('Локация удалена');
+    const handleDeleteLocation = async (id) => {
+        try {
+            await deleteLocation.mutateAsync(id);
+            refetchAll();
+        } catch (error) {
+            console.error('Error deleting location:', error);
         }
-    });
+    };
 
-    const subscriptionMutation = useMutation({
-        mutationFn: ({ id, status }) => api.entities.Subscription.update(id, { status }),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-subscriptions']);
-            toast.success('Статус обновлён');
-        }
-    });
-
-    const feedbackMutation = useMutation({
-        mutationFn: ({ id, status }) => api.entities.Feedback.update(id, { status }),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-feedback']);
-            toast.success('Статус обновлён');
-        }
-    });
-
-    const reviewMutation = useMutation({
-        mutationFn: ({ id, status, is_hidden }) => api.entities.Review.update(id, { status, is_hidden }),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-reviews']);
-            queryClient.invalidateQueries(['analytics-reviews']);
-            toast.success('Статус отзыва обновлён');
-        }
-    });
-
-    const updateUserRoleMutation = useMutation({
-        mutationFn: ({ id, custom_role }) => api.entities.User.update(id, { custom_role }),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-users']);
-            toast.success('Роль обновлена');
-        }
-    });
-
+    // Region status mutation (kept as is - complex logic not in useAdminMutations)
     const updateRegionStatusMutation = useMutation({
         mutationFn: async ({ region_name, region_type, parent_region, is_active, is_coming_soon, image_url, image_url_day, image_url_evening, image_url_night }) => {
             const existing = regionStatuses.find(rs =>
@@ -749,16 +689,7 @@ export default function Admin() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-region-statuses']);
-            toast.success('Статус обновлён');
-        }
-    });
-
-    const createSubscriptionMutation = useMutation({
-        mutationFn: (data) => api.entities.Subscription.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['admin-subscriptions']);
-            setShowSubscriptionForm(false);
-            toast.success('Подписка создана');
+            toast.success('Статус региона обновлён');
         }
     });
 
@@ -1327,7 +1258,7 @@ export default function Admin() {
                                 </DialogHeader>
                                 <ReviewDetail
                                     review={selectedReview}
-                                    onStatusChange={(id, status, is_hidden) => reviewMutation.mutate({ id, status, is_hidden })}
+                                    onStatusChange={(id, status, is_hidden) => updateReviewStatus.mutate({ id, status })}
                                     onClose={() => setShowReviewDetail(false)}
                                 />
                             </DialogContent>
@@ -1407,18 +1338,18 @@ export default function Admin() {
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end">
                                                                     <DropdownMenuItem
-                                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
+                                                                        onClick={() => updateReviewStatus.mutate({ id: review.id, status: 'approved' })}
                                                                         disabled={review.status === 'approved' && !review.is_hidden}
                                                                     >
                                                                         <CheckCircle2 className="w-4 h-4 mr-2" /> Одобрить
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuItem
-                                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
+                                                                        onClick={() => updateReviewStatus.mutate({ id: review.id, status: 'rejected' })}
                                                                         disabled={review.status === 'rejected'}
                                                                     >
                                                                         <X className="w-4 h-4 mr-2" /> Отклонить
                                                                     </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}>
+                                                                    <DropdownMenuItem onClick={() => api.entities.Review.update(review.id, { is_hidden: !review.is_hidden }).then(() => refetchAll())}>
                                                                         {review.is_hidden ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
                                                                         {review.is_hidden ? 'Показать' : 'Скрыть'}
                                                                     </DropdownMenuItem>
@@ -1497,7 +1428,7 @@ export default function Admin() {
                                                         size="sm"
                                                         variant="outline"
                                                         className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
-                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'approved', is_hidden: false })}
+                                                        onClick={() => updateReviewStatus.mutate({ id: review.id, status: 'approved' })}
                                                         disabled={review.status === 'approved' && !review.is_hidden}
                                                     >
                                                         <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -1507,7 +1438,7 @@ export default function Admin() {
                                                         size="sm"
                                                         variant="outline"
                                                         className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                                                        onClick={() => reviewMutation.mutate({ id: review.id, status: 'rejected', is_hidden: true })}
+                                                        onClick={() => updateReviewStatus.mutate({ id: review.id, status: 'rejected' })}
                                                         disabled={review.status === 'rejected'}
                                                     >
                                                         <X className="w-3 h-3 mr-1" />
@@ -1516,7 +1447,7 @@ export default function Admin() {
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
-                                                        onClick={() => reviewMutation.mutate({ id: review.id, is_hidden: !review.is_hidden })}
+                                                        onClick={() => api.entities.Review.update(review.id, { is_hidden: !review.is_hidden }).then(() => refetchAll())}
                                                     >
                                                         {review.is_hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                                     </Button>
@@ -1594,7 +1525,7 @@ export default function Admin() {
                                                     <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
                                                         <Select
                                                             value={sub.status}
-                                                            onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
+                                                            onValueChange={(status) => updateSubscription.mutate({ id: sub.id, data: { status } })}
                                                         >
                                                             <SelectTrigger className="w-full h-8 text-xs">
                                                                 <SelectValue />
@@ -1650,7 +1581,7 @@ export default function Admin() {
                                                     <TableCell className="text-right">
                                                         <Select
                                                             value={sub.status}
-                                                            onValueChange={(status) => subscriptionMutation.mutate({ id: sub.id, status })}
+                                                            onValueChange={(status) => updateSubscription.mutate({ id: sub.id, data: { status } })}
                                                         >
                                                             <SelectTrigger className="w-[120px]">
                                                                 <SelectValue />

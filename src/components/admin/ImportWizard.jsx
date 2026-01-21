@@ -494,305 +494,307 @@ export default function ImportWizard({ isOpen, onClose, file, type, onImported }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => !v && onClose?.()}>
-      <DialogContent className="w-[95vw] sm:w-full max-w-5xl max-h-[90vh] p-0 overflow-hidden flex flex-col dark:bg-neutral-800 dark:border-neutral-700">
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-neutral-900 dark:text-neutral-100">Импорт {type === 'excel' ? 'Excel' : 'CSV'} — предпросмотр и маппинг</DialogTitle>
-        </DialogHeader>
-        <div className="px-6 pb-4 space-y-4 flex-1 overflow-auto">
-          <div className="flex flex-wrap items-center gap-3">
-            {type === 'csv' && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-900 dark:text-neutral-300">Кодировка:</span>
-                <Select value={encoding} onValueChange={setEncoding}>
-                  <SelectTrigger className="w-[180px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="utf-8">UTF-8 (рекомендуется)</SelectItem>
-                    <SelectItem value="windows-1251">Windows-1251</SelectItem>
-                    <SelectItem value="iso-8859-1">ISO-8859-1</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <Badge variant={rows.length ? 'default' : 'secondary'} className="text-white">Строк: {rows.length}</Badge>
-            <Badge className={totalErrors ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}>Ошибок: {totalErrors}</Badge>
-            {selectedRows.size > 0 && (
-              <Badge variant="secondary">К импорту: {selectedRows.size}</Badge>
-            )}
-            <label className="flex items-center gap-2 text-sm ml-auto text-neutral-900 dark:text-neutral-100">
-              <input type="checkbox" checked={showOnlyErrors} onChange={(e) => setShowOnlyErrors(e.target.checked)} />
-              Показывать только строки с ошибками
-            </label>
-          </div>
-
-          {/* Google Maps Enrichment Section */}
-          {isGoogleMapsConfigured() && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-900 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                  <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                        Автоматическое обогащение данных
-                        <Badge variant="secondary" className="text-xs">Google Maps</Badge>
-                      </h4>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-                        Автоматически получить координаты, рейтинги, фото и другую информацию из Google Maps
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleEnrichment}
-                        disabled={isEnriching || selectedRows.size === 0 || !enableEnrichment}
-                        className="bg-white dark:bg-neutral-900"
-                      >
-                        {isEnriching ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                            Обогащение...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-3.5 h-3.5 mr-2" />
-                            Обогатить данные
-                          </>
-                        )}
-                      </Button>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={enableEnrichment}
-                          onChange={(e) => setEnableEnrichment(e.target.checked)}
-                          disabled={isEnriching}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Включить</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Enrichment Progress */}
-                  {isEnriching && (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
-                        <span>Прогресс обогащения</span>
-                        <span>{enrichmentProgress}%</span>
-                      </div>
-                      <Progress value={enrichmentProgress} className="h-2" />
-                    </div>
-                  )}
-
-                  {/* Enrichment Stats */}
-                  {enrichmentStats.total > 0 && !isEnriching && (
-                    <div className="mt-3 flex items-center gap-4 text-xs">
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Успешно: {enrichmentStats.success}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
-                        <XCircle className="w-3.5 h-3.5" />
-                        <span>Ошибки: {enrichmentStats.failed}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                        <span>Всего: {enrichmentStats.total}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showOnlyErrors && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border-0 shadow-sm dark:border dark:border-amber-900 text-neutral-900 dark:text-amber-200 text-sm rounded-xl p-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5" />
-              <div>
-                Показаны только строки с ошибками. В каждой проблемной ячейке отмечена иконка — наведите для подсказки; также детали видны в колонке «Ошибки».
-              </div>
-            </div>
-          )}
-
-          {/* Mapping */}
-          <div className="border-0 shadow-sm dark:border dark:border-neutral-700 rounded-xl p-4 bg-white dark:bg-neutral-900">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {EXPECTED_FIELDS.map(({ key, label }) => (
-                <div key={key} className="space-y-1">
-                  <div className="text-xs text-neutral-700 dark:text-neutral-400">{label}</div>
-                  <Select value={mapping[key] || ''} onValueChange={(v) => setMapping(prev => ({ ...prev, [key]: v }))}>
-                    <SelectTrigger className="text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-700">
-                      <SelectValue placeholder="Не использовать" />
+    <>
+      <Dialog open={isOpen} onOpenChange={(v) => !v && onClose?.()}>
+        <DialogContent className="w-[95vw] sm:w-full max-w-5xl max-h-[90vh] p-0 overflow-hidden flex flex-col dark:bg-neutral-800 dark:border-neutral-700">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-neutral-900 dark:text-neutral-100">Импорт {type === 'excel' ? 'Excel' : 'CSV'} — предпросмотр и маппинг</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-4 space-y-4 flex-1 overflow-auto">
+            <div className="flex flex-wrap items-center gap-3">
+              {type === 'csv' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-neutral-900 dark:text-neutral-300">Кодировка:</span>
+                  <Select value={encoding} onValueChange={setEncoding}>
+                    <SelectTrigger className="w-[180px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>Не использовать</SelectItem>
-                      {headers.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
+                      <SelectItem value="utf-8">UTF-8 (рекомендуется)</SelectItem>
+                      <SelectItem value="windows-1251">Windows-1251</SelectItem>
+                      <SelectItem value="iso-8859-1">ISO-8859-1</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              ))}
+              )}
+              <Badge variant={rows.length ? 'default' : 'secondary'} className="text-white">Строк: {rows.length}</Badge>
+              <Badge className={totalErrors ? 'bg-red-500 text-white' : 'bg-green-600 text-white'}>Ошибок: {totalErrors}</Badge>
+              {selectedRows.size > 0 && (
+                <Badge variant="secondary">К импорту: {selectedRows.size}</Badge>
+              )}
+              <label className="flex items-center gap-2 text-sm ml-auto text-neutral-900 dark:text-neutral-100">
+                <input type="checkbox" checked={showOnlyErrors} onChange={(e) => setShowOnlyErrors(e.target.checked)} />
+                Показывать только строки с ошибками
+              </label>
             </div>
-          </div>
 
-          {/* Preview & validation */}
-          <div className="border-0 shadow-sm dark:border dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900">
-            <div className="overflow-auto max-h-[70vh]">
-              <Table className="min-w-[1100px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[44px] text-neutral-900 dark:text-neutral-300">
-                      <Checkbox
-                        checked={previewRows.length > 0 && previewRows.every(({ i }) => selectedRows.has(i))}
-                        onCheckedChange={(checked) => {
-                          const next = new Set(selectedRows);
-                          if (checked) {
-                            previewRows.forEach(({ i }) => next.add(i));
-                          } else {
-                            previewRows.forEach(({ i }) => next.delete(i));
-                          }
-                          setSelectedRows(next);
-                        }}
-                        aria-label="Select all"
-                      />
-                    </TableHead>
-                    <TableHead className="w-[60px] text-neutral-900 dark:text-neutral-300">#</TableHead>
-                    {EXPECTED_FIELDS.map(f => (
-                      <TableHead key={f.key} className="text-neutral-900 dark:text-neutral-300">{f.key}</TableHead>
-                    ))}
-                    <TableHead className="text-neutral-900 dark:text-neutral-300">Ошибки</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={EXPECTED_FIELDS.length + 3} className="text-center text-neutral-900 dark:text-neutral-300">
-                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Загрузка...
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    previewRows.map(({ i, m }) => (
-                      <TableRow key={i} className={validations[i]?.errors?.length ? 'bg-red-50/50 dark:bg-red-950/30' : ''}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedRows.has(i)}
-                            onCheckedChange={(checked) => {
-                              const next = new Set(selectedRows);
-                              if (checked) next.add(i); else next.delete(i);
-                              setSelectedRows(next);
-                            }}
-                            aria-label="Select row"
+            {/* Google Maps Enrichment Section */}
+            {isGoogleMapsConfigured() && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-900 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                    <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                          Автоматическое обогащение данных
+                          <Badge variant="secondary" className="text-xs">Google Maps</Badge>
+                        </h4>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                          Автоматически получить координаты, рейтинги, фото и другую информацию из Google Maps
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleEnrichment}
+                          disabled={isEnriching || selectedRows.size === 0 || !enableEnrichment}
+                          className="bg-white dark:bg-neutral-900"
+                        >
+                          {isEnriching ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                              Обогащение...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5 mr-2" />
+                              Обогатить данные
+                            </>
+                          )}
+                        </Button>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enableEnrichment}
+                            onChange={(e) => setEnableEnrichment(e.target.checked)}
+                            disabled={isEnriching}
+                            className="w-4 h-4"
                           />
-                        </TableCell>
-                        <TableCell className="text-neutral-900 dark:text-neutral-300">{i + 2}</TableCell>
-                        {EXPECTED_FIELDS.map(f => {
-                          const isLongField = ['description', 'insider_tip', 'must_try'].includes(f.key);
-                          return (
-                            <TableCell
-                              key={f.key}
-                              className={`${isLongField ? 'max-w-[220px]' : 'min-w-[120px]'} ${validations[i]?.fieldErrors?.[f.key]?.length ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300' : 'text-neutral-900 dark:text-neutral-100'}`}
-                              title={validations[i]?.fieldErrors?.[f.key]?.join('; ') || String(m[f.key] ?? '')}
-                            >
-                              <div className="relative">
-                                {f.key === 'type' ? (
-                                  <Select
-                                    value={m[f.key] ?? ''}
-                                    onValueChange={(v) => {
-                                      setEditedData(prev => ({
-                                        ...prev,
-                                        [i]: { ...(prev[i] || {}), [f.key]: v }
-                                      }));
-                                    }}
-                                  >
-                                    <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {TYPE_ENUM.map(t => (
-                                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : f.key === 'price_range' ? (
-                                  <Select
-                                    value={m[f.key] ?? ''}
-                                    onValueChange={(v) => {
-                                      setEditedData(prev => ({
-                                        ...prev,
-                                        [i]: { ...(prev[i] || {}), [f.key]: v }
-                                      }));
-                                    }}
-                                  >
-                                    <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {PRICE_ENUM.map(p => (
-                                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Input
-                                    value={m[f.key] ?? ''}
-                                    onChange={(e) => {
-                                      setEditedData(prev => ({
-                                        ...prev,
-                                        [i]: { ...(prev[i] || {}), [f.key]: e.target.value }
-                                      }));
-                                    }}
-                                    className={`h-7 text-xs px-2 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300 dark:border-red-700 pr-6' : ''}`}
-                                  />
-                                )}
-                                {validations[i]?.fieldErrors?.[f.key]?.length > 0 && (
-                                  <AlertCircle className="w-3.5 h-3.5 text-red-600 absolute right-2 top-1.5 pointer-events-none" />
-                                )}
-                              </div>
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-xs text-red-600 dark:text-red-400">
-                          {validations[i]?.errors?.join('; ')}
+                          <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Включить</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Enrichment Progress */}
+                    {isEnriching && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+                          <span>Прогресс обогащения</span>
+                          <span>{enrichmentProgress}%</span>
+                        </div>
+                        <Progress value={enrichmentProgress} className="h-2" />
+                      </div>
+                    )}
+
+                    {/* Enrichment Stats */}
+                    {enrichmentStats.total > 0 && !isEnriching && (
+                      <div className="mt-3 flex items-center gap-4 text-xs">
+                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Успешно: {enrichmentStats.success}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Ошибки: {enrichmentStats.failed}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                          <span>Всего: {enrichmentStats.total}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showOnlyErrors && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border-0 shadow-sm dark:border dark:border-amber-900 text-neutral-900 dark:text-amber-200 text-sm rounded-xl p-3 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 mt-0.5" />
+                <div>
+                  Показаны только строки с ошибками. В каждой проблемной ячейке отмечена иконка — наведите для подсказки; также детали видны в колонке «Ошибки».
+                </div>
+              </div>
+            )}
+
+            {/* Mapping */}
+            <div className="border-0 shadow-sm dark:border dark:border-neutral-700 rounded-xl p-4 bg-white dark:bg-neutral-900">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {EXPECTED_FIELDS.map(({ key, label }) => (
+                  <div key={key} className="space-y-1">
+                    <div className="text-xs text-neutral-700 dark:text-neutral-400">{label}</div>
+                    <Select value={mapping[key] || ''} onValueChange={(v) => setMapping(prev => ({ ...prev, [key]: v }))}>
+                      <SelectTrigger className="text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-700">
+                        <SelectValue placeholder="Не использовать" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>Не использовать</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Preview & validation */}
+            <div className="border-0 shadow-sm dark:border dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900">
+              <div className="overflow-auto max-h-[70vh]">
+                <Table className="min-w-[1100px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[44px] text-neutral-900 dark:text-neutral-300">
+                        <Checkbox
+                          checked={previewRows.length > 0 && previewRows.every(({ i }) => selectedRows.has(i))}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(selectedRows);
+                            if (checked) {
+                              previewRows.forEach(({ i }) => next.add(i));
+                            } else {
+                              previewRows.forEach(({ i }) => next.delete(i));
+                            }
+                            setSelectedRows(next);
+                          }}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
+                      <TableHead className="w-[60px] text-neutral-900 dark:text-neutral-300">#</TableHead>
+                      {EXPECTED_FIELDS.map(f => (
+                        <TableHead key={f.key} className="text-neutral-900 dark:text-neutral-300">{f.key}</TableHead>
+                      ))}
+                      <TableHead className="text-neutral-900 dark:text-neutral-300">Ошибки</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={EXPECTED_FIELDS.length + 3} className="text-center text-neutral-900 dark:text-neutral-300">
+                          <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Загрузка...
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      previewRows.map(({ i, m }) => (
+                        <TableRow key={i} className={validations[i]?.errors?.length ? 'bg-red-50/50 dark:bg-red-950/30' : ''}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedRows.has(i)}
+                              onCheckedChange={(checked) => {
+                                const next = new Set(selectedRows);
+                                if (checked) next.add(i); else next.delete(i);
+                                setSelectedRows(next);
+                              }}
+                              aria-label="Select row"
+                            />
+                          </TableCell>
+                          <TableCell className="text-neutral-900 dark:text-neutral-300">{i + 2}</TableCell>
+                          {EXPECTED_FIELDS.map(f => {
+                            const isLongField = ['description', 'insider_tip', 'must_try'].includes(f.key);
+                            return (
+                              <TableCell
+                                key={f.key}
+                                className={`${isLongField ? 'max-w-[220px]' : 'min-w-[120px]'} ${validations[i]?.fieldErrors?.[f.key]?.length ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300' : 'text-neutral-900 dark:text-neutral-100'}`}
+                                title={validations[i]?.fieldErrors?.[f.key]?.join('; ') || String(m[f.key] ?? '')}
+                              >
+                                <div className="relative">
+                                  {f.key === 'type' ? (
+                                    <Select
+                                      value={m[f.key] ?? ''}
+                                      onValueChange={(v) => {
+                                        setEditedData(prev => ({
+                                          ...prev,
+                                          [i]: { ...(prev[i] || {}), [f.key]: v }
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {TYPE_ENUM.map(t => (
+                                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : f.key === 'price_range' ? (
+                                    <Select
+                                      value={m[f.key] ?? ''}
+                                      onValueChange={(v) => {
+                                        setEditedData(prev => ({
+                                          ...prev,
+                                          [i]: { ...(prev[i] || {}), [f.key]: v }
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger className={`h-7 text-xs ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300' : ''}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {PRICE_ENUM.map(p => (
+                                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <Input
+                                      value={m[f.key] ?? ''}
+                                      onChange={(e) => {
+                                        setEditedData(prev => ({
+                                          ...prev,
+                                          [i]: { ...(prev[i] || {}), [f.key]: e.target.value }
+                                        }));
+                                      }}
+                                      className={`h-7 text-xs px-2 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 ${validations[i]?.fieldErrors?.[f.key]?.length ? 'border-red-300 dark:border-red-700 pr-6' : ''}`}
+                                    />
+                                  )}
+                                  {validations[i]?.fieldErrors?.[f.key]?.length > 0 && (
+                                    <AlertCircle className="w-3.5 h-3.5 text-red-600 absolute right-2 top-1.5 pointer-events-none" />
+                                  )}
+                                </div>
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-xs text-red-600 dark:text-red-400">
+                            {validations[i]?.errors?.join('; ')}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-neutral-700 dark:text-neutral-400">
+                Обязательные поля: name, type, country, city. Типы: {TYPE_ENUM.join(', ')}. Цена: {PRICE_ENUM.join(', ')}.
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={onClose} disabled={importing}>Отмена</Button>
+                <Button onClick={startImport} disabled={!canImport || importing} className="bg-neutral-900 hover:bg-neutral-800">
+                  {importing ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" /> Импорт...</>) : 'Импортировать'}
+                </Button>
+              </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-neutral-700 dark:text-neutral-400">
-              Обязательные поля: name, type, country, city. Типы: {TYPE_ENUM.join(', ')}. Цена: {PRICE_ENUM.join(', ')}.
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={onClose} disabled={importing}>Отмена</Button>
-              <Button onClick={startImport} disabled={!canImport || importing} className="bg-neutral-900 hover:bg-neutral-800">
-                {importing ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" /> Импорт...</>) : 'Импортировать'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-
-    {/* Import Report Dialog */ }
-  <ImportReport
-    open={showReport}
-    onClose={() => {
-      setShowReport(false);
-      if (importResults?.summary?.errors === 0) {
-        onClose?.(); // Close main dialog only if no errors
-      }
-    }}
-    results={importResults}
-  />
+      {/* Import Report Dialog */}
+      <ImportReport
+        open={showReport}
+        onClose={() => {
+          setShowReport(false);
+          if (importResults?.summary?.errors === 0) {
+            onClose?.(); // Close main dialog only if no errors
+          }
+        }}
+        results={importResults}
+      />
+    </>
   );
 }

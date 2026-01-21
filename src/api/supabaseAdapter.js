@@ -1,17 +1,39 @@
 import { supabase } from '@/lib/supabase';
+import { handleError, validateApiResponse } from '@/lib/errorHandler';
 
 // Helper to map Supabase response to expected format or throw error
-const handleResponse = async (promise) => {
+const handleResponse = async (promise, context = 'Database operation') => {
     const { data, error } = await promise;
-    if (error) throw error;
+    if (error) {
+        handleError(error, { context, showToast: false });
+        throw error;
+    }
     return data;
 };
 
+/**
+ * Generic entity class for Supabase table operations
+ * Provides CRUD operations with automatic error handling
+ * @class SupabaseEntity
+ */
 class SupabaseEntity {
+    /**
+     * Create a new SupabaseEntity instance
+     * @param {string} tableName - Name of the Supabase table
+     */
     constructor(tableName) {
         this.tableName = tableName;
     }
 
+
+    /**
+     * List all records from the table
+     * @param {string|Object} optionsOrSort - Sort string (e.g., '-created_at') or options object
+     * @param {string} [optionsOrSort.sort] - Sort field with optional '-' prefix for descending
+     * @param {string} [optionsOrSort.select='*'] - Fields to select
+     * @param {Array<number>} [optionsOrSort.range] - Range [from, to] for pagination
+     * @returns {Promise<Array>} - Array of records
+     */
     async list(optionsOrSort) {
         let query = supabase.from(this.tableName);
 
@@ -48,6 +70,15 @@ class SupabaseEntity {
         return data;
     }
 
+    /**
+     * Filter records by exact match criteria
+     * @param {Object} criteria - Filter criteria (key-value pairs for exact match)
+     * @param {Object} [options={}] - Additional options
+     * @param {string} [options.select='*'] - Fields to select
+     * @returns {Promise<Array>} - Filtered records
+     * @example
+     * const cafes = await entity.filter({ city: 'Krakow', type: 'cafe' });
+     */
     async filter(criteria, options = {}) {
         let actualCriteria = { ...criteria };
         if (this.tableName === 'profiles' && actualCriteria.custom_role) {
@@ -66,6 +97,14 @@ class SupabaseEntity {
         return data;
     }
 
+    /**
+     * Create a new record
+     * @param {Object} data - Record data
+     * @returns {Promise<Object>} - Created record with id
+     * @throws {Error} - If creation fails
+     * @example
+     * const location = await entity.create({ name: 'Cafe', city: 'Krakow' });
+     */
     async create(data) {
         console.log(`[SupabaseEntity] Creating ${this.tableName}:`, data);
         let actualData = { ...data };
@@ -86,6 +125,15 @@ class SupabaseEntity {
         }
     }
 
+    /**
+     * Update an existing record
+     * @param {string} id - Record ID
+     * @param {Object} data - Data to update
+     * @returns {Promise<Object>} - Updated record
+     * @throws {Error} - If update fails
+     * @example
+     * const updated = await entity.update('uuid', { status: 'published' });
+     */
     async update(id, data) {
         let actualData = { ...data };
         if (this.tableName === 'profiles' && actualData.custom_role) {
@@ -105,12 +153,28 @@ class SupabaseEntity {
         return result;
     }
 
+    /**
+     * Delete a record by ID
+     * @param {string} id - Record ID to delete
+     * @returns {Promise<Object>} - { success: true }
+     * @throws {Error} - If deletion fails
+     * @example
+     * await entity.delete('uuid');
+     */
     async delete(id) {
         const { error } = await supabase.from(this.tableName).delete().eq('id', id);
         if (error) throw error;
         return { success: true };
     }
 
+    /**
+     * Get a single record by ID
+     * @param {string} id - Record ID
+     * @returns {Promise<Object>} - Record data
+     * @throws {Error} - If record not found
+     * @example
+     * const location = await entity.get('uuid');
+     */
     async get(id) {
         const data = await handleResponse(supabase.from(this.tableName).select('*').eq('id', id).single());
         if (this.tableName === 'profiles' && data) {
