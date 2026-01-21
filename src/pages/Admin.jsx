@@ -1175,7 +1175,7 @@ export default function Admin() {
                                                                     className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        publishLocationMutation.mutate(location.id);
+                                                                        handlePublishLocation(location.id);
                                                                     }}
                                                                     title="Опубликовать"
                                                                 >
@@ -1205,7 +1205,7 @@ export default function Admin() {
                                                                         <AlertDialogFooter>
                                                                             <AlertDialogCancel>Отмена</AlertDialogCancel>
                                                                             <AlertDialogAction
-                                                                                onClick={() => rejectLocationMutation.mutate(location.id)}
+                                                                                onClick={() => handleRejectLocation(location.id)}
                                                                                 className="bg-red-600 hover:bg-red-700"
                                                                             >
                                                                                 Отклонить
@@ -1470,8 +1470,8 @@ export default function Admin() {
                                     </DialogHeader>
                                     <SubscriptionForm
                                         users={users}
-                                        onSubmit={(data) => createSubscriptionMutation.mutate(data)}
-                                        isLoading={createSubscriptionMutation.isPending}
+                                        onSubmit={(data) => createSubscription.mutate(data)}
+                                        isLoading={createSubscription.isPending}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -1629,7 +1629,7 @@ export default function Admin() {
                                                     <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
                                                         <Select
                                                             value={u.custom_role || u.role}
-                                                            onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
+                                                            onValueChange={(custom_role) => updateUser.mutate({ id: u.id, data: { custom_role } })}
                                                         >
                                                             <SelectTrigger className="w-full h-8 text-xs">
                                                                 <SelectValue placeholder="Role" />
@@ -1685,7 +1685,7 @@ export default function Admin() {
                                                     <TableCell className="text-right">
                                                         <Select
                                                             value={u.custom_role || u.role}
-                                                            onValueChange={(custom_role) => updateUserRoleMutation.mutate({ id: u.id, custom_role })}
+                                                            onValueChange={(custom_role) => updateUser.mutate({ id: u.id, data: { custom_role } })}
                                                         >
                                                             <SelectTrigger className="w-[120px]">
                                                                 <SelectValue />
