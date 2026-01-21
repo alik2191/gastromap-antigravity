@@ -503,19 +503,6 @@ export default function Admin() {
         enabled: !loading
     });
 
-    // Keep moderation rounds query (not in useAdminData)
-    const { data: moderationRounds = [] } = useQuery({
-        queryKey: ['admin-moderation-rounds'],
-        queryFn: async () => {
-            const allRounds = await api.entities.ModerationRound.filter({ status: 'pending_admin_review' });
-            return allRounds.filter(round =>
-                (round.yes_count === 0 || !round.yes_count) &&
-                (round.no_count === 0 || !round.no_count)
-            );
-        },
-        enabled: !loading,
-        refetchInterval: 30000
-    });
 
     const isAgentConnected = agentConversations.length > 0;
 
