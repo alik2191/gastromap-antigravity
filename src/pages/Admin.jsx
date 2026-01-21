@@ -521,7 +521,6 @@ export default function Admin() {
 
     const newFeedbackCount = feedback.filter(item => item.status === 'new').length;
     const newReviewsCount = reviews.filter(item => item.status === 'pending').length;
-    const newModerationRoundsCount = moderationRounds.length;
 
     // Use centralized mutations hook
     const {
@@ -1023,8 +1022,8 @@ export default function Admin() {
                             </DialogHeader>
                             <LocationForm
                                 location={null}
-                                onSubmit={(data) => locationMutation.mutate(data)}
-                                isLoading={locationMutation.isPending}
+                                onSubmit={handleSaveLocation}
+                                isLoading={createLocation.isPending || updateLocation.isPending}
                             />
                         </DialogContent>
                     </Dialog>
@@ -1110,8 +1109,8 @@ export default function Admin() {
                                 </DialogHeader>
                                 <LocationForm
                                     location={editingLocation}
-                                    onSubmit={(data) => locationMutation.mutate(data)}
-                                    isLoading={locationMutation.isPending}
+                                    onSubmit={handleSaveLocation}
+                                    isLoading={createLocation.isPending || updateLocation.isPending}
                                 />
                             </DialogContent>
                         </Dialog >
